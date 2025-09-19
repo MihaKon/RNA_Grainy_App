@@ -1,0 +1,7 @@
+name: RNA Grainy App Pipeline
+on: [push]
+jobs:
+    Lint:
+        runs-on: ubuntu-latest
+        steps:
+        - run: echo "Auto Linting"
