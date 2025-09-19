@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>RNA Coarse Grain</title>
+        <meta name="description" content="RNA Coarse Grain">
+        <meta name="keywords" content="RNA, Coarse Grain, Simulation, Analysis">
+        <script src="https://kit.fontawesome.com/5ad53bb2b8.js"
+                crossorigin="anonymous"></script>
+        <link href="{{ url_for('static',path='/css/app.css') }}" rel="stylesheet" />
+    </head>
+    <body class="min-h-screen flex flex-col">
+        {% include "partials/navbar.html" %}
+        <main class="flex-1">
+            {% block content %}{% endblock %}
+        </main>
+        {% include "partials/footer.html" %}
+    </body>
+</html>
