@@ -1,15 +1,7 @@
-import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
 
-
-@pytest.fixture
-def client():
-    return TestClient(app)
-
-
-def test_full_file_upload_workflow(client):
+def test_full_file_upload_workflow(client: TestClient) -> None:
     response = client.get("/")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
@@ -22,7 +14,7 @@ def test_full_file_upload_workflow(client):
     assert upload_response.json() == {"filename": "test_document.txt"}
 
 
-def test_api_endpoints_integration(client):
+def test_api_endpoints_integration(client: TestClient) -> None:
     home_response = client.get("/")
     assert home_response.status_code == 200
 

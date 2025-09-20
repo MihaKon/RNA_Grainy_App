@@ -17,24 +17,6 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/Pipfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: 'npm'
-      - name: Cache Tailwind CSS output
-        uses: actions/cache@v4
-        with:
-          path: |
-            app/static/css/
-            app/styles/
-          key: ${{ runner.os }}-tailwind-${{ hashFiles('tailwind.config.js', 'package.json', 'app/templates/**') }}
-          restore-keys: |
-            ${{ runner.os }}-tailwind-
-      - name: Install Node dependencies
-        run: npm install
-      - name: Build Tailwind CSS
-        run: npm run dev
       - name: Install dependencies
         run: |
             python -m pip install --upgrade pip
