@@ -1,5 +1,5 @@
 name: Build and Test
-on: [push, pull_request]
+on: [push]
 jobs:
   setup:
     name: Setup & Build Tailwind
@@ -40,54 +40,12 @@ jobs:
         with:
           name: pipenv-env
           path: ~/.local/share/virtualenvs/
-  lint:
-    name: Ruff
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install pipenv -d
       - run: pipenv run ruff check .
-
-  mypy:
-    name: Mypy
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install pipenv -d
       - run: pipenv run mypy .
-
-  unit:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install pipenv -d
       - run: pipenv run pytest ./tests/unit
-
-  e2e:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
       - uses: actions/download-artifact@v4
         with:
           name: pipenv-env
           path: ~/.local/share/virtualenvs/
-      - run: pip install pipenv -d
+      - run: pip install pipenv
       - run: pipenv run pytest ./tests/e2e
