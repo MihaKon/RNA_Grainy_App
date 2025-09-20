@@ -1,6 +1,6 @@
 import pathlib
 
-from fastapi import FastAPI, Request, Form, UploadFile, File
+from fastapi import FastAPI, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
