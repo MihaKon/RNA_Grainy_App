@@ -6,12 +6,10 @@ from app.main import app
 
 @pytest.fixture
 def client():
-    """E2E test client fixture with full app context."""
     return TestClient(app)
 
 
 def test_full_file_upload_workflow(client):
-    """Test complete file upload user journey."""
     response = client.get("/")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
@@ -25,7 +23,6 @@ def test_full_file_upload_workflow(client):
 
 
 def test_api_endpoints_integration(client):
-    """Test that all API endpoints work together correctly."""
     home_response = client.get("/")
     assert home_response.status_code == 200
 
