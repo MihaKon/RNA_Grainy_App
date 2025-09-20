@@ -10,11 +10,27 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/Pipfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: 'npm'
+      - name: Cache Tailwind CSS output
+        uses: actions/cache@v4
+        with:
+          path: |
+            app/static/css/
+            app/styles/
+          key: ${{ runner.os }}-tailwind-${{ hashFiles('tailwind.config.js', 'package.json', 'app/templates/**') }}
+          restore-keys: |
+            ${{ runner.os }}-tailwind-
       - name: Install Node dependencies
         run: npm install
       - name: Build Tailwind CSS
@@ -24,8 +40,8 @@ jobs:
             python -m pip install --upgrade pip
             pip install pipenv
             pipenv install --dev
-      - name: Verify pytest installation
-        run: pipenv run pytest --version
+      - name: Check Formatting
+        run: ruff check .
       - name: Run Pytest
         run: pipenv run pytest .
         
