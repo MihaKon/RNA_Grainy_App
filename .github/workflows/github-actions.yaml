@@ -41,7 +41,7 @@ jobs:
             pip install pipenv
             pipenv install --dev
       - name: Check Formatting
-        run: pipenv ruff check .
+        run: pipenv run ruff check .
       - name: Run Pytest
         run: pipenv run pytest .
         
