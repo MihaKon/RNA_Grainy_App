@@ -1,10 +1,11 @@
 import pathlib
+from typing import Any
 
-from fastapi import FastAPI, Request, Form, UploadFile, File
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, Request, UploadFile
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -22,5 +23,5 @@ async def root(request: Request) -> HTMLResponse:
 
 
 @app.post("/uploadfile/")
-async def upload_file(file: UploadFile):
+async def upload_file(file: UploadFile) -> dict[str, Any]:
     return {"filename": file.filename}

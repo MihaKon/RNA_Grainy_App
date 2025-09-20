@@ -2,3 +2,6 @@
 __pycache__
 node_modules
 app/static
+.ruff_cache
+.pytest_cache
+.mypy_cache
