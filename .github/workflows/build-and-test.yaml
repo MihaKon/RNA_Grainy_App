@@ -7,22 +7,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-      
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: 'npm'
-      
       - name: Install Node dependencies
         run: npm install
-      
       - name: Build Tailwind CSS
         run: npm run dev
-      
       - name: Check for CSS changes
         id: css-changes
         run: |
@@ -31,7 +24,6 @@ jobs:
           else
             echo "changes=true" >> $GITHUB_OUTPUT
           fi
-      
       - name: Commit CSS changes
         if: steps.css-changes.outputs.changes == 'true'
         run: |
@@ -49,24 +41,25 @@ jobs:
           path: |
             app/static/css/
             app/styles/
+  Lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: ruff
+        run: pipenv run ruff check .
+      - name: mypy
+        run: pipenv run mypy .
   test:
     runs-on: ubuntu-latest
     needs: build-tailwind 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
-      - name: Download CSS artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: built-css
-          path: .
-      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      
       - name: Cache Python dependencies
         uses: actions/cache@v4
         with:
@@ -74,21 +67,11 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/Pipfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      
       - name: Install dependencies
         run: |
-            python -m pip install --upgrade pip
             pip install pipenv
             pipenv install --dev
-      
-      - name: ruff
-        run: pipenv run ruff check .
-      
-      - name: mypy
-        run: pipenv run mypy .
-      
       - name: unit tests
         run: pipenv run pytest ./tests/unit/.
-      
       - name: e2e tests
         run: pipenv run pytest ./tests/e2e/.
