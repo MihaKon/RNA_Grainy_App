@@ -1,4 +1,4 @@
-name: RNA Grainy App Pipeline
+name: CI
 on: [push]
 jobs:
   build:
@@ -40,8 +40,12 @@ jobs:
             python -m pip install --upgrade pip
             pip install pipenv
             pipenv install --dev
-      - name: Check Formatting
+      - name: ruff
         run: pipenv run ruff check .
-      - name: Run Pytest
-        run: pipenv run pytest .
+      - name: mypy
+        run: pipenv run mypy .
+      - name: unit
+        run: pipenv run pytest ./tests/unit/.
+      - name: e2e
+        run: pipenv run pytest ./tests/e2e/.
         
