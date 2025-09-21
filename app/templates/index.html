@@ -5,13 +5,17 @@
           method="post"
           class="w-full max-w-md m-auto bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-6">
         <h2 class="text-2xl font-bold text-gray-800 text-center">Upload File</h2>
-        <p class="text-sm text-gray-500 text-center">Supported formats: .pdb, .fasta, .txt, etc.</p>
+        <p class="text-sm text-gray-500 text-center">
+            Supported formats:
+            {% for file_format in supported_file_formats %}{{ '.'~file_format~', ' }}{% endfor %}
+        </p>
         <div class="flex flex-col gap-2">
             <label for="file" class="text-gray-700 font-medium">Choose file</label>
             <input id="file"
                    name="file"
                    type="file"
-                   class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-500 file:text-white hover:file:bg-purple-600 cursor-pointer border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-400">
+                   class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-500 file:text-white hover:file:bg-purple-600 cursor-pointer border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-400"
+                   accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}">
         </div>
         <button type="submit"
                 class="w-full py-3 bg-purple-500 text-white font-semibold rounded-xl shadow-md transition transform duration-300 ease-in-out hover:bg-purple-700 hover:scale-[1.02]">
