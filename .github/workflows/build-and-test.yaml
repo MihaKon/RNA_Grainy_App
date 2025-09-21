@@ -2,7 +2,7 @@ name: Build and Test
 on: [push]
 jobs:
   setup:
-    name: Setup & Build Tailwind
+    name: Build Tailwind And Test Code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
