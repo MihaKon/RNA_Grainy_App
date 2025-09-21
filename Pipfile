@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 fastapi = {extras = ["standard"], version = "*"}
 jinja2 = "==3.1.6"
+biopython = "*"
 
 [dev-packages]
 pytest = "==8.3.5"
