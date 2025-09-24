@@ -1,24 +1,23 @@
-from fastapi.testclient import TestClient
 import io
 
+from fastapi.testclient import TestClient
 
-def test_file_upload(client: TestClient, sample_file: io.BytesIO) -> None:
-    """Test successful file upload."""
+
+def test_unsupported_format_file_upload_returns_code_415(
+    client: TestClient, empty_file: io.BytesIO
+) -> None:
     response = client.post(
-        "/uploadfile/", files={"file": (sample_file.name, sample_file, "text/plain")}
+        "/uploadfile/", files={"file": (empty_file.name, empty_file, "text/plain")}
     )
-    assert response.status_code == 200
-    assert response.json() == {"filename": "TestFileName.TestExtension"}
+    assert response.status_code == 415
 
 
-def test_file_upload_without_file(client: TestClient) -> None:
-    """Test file upload endpoint without providing a file."""
+def test_file_upload_without_file_returns_code_422(client: TestClient) -> None:
     response = client.post("/uploadfile/")
     assert response.status_code == 422
 
 
-def test_file_upload_empty_file(client: TestClient) -> None:
-    """Test uploading an empty file."""
+def test_file_upload_empty_file_returns_415_code(client: TestClient) -> None:
     empty_file = io.BytesIO(b"")
     empty_file.name = "empty.txt"
 
@@ -26,26 +25,28 @@ def test_file_upload_empty_file(client: TestClient) -> None:
         "/uploadfile/", files={"file": ("empty.txt", empty_file, "text/plain")}
     )
 
-    assert response.status_code == 200
-    assert response.json() == {"filename": "empty.txt"}
+    assert response.status_code == 415
 
 
-def test_file_upload_large_filename(
-    client: TestClient, sample_file: io.BytesIO
+def test_correct_pdb_file_upload_returns_200(
+    client: TestClient, pdb_file: io.BytesIO
 ) -> None:
-    """Test uploading a file with a very long filename."""
-    sample_file.name = "a" * 100 + ".txt"
-
     response = client.post(
-        "/uploadfile/", files={"file": (sample_file.name, sample_file, "text/plain")}
+        "/uploadfile/", files={"file": (pdb_file.name, pdb_file, "text/plain")}
     )
-
     assert response.status_code == 200
-    assert response.json() == {"filename": sample_file.name}
+
+
+def test_correct_cif_file_upload_returns_200(
+    client: TestClient, cif_file: io.BytesIO
+) -> None:
+    response = client.post(
+        "/uploadfile/", files={"file": (cif_file.name, cif_file, "text/plain")}
+    )
+    assert response.status_code == 200
 
 
 def test_root_endpoint(client: TestClient) -> None:
-    """Test the root endpoint returns HTML."""
     response = client.get("/")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
