@@ -57,19 +57,23 @@ async def upload_file(request: Request, file: UploadFile) -> HTMLResponse:
     original_structure: Structure = parser(QUIET=True).get_structure(
         file.filename, file_like
     )
-    corase_structure = coarse_modeler.transform_to_coarse_grain(original_structure)
-    context = {
+
+    coarse_structure = coarse_modeler.transform_to_coarse_grain(original_structure)
+    context: dict[str, str | list[int] | None] = {
         "filename": file.filename,
         "atoms": [],
         "models": [],
         "chains": [],
         "residues": [],
     }
-    for structure in [original_structure, corase_structure]:
-        context["atoms"].append(sum(1 for _ in structure.get_atoms()))
-        context["chains"].append(sum(1 for _ in structure.get_chains()))
-        context["models"].append(sum(1 for _ in structure.get_models()))
-        context["residues"].append(sum(1 for _ in structure.get_residues()))
+    # Temporary placeholder for all the data
+    # TODO: when discusiing what data to export we will refactor it
+    # to separate functions
+    for structure in [original_structure, coarse_structure]:
+        context["atoms"].append(sum(1 for _ in structure.get_atoms()))  # type: ignore
+        context["chains"].append(sum(1 for _ in structure.get_chains()))  # type: ignore
+        context["models"].append(sum(1 for _ in structure.get_models()))  # type: ignore
+        context["residues"].append(sum(1 for _ in structure.get_residues()))  # type: ignore
     return TEMPLATES.TemplateResponse(
         request=request,
         name="comparison.html",
