@@ -1,2 +1,12 @@
 @import "tailwindcss";
 @source "./templates";
+
+
+:root{
+    --color-primary: #11151C;
+    --color-secondary: #0d5c63;   /* this */
+    --color-third: #212D40;
+    --color-fourth: #364156;
+    --color-fifth: #34113F;
+    
+}
