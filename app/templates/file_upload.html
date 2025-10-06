@@ -1,153 +1,111 @@
 {% extends "base.html" %}
 {% block content %}
-    <div id="upload-container" class="w-full max-w-md m-auto">
-        <form hx-post="/uploadfile/"
-              hx-target="#upload-container"
-              hx-swap="innerHTML"
-              hx-encoding="multipart/form-data"
-              class="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-6"
-              novalidate>
-            <h2 class="text-2xl font-bold text-secondary text-center">Upload File</h2>
-            <p class="text-sm text-tertiary text-center">
-                Supported formats:
-                {% for file_format in supported_file_formats %}{{ '.'~file_format~', ' }}{% endfor %}
-            </p>
-            
-            <div class="flex flex-col gap-2">
-                <label for="file" class="text-secondary font-medium">Choose file</label>
-                <input id="file"
-                       name="file"
-                       type="file"
-                       required
-                       class="block w-full text-sm text-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium cursor-pointer file:cursor-pointer file:bg-primary file:text-white hover:file:bg-secondary hover:cursor-pointer border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-focus"
-                       accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}">
-                <p id="file-alert" class="hidden text-sm font-semibold text-danger">Please select file to proceed.</p>
+<div id="upload-container" class="w-full max-w-md m-auto">
+    <form
+        hx-post="/uploadfile/"
+        hx-target="#upload-container"
+        hx-swap="innerHTML"
+        hx-encoding="multipart/form-data"
+        x-data="{
+            modelError: false,
+            fileError: false,
+            open: false,
+            selectedLabel: 'Select model',
+            selectedModel: '',
+            validate() {
+                this.modelError = !this.selectedModel;
+                this.fileError = !$refs.fileInput.value;
+                return !this.modelError && !this.fileError;
+            },
+            toggle() { this.open = !this.open },
+            close(focusAfter) { if (!this.open) return; this.open = false; focusAfter && focusAfter.focus() }
+        }"
+        @htmx:before-request="if (!validate()) { event.preventDefault(); }"
+        class="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-6"
+        novalidate
+    >
+        <h2 class="text-2xl font-bold text-secondary text-center">Upload File</h2>
+        <p class="text-sm text-tertiary text-center">
+            Supported formats:
+            {% for file_format in supported_file_formats %}{{ '.'~file_format~', ' }}{% endfor %}
+        </p>
 
-            </div>
+        <!-- File selection -->
+        <div class="flex flex-col gap-2">
+            <label for="file" class="text-secondary font-medium">Choose file</label>
+            <input
+                id="file"
+                name="file"
+                type="file"
+                x-ref="fileInput"
+                required
+                :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
+                class="block w-full text-sm text-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium cursor-pointer file:cursor-pointer file:bg-primary file:text-white hover:file:bg-secondary hover:cursor-pointer border shadow-sm focus:ring-2 focus:ring-focus"
+                accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}"
+            >
+            <p x-show="fileError" x-cloak class="text-sm font-semibold text-danger">Please select a file to proceed.</p>
+        </div>
 
-            <div class="flex flex-col">
-                <div class="flex justify-between gap-2">   
-                    <label for="model" class="text-secondary font-medium items-center flex">Select CG Model</label>
-                    <div class="flex ">
-                        <div
-                            x-data="{
-                                open: false,
-                                selectedLabel: 'Select model',
-                                selectedModel: '',
-                                toggle() {
-                                    if (this.open) {
-                                        return this.close()
-                                    }
+        <!-- Model selection -->
+        <div class="flex flex-col">
+            <div class="flex justify-between gap-2">
+                <label class="text-secondary font-medium items-center flex">Select CG Model</label>
+                <div
+                    x-on:keydown.escape.prevent.stop="close($refs.button)"
+                    x-on:focusin.window="!$refs.panel.contains($event.target) && close()"
+                    x-id="['dropdown-button']"
+                    class="relative"
+                >
+                    <input type="hidden" name="selected_model" x-model="selectedModel">
 
-                                    this.$refs.button.focus()
+                    <!-- Drodpown button -->
+                    <button
+                        type="button"
+                        x-ref="button"
+                        @click="toggle()"
+                        :aria-expanded="open"
+                        :aria-controls="$id('dropdown-button')"
+                        :class="{ 'border-danger': modelError, 'border-gray-300': !modelError }"
+                        class="relative cursor-pointer flex items-center whitespace-nowrap justify-center min-w-48 gap-2 py-2 rounded-lg shadow-sm px-4 text-primary bg-white border focus:ring-2 focus:ring-focus"
+                    >
+                        <span class="text-sm text-primary" x-text="selectedLabel"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
+                            <path fill-rule="evenodd" d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
 
-                                    this.open = true
-                                },
-                                close(focusAfter) {
-                                    if (! this.open) return
-
-                                    this.open = false
-
-                                    focusAfter && focusAfter.focus()
-                                }
-                            }"
-                            x-on:keydown.escape.prevent.stop="close($refs.button)"
-                            x-on:focusin.window="! $refs.panel.contains($event.target) && close()"
-                            x-id="['dropdown-button']"
-                            class="relative     "
-                        >
-                            <input required type="hidden" name="selected_model" x-model="selectedModel"> 
-
-                            <!-- Button -->
-                            <button
-                                id="cg-button"
-                                x-ref="button"
-                                x-on:click="toggle()"
-                                :aria-expanded="open"
-                                :aria-controls="$id('dropdown-button')"
-                                type="button"
-                                aria-placeholder="Select option"
-                                class="relative cursor-pointer flex items-center whitespace-nowrap justify-center min-w-48 gap-2 py-2 rounded-lg shadow-sm px-4 text-primary bg-white border border-gray-300 focus:ring-2 focus:ring-focus"
-                            >
-                                <span class="text-sm text-primary" x-text="selectedLabel"></span>
-
-                                <!-- Icon -->
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
-                                    <path fill-rule="evenodd" d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-
-                            <!-- Panel -->
-                            <div
-                                x-ref="panel"
-                                x-show="open"
-                                x-transition.origin.top.left
-                                x-on:click.outside="close($refs.button)"
-                                :id="$id('dropdown-button')"
-                                x-cloak
-                                class=" absolute left-0 min-w-48 rounded-lg shadow-sm mt-2 z-10 origin-top-left bg-white p-1.5 outline-none border border-gray-200"
-                            >
-                                <ul class="font-medium text-primary">
-                                    {% for model in coarse_grain_models %}
-                                        <li>
-                                            <button type="button"
-                                            @click="selectedModel = '{{ model }}'; selectedLabel= '{{ model }}'; close($refs.button)"
-                                            class ="flex cursor-pointer items-center w-full px-3 py-1.5 rounded-lg hover:bg-gray-100">
-                                            {{model}}
-                                        </button>    
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
+                    <!-- Dropdown selection -->
+                    <div
+                        x-ref="panel"
+                        x-show="open"
+                        x-transition
+                        @click.outside="close($refs.button)"
+                        :id="$id('dropdown-button')"
+                        x-cloak
+                        class="absolute left-0 min-w-48 rounded-lg shadow-sm mt-2 z-10 origin-top-left bg-white p-1.5 outline-none border border-gray-200"
+                    >
+                        <ul class="font-medium text-primary">
+                            {% for model in coarse_grain_models %}
+                            <li>
+                                <button
+                                    type="button"
+                                    @click="selectedModel = '{{ model }}'; selectedLabel = '{{ model }}'; close($refs.button)"
+                                    class="flex cursor-pointer items-center w-full px-3 py-1.5 rounded-lg hover:bg-gray-100"
+                                >
+                                    {{ model }}
+                                </button>
+                            </li>
+                            {% endfor %}
+                        </ul>
                     </div>
                 </div>
-                <p id="model-alert" class="hidden text-sm font-semibold text-danger">Please select a coarse-grain model to proceed.</p>
             </div>
+            <p x-show="modelError" x-cloak class="text-sm font-semibold text-danger">Please select a coarse-grain model to proceed.</p>
+        </div>
 
-            
-            <button type="submit" class="w-full py-3 bg-primary hover:cursor-pointer text-white font-semibold rounded-xl shadow-md transition transform duration-300 ease-in-out hover:bg-secondary hover:scale-[1.02]">
-                Submit
-            </button>
-        </form>  
-    </div>
+        <button type="submit" class="w-full py-3 bg-primary hover:cursor-pointer text-white font-semibold rounded-xl shadow-md transition transform duration-300 ease-in-out hover:bg-secondary hover:scale-[1.02]">
+            Submit
+        </button>
+    </form>
+</div>
 {% endblock %}
-
-{% block scripts %}
-    <script>
-        const labelStyles = "text-secondary font-medium";
-        const inputStyles = "border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-focus";
-
-        modelAlert = document.getElementById('model-alert');
-        fileAlert = document.getElementById('file-alert');
-        cgButton = document.getElementById('cg-button');
-        fileButton = document.getElementById('file');
-
-        const form = document.querySelector('form');
-        form.addEventListener('htmx:beforeRequest', (event) => { 
-            const selectedModelInput = form.querySelector('input[name="selected_model"]');
-            if (!selectedModelInput.value) {
-                event.preventDefault();
-                modelAlert.classList.remove('hidden');
-                cgButton.classList.add('border-danger');
-                cgButton.classList.remove('border-gray-300');
-            }  else{
-                modelAlert.classList.add('hidden');
-                cgButton.classList.remove('border', 'border-danger');
-                cgButton.classList.add('border', 'border-gray-300');
-            } 
-
-            const fileInput = form.querySelector('input[name="file"]');
-            if (!fileInput.value) {
-                event.preventDefault();
-                fileAlert.classList.remove('hidden');
-                fileButton.classList.add('border-danger');
-                fileButton.classList.remove('border-gray-300');
-            } else{
-                fileAlert.classList.add('hidden');
-                fileButton.classList.remove('border', 'border-danger');
-                fileButton.classList.add('border', 'border-gray-300');
-            } 
-        });
-    </script>
-{% endblock scripts%}
