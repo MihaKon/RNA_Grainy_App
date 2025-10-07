@@ -5,10 +5,7 @@
 @theme {
     --color-primary: #212D40;
     --color-secondary: #11151C;
-    --color-tertiary: #6a7282;
-    --color-fourth: #364156;
-    --color-fifth: #34113F;
     --color-danger: #E02424; 
-    --color-focus: #B182E3;  /* purple  */
+    --color-focus: #B182E3; 
 }
 

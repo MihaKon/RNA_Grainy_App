@@ -30,7 +30,6 @@
             {% for file_format in supported_file_formats %}{{ '.'~file_format~', ' }}{% endfor %}
         </p>
 
-        <!-- File selection -->
         <div class="flex flex-col gap-2">
             <label for="file" class="text-secondary font-medium">Choose file</label>
             <input
@@ -46,7 +45,6 @@
             <p x-show="fileError" x-cloak class="text-sm font-semibold text-danger">Please select a file to proceed.</p>
         </div>
 
-        <!-- Model selection -->
         <div class="flex flex-col">
             <div class="flex justify-between gap-2">
                 <label class="text-secondary font-medium items-center flex">Select CG Model</label>
@@ -58,7 +56,6 @@
                 >
                     <input type="hidden" name="selected_model" x-model="selectedModel">
 
-                    <!-- Drodpown button -->
                     <button
                         type="button"
                         x-ref="button"
@@ -74,7 +71,6 @@
                         </svg>
                     </button>
 
-                    <!-- Dropdown selection -->
                     <div
                         x-ref="panel"
                         x-show="open"
