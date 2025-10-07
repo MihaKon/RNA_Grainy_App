@@ -66,9 +66,7 @@
                         class="relative cursor-pointer flex items-center whitespace-nowrap justify-center min-w-48 gap-2 py-2 rounded-lg shadow-sm px-4 text-primary bg-white border focus:ring-2 focus:ring-focus"
                     >
                         <span class="text-sm text-primary" x-text="selectedLabel"></span>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
-                            <path fill-rule="evenodd" d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
-                        </svg>
+                        <i class="fa-2xs fa-solid fa-chevron-down transition-transform duration-300" :class="{'fa-rotate-180': open}"></i>
                     </button>
 
                     <div
