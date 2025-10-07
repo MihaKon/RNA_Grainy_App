@@ -11,6 +11,7 @@ def test_pdb_file_upload_workflow(client: TestClient, pdb_file: io.BytesIO) -> N
     assert "text/html" in response.headers["content-type"]
 
     test_file = {"file": (pdb_file.name, pdb_file, "text/plain")}
+    form_data = {"selected_model": "option1"}
 
-    upload_response = client.post("/uploadfile/", files=test_file)
+    upload_response = client.post("/uploadfile/", files=test_file, data=form_data)
     assert upload_response.status_code == 200
