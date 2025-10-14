@@ -1,2 +1,11 @@
 @import "tailwindcss";
 @source "./templates";
+
+
+@theme {
+    --color-primary: #212D40;
+    --color-secondary: #11151C;
+    --color-danger: #E02424; 
+    --color-focus: #B182E3; 
+}
+

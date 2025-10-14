@@ -1,29 +1,105 @@
 {% extends "base.html" %}
 {% block content %}
-    <div id="upload-container" class="w-full max-w-md m-auto">
-        <form hx-post="/uploadfile/"
-              hx-target="#upload-container"
-              hx-swap="innerHTML"
-              hx-encoding="multipart/form-data"
-              class="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-6">
-            <h2 class="text-2xl font-bold text-gray-800 text-center">Upload File</h2>
-            <p class="text-sm text-gray-500 text-center">
-                Supported formats:
-                {% for file_format in supported_file_formats %}{{ '.'~file_format~', ' }}{% endfor %}
-            </p>
-            <div class="flex flex-col gap-2">
-                <label for="file" class="text-gray-700 font-medium">Choose file</label>
-                <input id="file"
-                       name="file"
-                       type="file"
-                       required
-                       class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-500 file:text-white hover:file:bg-purple-600 cursor-pointer border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-400"
-                       accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}">
+<div id="upload-container" class="w-full max-w-md m-auto">
+    <form
+        hx-post="/uploadfile/"
+        hx-target="#upload-container"
+        hx-swap="innerHTML"
+        hx-encoding="multipart/form-data"
+        x-data="{
+            modelError: false,
+            fileError: false,
+            open: false,
+            selectedLabel: 'Select model',
+            selectedModel: '',
+            validate() {
+                this.modelError = !this.selectedModel;
+                this.fileError = !$refs.fileInput.value;
+                return !this.modelError && !this.fileError;
+            },
+            toggle() { this.open = !this.open },
+            close(focusAfter) { if (!this.open) return; this.open = false; focusAfter && focusAfter.focus() }
+        }"
+        @htmx:before-request="if (!validate()) { event.preventDefault(); }"
+        class="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-6"
+        novalidate
+    >
+        <h2 class="text-2xl font-bold text-secondary text-center">Upload File</h2>
+        <p class="text-sm text-tertiary text-center">
+            Supported formats:
+            {% for file_format in supported_file_formats %}{{ '.'~file_format~', ' }}{% endfor %}
+        </p>
+
+        <div class="flex flex-col gap-2">
+            <label for="file" class="text-secondary font-medium">Choose file</label>
+            <input
+                id="file"
+                name="file"
+                type="file"
+                x-ref="fileInput"
+                required
+                :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
+                class="block w-full text-sm text-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium cursor-pointer file:cursor-pointer file:bg-primary file:text-white hover:file:bg-secondary hover:cursor-pointer border shadow-sm focus:ring-2 focus:ring-focus"
+                accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}"
+            >
+            <p x-show="fileError" x-cloak class="text-sm font-semibold text-danger">Please select a file to proceed.</p>
+        </div>
+
+        <div class="flex flex-col">
+            <div class="flex justify-between gap-2">
+                <label class="text-secondary font-medium items-center flex">Select CG Model</label>
+                <div
+                    x-on:keydown.escape.prevent.stop="close($refs.button)"
+                    x-on:focusin.window="!$refs.panel.contains($event.target) && close()"
+                    x-id="['dropdown-button']"
+                    class="relative"
+                >
+                    <input type="hidden" name="selected_model" x-model="selectedModel">
+
+                    <button
+                        type="button"
+                        x-ref="button"
+                        @click="toggle()"
+                        :aria-expanded="open"
+                        :aria-controls="$id('dropdown-button')"
+                        :class="{ 'border-danger': modelError, 'border-gray-300': !modelError }"
+                        class="relative cursor-pointer flex items-center whitespace-nowrap justify-center min-w-48 gap-2 py-2 rounded-lg shadow-sm px-4 text-primary bg-white border focus:ring-2 focus:ring-focus"
+                    >
+                        <span class="text-sm text-primary" x-text="selectedLabel"></span>
+                        <i class="fa-2xs fa-solid fa-chevron-down transition-transform duration-300" :class="{'fa-rotate-180': open}"></i>
+                    </button>
+
+                    <div
+                        x-ref="panel"
+                        x-show="open"
+                        x-transition
+                        @click.outside="close($refs.button)"
+                        :id="$id('dropdown-button')"
+                        x-cloak
+                        class="absolute left-0 min-w-48 rounded-lg shadow-sm mt-2 z-10 origin-top-left bg-white p-1.5 outline-none border border-gray-200"
+                    >
+                        <ul class="font-medium text-primary">
+                            {% for model in coarse_grain_models %}
+                            <li>
+                                <button
+                                    type="button"
+                                    @click="selectedModel = '{{ model }}'; selectedLabel = '{{ model }}'; close($refs.button)"
+                                    class="flex cursor-pointer items-center w-full px-3 py-1.5 rounded-lg hover:bg-gray-100"
+                                >
+                                    {{ model }}
+                                </button>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
             </div>
-            <button type="submit"
-                    class="w-full py-3 bg-purple-500 text-white font-semibold rounded-xl shadow-md transition transform duration-300 ease-in-out hover:bg-purple-700 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed">
-                Submit
-            </button>
-        </form>
-    </div>
+            <p x-show="modelError" x-cloak class="text-sm font-semibold text-danger">Please select a coarse-grain model to proceed.</p>
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-primary hover:cursor-pointer text-white font-semibold rounded-xl shadow-md transition transform duration-300 ease-in-out hover:bg-secondary hover:scale-[1.02]">
+            Submit
+        </button>
+    </form>
+</div>
 {% endblock %}

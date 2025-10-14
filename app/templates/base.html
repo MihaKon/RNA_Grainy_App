@@ -17,9 +17,12 @@
     </head>
     <body class="min-h-screen flex flex-col">
         {% include "partials/navbar.html" %}
-        <main class="flex-1">
+        <main class="flex-1 justify-center h-full flex">
             {% block content %}{% endblock %}
         </main>
         {% include "partials/footer.html" %}
+
+        {% block scripts %}
+        {% endblock scripts%}
     </body>
 </html>
