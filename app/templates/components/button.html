@@ -1,5 +1,6 @@
-{% macro button(text='', classes='', button_type='button', attrs='') %}
+{% macro button(id='', text='', classes='', button_type='button', attrs='') %}
 <button 
+  id="{{ id }}"
   type="{{ button_type }}" 
   class="btn {{ classes }}"
   {{ attrs | safe }}
