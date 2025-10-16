@@ -96,10 +96,9 @@
             </div>
             <p x-show="modelError" x-cloak class="text-sm font-semibold text-danger">Please select a coarse-grain model to proceed.</p>
         </div>
-
-        <button type="submit" class="w-full py-3 bg-primary hover:cursor-pointer text-white font-semibold rounded-xl shadow-md transition transform duration-300 ease-in-out hover:bg-secondary hover:scale-[1.02]">
-            Submit
-        </button>
+        {% with text='Upload', button_type='submit', classes='w-full' %}
+            {% include "components/button.html" %}
+        {% endwith %}
     </form>
 </div>
 {% endblock %}
