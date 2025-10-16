@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+
+{% from "components/button.html" import button %}
+
 {% block content %}
 <div id="upload-container" class="w-full max-w-md m-auto">
     <form
@@ -96,9 +99,7 @@
             </div>
             <p x-show="modelError" x-cloak class="text-sm font-semibold text-danger">Please select a coarse-grain model to proceed.</p>
         </div>
-        {% with text='Upload', button_type='submit', classes='w-full' %}
-            {% include "components/button.html" %}
-        {% endwith %}
+        {{ button(text='Submit', button_type="submit", classes='w-full') }}
     </form>
 </div>
 {% endblock %}

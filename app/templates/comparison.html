@@ -1,3 +1,5 @@
+{% from "components/button.html" import button %}
+
 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mb-6">
     <h1>{{ filename }}</h1>
     <ul>
@@ -8,17 +10,12 @@
         <li> Selected model: {{ selected_model }}</li>
     </ul>
     <div class="flex mt-4">
-        <div class="flex w-1/2 justify-center"> 
-            {% with text='Show using mol*', classes='w-3/4' %}
-                {% include "components/button.html" %}
-            {% endwith %}
+          <div class="flex w-1/2 justify-center"> 
+            {{ button(text='Show using mol*', classes='w-3/4') }}
         </div>
 
         <div class="flex w-1/2 justify-center"> 
-            {% with text='Show using 3dmol.js', classes='w-3/4' %}
-                {% include "components/button.html" %}
-            {% endwith %}
+            {{ button(text='Show using 3dmol.js', classes='w-3/4') }}
         </div>
     </div>
-
 </div>

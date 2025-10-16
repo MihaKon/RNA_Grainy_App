@@ -1,5 +1,9 @@
-<button
-    type="{{ button_type or 'button' }}"
-    class="btn {{classes}}">
+{% macro button(text='', classes='', button_type='button', attrs='') %}
+<button 
+  type="{{ button_type }}" 
+  class="btn {{ classes }}"
+  {{ attrs | safe }}
+>
     {{ text }}
 </button>
+{% endmacro %}
