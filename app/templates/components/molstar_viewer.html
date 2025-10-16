@@ -1,0 +1,23 @@
+{% macro molstar_viewer(container_id, classes='') %}
+<div id="{{ container_id }}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] z-10 {{ classes }}"></div>
+
+<script type="text/javascript">
+        molstar.Viewer.create('{{container_id}}', {
+        layoutIsExpanded: false,
+        layoutShowControls: false,
+        layoutShowRemoteState: false,
+        layoutShowSequence: true,
+        layoutShowLog: false,
+        layoutShowLeftPanel: true,
+
+        viewportShowExpand: true,
+        viewportShowSelectionMode: false,
+        viewportShowAnimation: false,
+
+        pdbProvider: 'rcsb',
+        emdbProvider: 'rcsb',
+    }).then(viewer => {
+        viewer.loadPdb('7bv2');
+    });
+</script>
+{% endmacro %}
