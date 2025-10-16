@@ -7,4 +7,18 @@
         <li>Residues count: {{ residues }}</li>
         <li> Selected model: {{ selected_model }}</li>
     </ul>
+    <div class="flex mt-4">
+        <div class="flex w-1/2 justify-center"> 
+            {% with text='Show using mol*', classes='w-3/4' %}
+                {% include "components/button.html" %}
+            {% endwith %}
+        </div>
+
+        <div class="flex w-1/2 justify-center"> 
+            {% with text='Show using 3dmol.js', classes='w-3/4' %}
+                {% include "components/button.html" %}
+            {% endwith %}
+        </div>
+    </div>
+
 </div>
