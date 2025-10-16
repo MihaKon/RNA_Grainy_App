@@ -1,4 +1,4 @@
-{% macro molstar_viewer(container_id, classes='') %}
+{% macro molstar_viewer(container_id, file_data='', file_format= '', classes='') %}
 <div id="{{ container_id }}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] z-10 {{ classes }}"></div>
 
 <script type="text/javascript">
@@ -17,7 +17,11 @@
         pdbProvider: 'rcsb',
         emdbProvider: 'rcsb',
     }).then(viewer => {
-        viewer.loadPdb('7bv2');
+        const fileData = {{ file_data | tojson }};
+        const fileFormat = {{ file_format | tojson }};
+        viewer.loadStructureFromData(fileData, fileFormat).then(() => {
+            viewer.autoView();
+        });
     });
 </script>
 {% endmacro %}
