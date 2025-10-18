@@ -2,28 +2,32 @@
 {% from "components/molstar_viewer.html" import molstar_viewer %}
 
 {% block content %}
-<div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mb-6">
-    <h1>{{ filename }}</h1>
-    <ul>
-        <li>File format: {{ file_format }}</li>
-        <li>Chains: {{ chains }}</li>
-        <li>Atoms count: {{ atoms }}</li>
-        <li>Models count: {{ models }}</li>
-        <li>Residues count: {{ residues }}</li>
-        <li>Selected model: {{ selected_model }}</li>
-    </ul>
-    <div class="flex mt-4" x-data="{ showMolViewer: false }">
-        <div class="flex w-1/2 justify-center" x-show="!showMolViewer"> 
-            {{ button(text='Show using mol*', classes='w-3/4', attrs='@click="showMolViewer=true"') }}
-        </div>
+<div class="grid justify-items-center" :class="{ 'grid-cols-1': !showMolViewer, 'grid-cols-2': showMolViewer }" x-data="{ showMolViewer: false }">
+    <div class="flex flex-col bg-white rounded-2xl shadow-lg border border-gray-200 p-8 self-center w-sm">
+        <h1>{{ filename }}</h1>
+        <ul>
+            <li>File format: {{ file_format }}</li>
+            <li>Chains: {{ chains }}</li>
+            <li>Atoms count: {{ atoms }}</li>
+            <li>Models count: {{ models }}</li>
+            <li>Residues count: {{ residues }}</li>
+            <li>Selected model: {{ selected_model }}</li>
+        </ul>
+        <div class="flex mt-4">
+            <div class="flex w-1/2 justify-center"> 
+                {{ button(text='Show using mol*', classes='w-3/4', attrs='@click="showMolViewer=true"') }}
+            </div>
 
-        <div class="flex w-1/2 justify-center"> 
-            {{ button(text='Show using 3dmol.js', classes='w-3/4') }}
-        </div>
-
-        <div x-show="showMolViewer" x-cloak @click.stop @click.outside="showMolViewer = false">
-            {{ molstar_viewer('molstar-container', file_data=file_data, file_format=file_format) }}
+            <div class="flex w-1/2 justify-center"> 
+                {{ button(text='Show using 3dmol.js', classes='w-3/4') }}
+            </div>
         </div>
     </div>
+
+    <div class="relative" x-show="showMolViewer" x-cloak @click.stop @click.outside="showMolViewer = false">
+        {{ molstar_viewer('molstar-container', file_data=file_data, file_format=file_format) }}
+    </div>
 </div>
+    
+
 {% endblock %}
