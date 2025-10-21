@@ -1,8 +1,9 @@
 {% from "components/button.html" import button %}
 {% from "components/molstar_viewer.html" import molstar_viewer %}
+{% from "components/3dmol_viewer.html" import mol3d_viewer %}
 
 {% block content %}
-<div class="grid justify-items-center" :class="{ 'grid-cols-1': !showMolViewer, 'grid-cols-2': showMolViewer }" x-data="{ showMolViewer: false }">
+<div class="grid justify-items-center" :class="{ 'grid-cols-1': !showMolViewer, 'grid-cols-2': showMolViewer || show3DmolViewer  }" x-data="{ showMolViewer: false, show3DmolViewer: false }">
     <div class="flex flex-col bg-white rounded-2xl shadow-lg border border-gray-200 p-8 self-center w-sm">
         <h1>{{ filename }}</h1>
         <ul>
@@ -19,13 +20,17 @@
             </div>
 
             <div class="flex w-1/2 justify-center"> 
-                {{ button(text='Show using 3dmol.js', classes='w-3/4') }}
+                {{ button(text='Show using 3dmol.js', classes='w-3/4', attrs='@click="show3DmolViewer=true"') }}
             </div>
         </div>
     </div>
 
-    <div class="relative" x-show="showMolViewer" x-cloak @click.stop @click.outside="showMolViewer = false">
+    <div class="relative" x-show="showMolViewer" x-cloak @click.stop @click.outside="showMolViewer = false, show3DmolViewer = false">
         {{ molstar_viewer('molstar-container', file_data=file_data, file_format=file_format) }}
+    </div>
+
+    <div class="relative" x-show="show3DmolViewer" x-cloak @click.stop @click.outside="showMolViewer = false, show3DmolViewer = false">
+        {{ mol3d_viewer('3dmoljs-container', file_data=file_data, file_format=file_format) }}
     </div>
 </div>
     

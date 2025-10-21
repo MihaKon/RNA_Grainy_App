@@ -1,0 +1,18 @@
+{% macro mol3d_viewer(container_id, file_data='', file_format= '', classes='') %}
+
+<div id="{{ container_id }}" class="w-[640px] h-[480px] z-10 {{ classes }}"></div>
+
+<script type="text/javascript">
+    const element = document.getElementById("3dmoljs-container");
+    const config = { backgroundColor: 'white' };
+    const viewer = $3Dmol.createViewer(element, config);
+    const fileData = {{ file_data | tojson }};
+    const fileFormat = {{ file_format | tojson }};
+
+    viewer.addModel(fileData, fileFormat);
+    viewer.setStyle({}, { cartoon: { color: 'spectrum' } });
+    viewer.zoomTo();
+    viewer.render();
+</script>
+
+{% endmacro %}
