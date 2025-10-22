@@ -1,4 +1,3 @@
-import pathlib
 from enum import Enum
 from io import StringIO
 
@@ -6,18 +5,13 @@ import uvicorn
 from Bio.PDB.MMCIFParser import MMCIFParser
 from Bio.PDB.PDBParser import PDBParser
 from Bio.PDB.Structure import Structure
-from fastapi import FastAPI, HTTPException, Request, UploadFile, Form
+from fastapi import FastAPI, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
-from app import coarse_modeler
-
-BASE_DIR = pathlib.Path(__file__).resolve().parent
-TEMPLATES_DIR = BASE_DIR / "templates"
-STATIC_DIR = BASE_DIR / "static"
-TEMPLATES = Jinja2Templates(directory=TEMPLATES_DIR)
+from app.coarse_modeler import CoarseGrainModels, transform_to_coarse_grain
+from app.settings import STATIC_DIR, TEMPLATES
 
 
 class SupportedFormats(Enum):
@@ -35,7 +29,6 @@ app.add_middleware(GZipMiddleware)
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request) -> HTMLResponse:
-    models = ["option1", "option2", "option3"]
     return TEMPLATES.TemplateResponse(
         request=request,
         name="file_upload.html",
@@ -43,41 +36,39 @@ async def root(request: Request) -> HTMLResponse:
             "supported_file_formats": [
                 file_format.value for file_format in SupportedFormats
             ],
-            "coarse_grain_models": models,
+            "coarse_grain_models": [model.name.title() for model in CoarseGrainModels],
         },
     )
 
 
 @app.post("/uploadfile/")
-async def upload_file(request: Request, file: UploadFile, selected_model: str = Form(...)) -> HTMLResponse:
+async def upload_file(
+    request: Request, file: UploadFile, selected_model: str = Form(...)
+) -> HTMLResponse:
     file_format = "" if file.filename is None else file.filename.split(".")[-1]
     if file_format not in SupportedFormats:
         raise HTTPException(status_code=415, detail="File format not supported")
     content = await file.read()
     file_like = StringIO(content.decode("utf-8"))
-    parser = FORMAT_PARSERS[SupportedFormats(file_format)]
-    original_structure: Structure = parser(QUIET=True).get_structure(
-        file.filename, file_like
-    )
+    parser = FORMAT_PARSERS[SupportedFormats(file_format)](QUIET=True)
+    original_structure: Structure = parser.get_structure(file.filename, file_like)
     model = selected_model
-
-    coarse_structure = coarse_modeler.transform_to_coarse_grain(original_structure)
+    coarse_file = transform_to_coarse_grain(original_structure, CoarseGrainModels.DUMMY)
+    f = StringIO(coarse_file.getvalue().encode("utf-8").decode("utf-8"))
+    coarse_structure = parser.get_structure(file.filename, f)
     context: dict[str, str | list[int] | None] = {
         "filename": file.filename,
-        "atoms": [],
-        "models": [],
-        "chains": [],
-        "residues": [],        
         "selected_model": model,
-        }
+    }
     # Temporary placeholder for all the data
     # TODO: when discusiing what data to export we will refactor it
     # to separate functions
+    entity_keys = ["atoms", "chains", "models", "residues"]
     for structure in [original_structure, coarse_structure]:
-        context["atoms"].append(sum(1 for _ in structure.get_atoms()))  # type: ignore
-        context["chains"].append(sum(1 for _ in structure.get_chains()))  # type: ignore
-        context["models"].append(sum(1 for _ in structure.get_models()))  # type: ignore
-        context["residues"].append(sum(1 for _ in structure.get_residues()))  # type: ignore
+        for key in entity_keys:
+            method_to_call = getattr(structure, f"get_{key}")
+            count = sum(1 for _ in method_to_call())
+            context[key].append(count)
     return TEMPLATES.TemplateResponse(
         request=request,
         name="comparison.html",
