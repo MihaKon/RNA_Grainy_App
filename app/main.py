@@ -60,10 +60,9 @@ async def upload_file(request: Request, file: UploadFile, selected_model: str = 
         file.filename, file_like
     )
 
+    # TODO: REMOVE
     if file_format == SupportedFormats.CIF.value:
         file_format = "mmcif"
-    elif file_format == SupportedFormats.PDB.value:
-        file_format = "pdb"
 
     model = selected_model
 

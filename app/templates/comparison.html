@@ -1,4 +1,4 @@
-{% from "components/button.html" import button %}
+{% from "components/ui_button.html" import ui_button %}
 {% from "components/molstar_viewer.html" import molstar_viewer %}
 {% from "components/3dmol_viewer.html" import mol3d_viewer %}
 
@@ -16,11 +16,11 @@
         </ul>
         <div class="flex mt-4">
             <div class="flex w-1/2 justify-center"> 
-                {{ button(text='Show using mol*', classes='w-3/4', attrs='@click="showMolViewer=true, show3DmolViewer=false"') }}
+                {{ ui_button(text='Show using mol*', classes='w-3/4', attrs='@click="showMolViewer=true, show3DmolViewer=false"') }}
             </div>
 
             <div class="flex w-1/2 justify-center"> 
-                {{ button(text='Show using 3dmol.js', classes='w-3/4', attrs='@click="show3DmolViewer=true, showMolViewer=false"') }}
+                {{ ui_button(text='Show using 3dmol.js', classes='w-3/4', attrs='@click="show3DmolViewer=true, showMolViewer=false"') }}
             </div>
         </div>
     </div>

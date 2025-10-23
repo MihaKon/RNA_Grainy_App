@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% from "components/button.html" import button %}
+{% from "components/ui_button.html" import ui_button %}
 
 {% block content %}
 <div id="upload-container" class="flex w-full items-center justify-center">
@@ -99,7 +99,7 @@
             </div>
             <p x-show="modelError" x-cloak class="text-sm font-semibold text-danger">Please select a coarse-grain model to proceed.</p>
         </div>
-        {{ button(text='Submit', button_type="submit", classes='w-full') }}
+        {{ ui_button(text='Submit', button_type="submit", classes='w-full') }}
     </form>
 </div>
 {% endblock %}
