@@ -52,13 +52,14 @@ async def upload_file(
     file_like = StringIO(content.decode("utf-8"))
     parser = FORMAT_PARSERS[SupportedFormats(file_format)](QUIET=True)
     original_structure: Structure = parser.get_structure(file.filename, file_like)
-    model = selected_model
-    coarse_file = transform_to_coarse_grain(original_structure, CoarseGrainModels.DUMMY)
-    f = StringIO(coarse_file.getvalue().encode("utf-8").decode("utf-8"))
+    coarse_file = transform_to_coarse_grain(
+        original_structure, getattr(CoarseGrainModels, selected_model.upper())
+    )
+    f = StringIO(coarse_file.getvalue())
     coarse_structure = parser.get_structure(file.filename, f)
     context: dict[str, str | list[int] | None] = {
         "filename": file.filename,
-        "selected_model": model,
+        "selected_model": selected_model,
     }
     # Temporary placeholder for all the data
     # TODO: when discusiing what data to export we will refactor it
@@ -68,6 +69,8 @@ async def upload_file(
         for key in entity_keys:
             method_to_call = getattr(structure, f"get_{key}")
             count = sum(1 for _ in method_to_call())
+            if key not in context.keys():
+                context[key] = []
             context[key].append(count)
     return TEMPLATES.TemplateResponse(
         request=request,
