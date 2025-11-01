@@ -1,0 +1,10 @@
+{% macro ui_button(id='', text='', classes='', button_type='button', attrs='') %}
+<button 
+  id="{{ id }}"
+  type="{{ button_type }}" 
+  class="py-3 bg-primary hover:cursor-pointer text-white font-semibold rounded-xl shadow-md transition transform duration-300 ease-in-out hover:bg-secondary hover:scale-[1.02] {{ classes }}"
+  {{ attrs | safe }}
+>
+    {{ text }}
+</button> 
+{% endmacro %}

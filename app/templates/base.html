@@ -6,6 +6,8 @@
         <title>RNA Coarse Grain</title>
         <meta name="description" content="RNA Coarse Grain">
         <meta name="keywords" content="RNA, Coarse Grain, Simulation, Analysis">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/molstar/molstar.css') }}" />
+        <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
         <script src="https://kit.fontawesome.com/5ad53bb2b8.js"
                 crossorigin="anonymous"></script>
         <link href="{{ url_for('static',path='/css/app.css') }}" rel="stylesheet" />
@@ -17,11 +19,12 @@
     </head>
     <body class="min-h-screen flex flex-col">
         {% include "partials/navbar.html" %}
-        <main class="flex-1 justify-center h-full flex">
+        <main class="flex-1 justify-center h-full flex ">
             {% block content %}{% endblock %}
         </main>
         {% include "partials/footer.html" %}
 
+        <script defer type="text/javascript" src="{{ url_for('static', path='/molstar/molstar.js') }}"></script>
         {% block scripts %}
         {% endblock scripts%}
     </body>

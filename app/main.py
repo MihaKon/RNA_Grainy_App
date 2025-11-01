@@ -59,7 +59,11 @@ async def upload_file(
     coarse_structure = parser.get_structure(file.filename, f)
     context: dict[str, str | list[int] | None] = {
         "filename": file.filename,
-        "selected_model": selected_model,
+        "atoms": [],
+        "models": [],
+        "chains": [],
+        "residues": [],
+        "selected_model": model,
     }
     # Temporary placeholder for all the data
     # TODO: when discusiing what data to export we will refactor it
