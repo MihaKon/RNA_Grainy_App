@@ -59,11 +59,18 @@ async def upload_file(request: Request, file: UploadFile, selected_model: str = 
     original_structure: Structure = parser(QUIET=True).get_structure(
         file.filename, file_like
     )
+
+    # TODO: REMOVE
+    if file_format == SupportedFormats.CIF.value:
+        file_format = "mmcif"
+
     model = selected_model
 
     coarse_structure = coarse_modeler.transform_to_coarse_grain(original_structure)
     context: dict[str, str | list[int] | None] = {
         "filename": file.filename,
+        "file_format": file_format,
+        "file_data": file_like.getvalue(),
         "atoms": [],
         "models": [],
         "chains": [],
