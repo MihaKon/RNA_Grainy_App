@@ -1,5 +1,7 @@
-from enum import Enum
+import enum
+from collections import defaultdict
 from io import StringIO
+from typing import Any
 
 import uvicorn
 from Bio.PDB.MMCIFParser import MMCIFParser
@@ -14,12 +16,15 @@ from app.coarse_modeler import CoarseGrainModels, transform_to_coarse_grain
 from app.settings import STATIC_DIR, TEMPLATES
 
 
-class SupportedFormats(Enum):
+class SupportedFormats(enum.Enum):
     PDB = "pdb"
     CIF = "cif"
 
 
-FORMAT_PARSERS = {SupportedFormats.PDB: PDBParser, SupportedFormats.CIF: MMCIFParser}
+FORMAT_PARSERS = {
+    SupportedFormats.PDB: PDBParser,
+    SupportedFormats.CIF: MMCIFParser,
+}
 
 
 app = FastAPI()
@@ -56,15 +61,21 @@ async def upload_file(
         original_structure, getattr(CoarseGrainModels, selected_model.upper())
     )
     f = StringIO(coarse_file.getvalue())
+    parser = PDBParser(QUIET=True)
     coarse_structure = parser.get_structure(file.filename, f)
-    context: dict[str, str | list[int] | None] = {
+    if file_format == SupportedFormats.CIF.value:
+        file_format = "mmcif"
+    initial_data = {
         "filename": file.filename,
-        "atoms": [],
-        "models": [],
-        "chains": [],
-        "residues": [],
-        "selected_model": model,
+        "file_format": [file_format, "pdb"],
+        "file_data": [
+            file_like.getvalue(),
+            coarse_file.getvalue(),
+        ],
+        "selected_model": selected_model,
     }
+    context: defaultdict[str, str | list[Any] | None] = defaultdict(list, initial_data)
+
     # Temporary placeholder for all the data
     # TODO: when discusiing what data to export we will refactor it
     # to separate functions
@@ -73,9 +84,7 @@ async def upload_file(
         for key in entity_keys:
             method_to_call = getattr(structure, f"get_{key}")
             count = sum(1 for _ in method_to_call())
-            if key not in context.keys():
-                context[key] = []
-            context[key].append(count)
+            context[key].append(count)  # type: ignore
     return TEMPLATES.TemplateResponse(
         request=request,
         name="comparison.html",

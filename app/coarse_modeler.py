@@ -30,7 +30,7 @@ class CoarseGrainSelect(Select):
     def accept_atom(self, atom: Atom.Atom) -> int:
         if (
             atom.get_name() in self.atoms_subset
-            or atom.get_parent().get_resname() in self.residues
+            or atom.get_parent().get_resname() in self.residues  # type: ignore
         ):
             return 1
         return 0
