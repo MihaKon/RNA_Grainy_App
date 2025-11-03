@@ -1,10 +1,9 @@
 {% from "components/ui_button.html" import ui_button %}
 {% from "components/molstar_viewer.html" import molstar_viewer %}
-{% from "components/3dmol_viewer.html" import mol3d_viewer %}
 {% block content %}
     <div class="flex flex-col gap-4 md:grid md:justify-items-center"
-         :class="{ 'md:grid-cols-1': !showMolViewer, 'md:grid-cols-2': showMolViewer || show3DmolViewer  }"
-         x-data="{ showMolViewer: false, show3DmolViewer: false }">
+         :class="{ 'md:grid-cols-1': !showMolViewer, 'md:grid-cols-2': showMolViewer }"
+         x-data="{ showMolViewer: false }">
         <div class="flex flex-col bg-white rounded-2xl shadow-lg border border-gray-200 p-8 self-center w-sm">
             <h1>{{ filename }}</h1>
             <ul>
@@ -16,11 +15,8 @@
                 <li>Selected model: {{ selected_model }}</li>
             </ul>
             <div class="flex mt-4">
-                <div class="flex w-1/2 justify-center">
-                    {{ ui_button(text='Show using mol*', classes='w-3/4', attrs='@click="showMolViewer=true, show3DmolViewer=false"') }}
-                </div>
-                <div class="flex w-1/2 justify-center">
-                    {{ ui_button(text='Show using 3dmol.js', classes='w-3/4', attrs='@click="show3DmolViewer=true, showMolViewer=false"') }}
+                <div class="flex w-full justify-center self-center">
+                    {{ ui_button(text='Show using mol*', classes='w-1/2', attrs='@click="showMolViewer=true"') }}
                 </div>
             </div>
         </div>
@@ -28,9 +24,5 @@
              x-show="showMolViewer"
              x-cloak
              @click.stop>{{ molstar_viewer('molstar-container', file_data=file_data, file_format=file_format) }}</div>
-        <div class="relative w-full h-full self-center justify-center"
-             x-show="show3DmolViewer"
-             x-cloak
-             @click.stop>{{ mol3d_viewer('3dmoljs-container', file_data=file_data, file_format=file_format) }}</div>
     </div>
 {% endblock %}
