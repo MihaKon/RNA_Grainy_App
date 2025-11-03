@@ -1,9 +1,9 @@
 {% macro molstar_viewer(container_id, file_data='', file_format= '', classes='') %}
-<div id="{{ container_id }}" class="w-[320px] h-[240px] lg:w-[480px] lg:h-[320px] z-10 {{ classes }}"></div>
+<div id="{{ container_id }}" class="w-1/2 {{ classes }}"></div>
 
 <script type="text/javascript">
-        molstar.Viewer.create('{{container_id}}', {
-        layoutIsExpanded: false,
+    molstar.Viewer.create('{{container_id}}', {
+        layoutIsExpanded: true,
         layoutShowControls: false,
         layoutShowRemoteState: false,
         layoutShowSequence: true,
@@ -17,9 +17,20 @@
         pdbProvider: 'rcsb',
         emdbProvider: 'rcsb',
     }).then(viewer => {
-        const fileData = {{ file_data | tojson }};
-        const fileFormat = {{ file_format | tojson }};
-        viewer.loadStructureFromData(fileData, fileFormat).then(() => {
+        const fileDataArray = {{ file_data | tojson }};
+        const fileFormatArray = {{ file_format | tojson }};
+
+        let loadPromise = Promise.resolve();
+
+        fileDataArray.forEach((data, index) => {
+            const format = fileFormatArray[index];
+
+            loadPromise = loadPromise.then(() => {
+                return viewer.loadStructureFromData(data, format);
+            });
+        });
+
+        loadPromise.then(() => {
             viewer.autoView();
         });
     });

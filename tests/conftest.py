@@ -24,7 +24,7 @@ def empty_file() -> BytesIO:
 
 @pytest.fixture
 def pdb_file() -> BytesIO:
-    with open(TEST_DATA_DIR / "1GCT.pdb", "rb") as f:
+    with open(TEST_DATA_DIR / "4GXY.pdb", "rb") as f:
         data = BytesIO(f.read())
     data.name = "1GCT.pdb"
     return data
@@ -32,7 +32,7 @@ def pdb_file() -> BytesIO:
 
 @pytest.fixture
 def cif_file() -> BytesIO:
-    with open(TEST_DATA_DIR / "1GCT.cif", "rb") as f:
+    with open(TEST_DATA_DIR / "4GXY.cif", "rb") as f:
         data = BytesIO(f.read())
     data.name = "1GCT.cif"
     return data
