@@ -6,9 +6,6 @@
                 <title>RNA Coarse Grain</title>
                 <meta name="description" content="RNA Coarse Grain">
                 <meta name="keywords" content="RNA, Coarse Grain, Simulation, Analysis">
-                <link rel="stylesheet"
-                      type="text/css"
-                      href="{{ url_for('static', path='/molstar/molstar.css') }}" />
                 <script src="https://kit.fontawesome.com/5ad53bb2b8.js"
                         crossorigin="anonymous"></script>
                 <link href="{{ url_for('static',path='/css/app.css') }}" rel="stylesheet" />
@@ -28,9 +25,6 @@
                         {% block content %}{% endblock %}
                 </main>
                 {% include "partials/footer.html" %}
-                <script defer
-                        type="text/javascript"
-                        src="{{ url_for('static', path='/molstar/molstar.js') }}"></script>
                 {% block scripts %}
                 {% endblock scripts %}
         </body>
