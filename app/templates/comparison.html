@@ -19,7 +19,7 @@
                     {{ ui_button(text='Show 3D viewer', classes='w-1/2', attrs='@click="showMolViewer=true" aria-expanded="false" aria-controls="molstar-viewer-wrapper"') }}
                 </div>
                 <div x-show="showMolViewer" x-cloak class="flex w-full justify-center"> 
-                    {{ ui_button(text='Hide 3D viewer', classes='w-1/2', attrs='@click="showMolViewer=true" aria-expanded="true" aria-controls="molstar-viewer-wrapper"') }}
+                    {{ ui_button(text='Hide 3D viewer', classes='w-1/2', attrs='@click="showMolViewer=false" aria-expanded="true" aria-controls="molstar-viewer-wrapper"') }}
                 </div>
     
                 <div class="relative py-2">
