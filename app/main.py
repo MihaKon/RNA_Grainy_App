@@ -64,6 +64,7 @@ async def upload_file(
     file_content: Optional[str] = None
     filename: Optional[str] = None
     file_format: str = ""
+    #TODO: Extense error handling
     try:
         if rscb_file:
             file_content = await fetch_rscb_content(rscb_file)
@@ -74,14 +75,14 @@ async def upload_file(
 
         elif file and file.filename:
             file_format = "" if file.filename is None else file.filename.split(".")[-1].lower()
+            if file_format not in SupportedFormats:
+                return render_error_response(request, f"File format '{file_format}' is not supported.", 415)
             filename = file.filename
             file_content = (await file.read()).decode("utf-8")
 
         else:
             return render_error_response(request, "No file or PDB ID provided.", 400)        
         
-        if file_format not in SupportedFormats:
-            return render_error_response(request, f"File format '{file_format}' is not supported.", 415)
         file_like = StringIO(file_content)
 
         parser = FORMAT_PARSERS[SupportedFormats(file_format)](QUIET=True)

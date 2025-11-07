@@ -6,6 +6,7 @@ client = httpx.AsyncClient()
 async def fetch_rscb_content(pdb_id: str) -> Optional[str]:
     pdb_id = pdb_id.strip().upper()
     url = f"https://files.rcsb.org/download/{pdb_id}.cif"
+    #TODO: this service should raise extensions
     try:
         response = await client.get(url)
         response.raise_for_status()
