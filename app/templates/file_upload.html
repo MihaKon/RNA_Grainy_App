@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% from "components/ui_button.html" import ui_button %}
+{% from "components/error_alert.html" import error_alert %}
 
 {% block content %}
 <div id="upload-container" class="flex w-full items-center justify-center">
@@ -9,6 +10,7 @@
         hx-target="#upload-container"
         hx-swap="innerHTML"
         hx-encoding="multipart/form-data"
+        hx-target-error="#errors"
         x-data="{
             modelError: false,
             fileError: false,
@@ -35,6 +37,14 @@
         novalidate
         >
         <h2 class="text-2xl font-bold text-secondary text-center">Upload File</h2>
+
+        <div id="errors">
+            {% if error %}
+                {% include "components/error_alert.html" %}
+            {% endif %}
+        </div>
+
+
         <p class="text-sm text-tertiary text-center">
             Supported formats:
             {% for file_format in supported_file_formats %}{{ '.'~file_format~', ' }}{% endfor %}

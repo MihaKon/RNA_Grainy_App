@@ -34,6 +34,15 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.add_middleware(GZipMiddleware)
 
+def render_error_response(request: Request, error: str, status_code: int) -> HTMLResponse:
+    context = {"error": error}
+
+    return TEMPLATES.TemplateResponse(
+        request=request,
+        name="components/error_alert.html",
+        context=context,
+        status_code=status_code,
+    )
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request) -> HTMLResponse:
@@ -48,7 +57,6 @@ async def root(request: Request) -> HTMLResponse:
         },
     )
 
-
 @app.post("/uploadfile/")
 async def upload_file(
     request: Request, file: Optional[UploadFile]=File(None), rscb_file: Optional[str] = Form(None), selected_model: str = Form(...)
@@ -56,12 +64,11 @@ async def upload_file(
     file_content: Optional[str] = None
     filename: Optional[str] = None
     file_format: str = ""
-
     try:
         if rscb_file:
             file_content = await fetch_rscb_content(rscb_file)
             if file_content is None:
-                raise HTTPException(status_code=404, detail="RCSB file not found")
+                return render_error_response(request, f"PDB ID '{rscb_file}' not found.", 404)
             filename = f"{rscb_file.strip().upper()}.cif"
             file_format = "cif"
 
@@ -71,11 +78,10 @@ async def upload_file(
             file_content = (await file.read()).decode("utf-8")
 
         else:
-            raise HTTPException(status_code=400, detail="No file provided")
+            return render_error_response(request, "No file or PDB ID provided.", 400)        
         
         if file_format not in SupportedFormats:
-            raise HTTPException(status_code=415, detail="File format not supported")
-
+            return render_error_response(request, f"File format '{file_format}' is not supported.", 415)
         file_like = StringIO(file_content)
 
         parser = FORMAT_PARSERS[SupportedFormats(file_format)](QUIET=True)
@@ -119,8 +125,7 @@ async def upload_file(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+        return render_error_response(request, f"Internal server error: {e}", 500)
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="127.0.0.1", port=5050)
