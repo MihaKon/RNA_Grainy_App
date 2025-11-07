@@ -33,19 +33,51 @@
             {% for file_format in supported_file_formats %}{{ '.'~file_format~', ' }}{% endfor %}
         </p>
 
-        <div class="flex flex-col gap-2">
-            <label for="file" class="text-secondary font-medium">Choose file</label>
-            <input
-                id="file"
-                name="file"
-                type="file"
-                x-ref="fileInput"
-                required
-                :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
-                class="block w-full text-sm text-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium cursor-pointer file:cursor-pointer file:bg-primary file:text-white hover:file:bg-secondary hover:cursor-pointer border shadow-sm focus:ring-2 focus:ring-focus"
-                accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}"
-            >
-            <p x-show="fileError" x-cloak class="text-sm font-semibold text-danger">Please select a file to proceed.</p>
+        <div x-data="{ pdbID: '', fileObject: null}">
+            <div class="flex flex-col gap-2">
+                <label for="file" class="text-secondary font-medium">Upload your structure file</label>
+                <input
+                    id="file"
+                    name="file"
+                    type="file"
+                    x-ref="fileInput"
+                    :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
+                    class="block w-full text-sm text-primary outline-none rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium cursor-pointer file:cursor-pointer file:bg-primary file:text-white hover:file:bg-secondary hover:cursor-pointer border shadow-sm focus:ring-2 focus:ring-focus transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                    accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}"
+                    :disabled="pdbID.trim() !== ''"
+                    :required="pdbID.trim() === ''"
+                    @change="fileObject = $event.target.files[0]; if (fileObject) { pdbID = '' }"                
+                    >
+                <p x-show="fileError" x-cloak class="text-sm font-semibold text-danger">Please select a file to proceed.</p>
+                
+                <div id="kox" class="relative py-2">
+                    <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                        <span class="w-full border-t border-gray-300"></span>
+                    </div>
+                    <div class="relative flex justify-center">
+                        <span class="bg-white px-3 text-sm font-medium text-gray-500">
+                                Or
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label for="rscb-file" class="text-secondary font-medium">Search your structure in RSCB PDB database</label>
+                    <input
+                        id="rscb-file"
+                        name="rscb_file"
+                        type="text" 
+                        x-model="pdbID"
+                        placeholder="Enter PDB ID (e.g., 1A2C)"
+                        class="block w-full text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-4 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                        :disabled="fileObject !==null"
+                        :required="fileObject === null"
+                        @input="if (pdbID.trim() !== '') { $refs.fileInput.value = null; fileObject = null }"
+                        >
+                </div>
+
+            </div>
+
         </div>
 
         <div class="flex flex-col">
@@ -66,7 +98,7 @@
                         :aria-expanded="open"
                         :aria-controls="$id('dropdown-button')"
                         :class="{ 'border-danger': modelError, 'border-gray-300': !modelError }"
-                        class="relative cursor-pointer flex items-center whitespace-nowrap justify-center min-w-48 gap-2 py-2 rounded-lg shadow-sm px-4 text-primary bg-white border focus:ring-2 focus:ring-focus"
+                        class="relative cursor-pointer flex items-center whitespace-nowrap justify-center min-w-48 gap-2 py-2 rounded-lg shadow-sm px-4 text-primary bg-white border focus:ring-2 focus:ring-focus outline-none"
                     >
                         <span class="text-sm text-primary" x-text="selectedLabel"></span>
                         <i class="fa-2xs fa-solid fa-chevron-down transition-transform duration-300" :class="{'fa-rotate-180': open}"></i>
@@ -76,7 +108,7 @@
                         x-ref="panel"
                         x-show="open"
                         x-transition
-                        @click.outside="close($refs.button)"
+                        @click.outside="close($refs.button); $refs.button.blur()"
                         :id="$id('dropdown-button')"
                         x-cloak
                         class="absolute left-0 min-w-48 rounded-lg shadow-sm mt-2 z-10 origin-top-left bg-white p-1.5 outline-none border border-gray-200"
