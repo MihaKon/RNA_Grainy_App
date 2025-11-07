@@ -52,19 +52,29 @@
 
         <div class="flex flex-col gap-2">
             <label for="file" class="text-secondary font-medium">Upload your structure file</label>
-            <input
-                id="file"
-                name="file"
-                type="file"
-                x-ref="fileInput"
-                :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
-                class="block w-full text-sm text-primary outline-none rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium cursor-pointer file:cursor-pointer file:bg-primary file:text-white hover:file:bg-secondary hover:cursor-pointer border shadow-sm focus:ring-2 focus:ring-focus transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}"
-                :disabled="pdbID.trim() !== ''"
-                :required="pdbID.trim() === ''"
-                @change="fileObject = $event.target.files[0]; if (fileObject) { pdbID = '' }"                
+            <div class="flex">
+                <input
+                    id="file"
+                    name="file"
+                    type="file"
+                    x-ref="fileInput"
+                    :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
+                    class="block w-full text-sm text-primary outline-none rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium cursor-pointer file:cursor-pointer file:bg-primary file:text-white hover:file:bg-secondary hover:cursor-pointer border shadow-sm focus:ring-2 focus:ring-focus transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                    accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}"
+                    :disabled="pdbID.trim() !== ''"
+                    :required="pdbID.trim() === ''"
+                    @change="fileObject = $event.target.files[0]; if (fileObject) { pdbID = '' }"                
+                    >
+                <button
+                    type="button"
+                    @click="$refs.fileInput.value = null; fileObject = null;"
+                    :class="{ 'hidden': !fileObject, '': fileObject }"
+                    class="ml-2 flex-shrink-0 text-gray-400 hover:text-danger hover:cursor-pointer"
+                    aria-label="Remove file"
                 >
-            
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
             <div class="relative py-2">
                 <div class="absolute inset-0 flex items-center" aria-hidden="true">
                     <span class="w-full border-t border-gray-300"></span>
@@ -75,7 +85,6 @@
                     </span>
                 </div>
             </div>
-
             <div class="flex flex-col gap-2">
                 <label for="rscb-file" class="text-secondary font-medium">Search your structure in RSCB PDB database</label>
                 <input
