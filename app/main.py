@@ -12,7 +12,6 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from typing import Optional
 from .services import fetch_rscb_content
 
 from app.coarse_modeler import CoarseGrainModels, transform_to_coarse_grain
@@ -59,10 +58,10 @@ async def root(request: Request) -> HTMLResponse:
 
 @app.post("/uploadfile/")
 async def upload_file(
-    request: Request, file: Optional[UploadFile]=File(None), rscb_file: Optional[str] = Form(None), selected_model: str = Form(...)
+    request: Request, file: UploadFile | None = File(None), rscb_file: str | None = Form(None), selected_model: str = Form(...)
 ) -> HTMLResponse:
-    file_content: Optional[str] = None
-    filename: Optional[str] = None
+    file_content: str | None = None
+    filename: str | None = None
     file_format: str = ""
     #TODO: Extense error handling
     try:
