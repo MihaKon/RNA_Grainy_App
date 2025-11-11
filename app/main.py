@@ -144,8 +144,8 @@ async def fetch_rcsb(
     if file_content is None:
         return render_error_response(request, f"Structure ID '{rcsb_id}' not found.", 404)
     
-    filename = f"{rcsb_id.strip().upper()}.cif"
-    file_format = "cif"
+    file_format = SupportedFormats.CIF.value
+    filename = f"{rcsb_id.strip().upper()}.{file_format}"
 
     return await process_structure(
         request = request,
