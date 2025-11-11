@@ -12,7 +12,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from .services import fetch_rscb_content
+from .services import fetch_rcsb_content
 
 from app.coarse_modeler import CoarseGrainModels, transform_to_coarse_grain
 from app.settings import STATIC_DIR, TEMPLATES
@@ -58,18 +58,18 @@ async def root(request: Request) -> HTMLResponse:
 
 @app.post("/uploadfile/")
 async def upload_file(
-    request: Request, file: UploadFile | None = File(None), rscb_file: str | None = Form(None), selected_model: str = Form(...)
+    request: Request, file: UploadFile | None = File(None), rcsb_id: str | None = Form(None), selected_model: str = Form(...)
 ) -> HTMLResponse:
     file_content: str | None = None
     filename: str | None = None
     file_format: str = ""
     #TODO: Extense error handling
     try:
-        if rscb_file:
-            file_content = await fetch_rscb_content(rscb_file)
+        if rcsb_id:
+            file_content = await fetch_rcsb_content(rcsb_id)
             if file_content is None:
-                return render_error_response(request, f"PDB ID '{rscb_file}' not found.", 404)
-            filename = f"{rscb_file.strip().upper()}.cif"
+                return render_error_response(request, f"RCSB ID '{rcsb_id}' not found.", 404)
+            filename = f"{rcsb_id.strip().upper()}.cif"
             file_format = "cif"
 
         elif file and file.filename:
