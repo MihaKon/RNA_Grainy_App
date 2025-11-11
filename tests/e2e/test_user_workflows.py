@@ -16,7 +16,7 @@ def test_pdb_file_upload_workflow(client: TestClient, pdb_file: io.BytesIO) -> N
     form_data = {"selected_model": CoarseGrainModels.DUMMY.name}
 
     upload_response = client.post(
-        "/uploadfile/",
+        "/upload-file/",
         files=test_file,
         data=form_data,
     )
