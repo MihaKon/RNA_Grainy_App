@@ -99,14 +99,14 @@
                     name="rcsb_id"
                     type="text" 
                     x-model="rcsbID"
-                    placeholder="Enter PDB ID (e.g., 4YWO)"
+                    placeholder="Enter structure ID (e.g., 1RNA)"
                     :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
                     class="block w-full text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-4 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                     :disabled="fileObject !==null"
                     :required="fileObject === null"
                     @input="if (rcsbID.trim() !== '') { $refs.fileInput.value = null; fileObject = null }"
                 >
-                <p x-show="fileError" x-cloak class="text-sm font-semibold text-danger">Please select a file OR enter a PDB ID to proceed.</p>
+                <p x-show="fileError" x-cloak class="text-sm font-semibold text-danger">Please select a file OR enter a structure ID to proceed.</p>
             </div>
 
         </div>
