@@ -45,12 +45,14 @@
         >
         <h2 class="text-2xl font-bold text-secondary text-center">Upload File</h2>
 
-        <div id="errors">
+        <div id="errors"
+            @htmx:after-swap="$el.classList.toggle('hidden', $el.innerHTML.trim() === '')"
+            class="hidden"
+            >
             {% if error %}
                 {% include "components/error_alert.html" %}
             {% endif %}
         </div>
-
 
         <p class="text-sm text-tertiary text-center">
             Supported formats:
