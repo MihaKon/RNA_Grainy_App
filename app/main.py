@@ -108,7 +108,7 @@ async def upload_file(
     request: Request, file: UploadFile | None = File(None), selected_model: str = Form(...)) -> HTMLResponse:
     #TODO: Extend error handling
     if not file or not file.filename:
-        return render_error_response(request, f"No file provided", 400)
+        return render_error_response(request, "No file provided", 400)
     
     file_format = file.filename.split(".")[-1].lower()
     if file_format not in SupportedFormats:
@@ -132,7 +132,7 @@ async def upload_file(
 async def fetch_rcsb(
     request: Request, rcsb_id: str | None = Form(None), selected_model: str = Form(...)) -> HTMLResponse:
     if not rcsb_id:
-        return render_error_response(request, f"No structure ID provided", 400)
+        return render_error_response(request, "No structure ID provided", 400)
     
     try:
         file_content = await fetch_rcsb_file(rcsb_id)

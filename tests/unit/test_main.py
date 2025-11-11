@@ -1,7 +1,6 @@
 import io
 import pytest
 from fastapi.testclient import TestClient
-from httpx import Response  
 from pytest_httpx import HTTPXMock 
 
 from app.coarse_modeler import CoarseGrainModels
