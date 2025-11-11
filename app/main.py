@@ -12,7 +12,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from .services import fetch_rcsb_file
+from .services import fetch_rcsb_file, RCSBNotFoundError, RCSBServiceError
 
 from app.coarse_modeler import CoarseGrainModels, transform_to_coarse_grain
 from app.settings import STATIC_DIR, TEMPLATES
@@ -117,8 +117,6 @@ async def upload_file(
     if file_format not in SupportedFormats:
         return render_error_response(request, f"File format '{file_format}' is not supported.", 415)
     
-    filename = file.filename
-
     try:
         file_content = (await file.read()).decode("utf-8")
     except Exception as e:
@@ -127,7 +125,7 @@ async def upload_file(
     return await process_structure(
         request = request,
         file_content = file_content,
-        filename = filename,
+        filename = file.filename,
         file_format = file_format,
         selected_model = selected_model
     )     
@@ -136,24 +134,27 @@ async def upload_file(
 @app.post("/fetch-rcsb")
 async def fetch_rcsb(
     request: Request, rcsb_id: str | None = Form(None), selected_model: str = Form(...)) -> HTMLResponse:
-    #TODO: Extend error handling
     if not rcsb_id:
         return render_error_response(request, f"No structure ID provided", 400)
     
-    file_content = await fetch_rcsb_file(rcsb_id)
-    if file_content is None:
-        return render_error_response(request, f"Structure ID '{rcsb_id}' not found.", 404)
-    
-    file_format = SupportedFormats.CIF.value
-    filename = f"{rcsb_id.strip().upper()}.{file_format}"
+    try:
+        file_content = await fetch_rcsb_file(rcsb_id)
+        
+        file_format = SupportedFormats.CIF.value
+        filename = f"{rcsb_id.strip().upper()}.{file_format}"
 
-    return await process_structure(
-        request = request,
-        file_content = file_content,
-        filename = filename,
-        file_format = file_format,
-        selected_model = selected_model
-    )     
+        return await process_structure(
+            request = request,
+            file_content = file_content,
+            filename = filename,
+            file_format = file_format,
+            selected_model = selected_model
+        )
+    except RCSBServiceError as e:
+        return render_error_response(request, f"Internal server error: {e}", 500)
+    except RCSBNotFoundError as e:
+        return render_error_response(request, f"{e}", 404)
+
     
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="127.0.0.1", port=5050)
