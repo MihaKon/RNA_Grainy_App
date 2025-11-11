@@ -12,7 +12,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from .services import fetch_rcsb_content
+from .services import fetch_rcsb_file
 
 from app.coarse_modeler import CoarseGrainModels, transform_to_coarse_grain
 from app.settings import STATIC_DIR, TEMPLATES
@@ -140,7 +140,7 @@ async def fetch_rcsb(
     if not rcsb_id:
         return render_error_response(request, f"No structure ID provided", 400)
     
-    file_content = await fetch_rcsb_content(rcsb_id)
+    file_content = await fetch_rcsb_file(rcsb_id)
     if file_content is None:
         return render_error_response(request, f"Structure ID '{rcsb_id}' not found.", 404)
     

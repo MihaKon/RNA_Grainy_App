@@ -1,9 +1,8 @@
 import httpx
-from typing import Optional
 
 client = httpx.AsyncClient()
 
-async def fetch_rcsb_content(rcsb_id: str) -> Optional[str]:
+async def fetch_rcsb_file(rcsb_id: str) -> str | None:
     rcsb_id = rcsb_id.strip().upper()
     url = f"https://files.rcsb.org/download/{rcsb_id}.cif"
     #TODO: this service should raise extensions
