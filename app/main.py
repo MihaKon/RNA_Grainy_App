@@ -43,45 +43,8 @@ def render_error_response(request: Request, error: str, status_code: int) -> HTM
         status_code=status_code,
     )
 
-@app.get("/", response_class=HTMLResponse)
-async def root(request: Request) -> HTMLResponse:
-    return TEMPLATES.TemplateResponse(
-        request=request,
-        name="file_upload.html",
-        context={
-            "supported_file_formats": [
-                file_format.value for file_format in SupportedFormats
-            ],
-            "coarse_grain_models": [model.name.title() for model in CoarseGrainModels],
-        },
-    )
-
-@app.post("/uploadfile/")
-async def upload_file(
-    request: Request, file: UploadFile | None = File(None), rcsb_id: str | None = Form(None), selected_model: str = Form(...)
-) -> HTMLResponse:
-    file_content: str | None = None
-    filename: str | None = None
-    file_format: str = ""
-    #TODO: Extense error handling
+async def process_structure(request: Request, file_content: str, filename: str, file_format: str, selected_model: str) -> HTMLResponse:
     try:
-        if rcsb_id:
-            file_content = await fetch_rcsb_content(rcsb_id)
-            if file_content is None:
-                return render_error_response(request, f"RCSB ID '{rcsb_id}' not found.", 404)
-            filename = f"{rcsb_id.strip().upper()}.cif"
-            file_format = "cif"
-
-        elif file and file.filename:
-            file_format = "" if file.filename is None else file.filename.split(".")[-1].lower()
-            if file_format not in SupportedFormats:
-                return render_error_response(request, f"File format '{file_format}' is not supported.", 415)
-            filename = file.filename
-            file_content = (await file.read()).decode("utf-8")
-
-        else:
-            return render_error_response(request, "No file or PDB ID provided.", 400)        
-        
         file_like = StringIO(file_content)
 
         parser = FORMAT_PARSERS[SupportedFormats(file_format)](QUIET=True)
@@ -126,6 +89,71 @@ async def upload_file(
 
     except Exception as e:
         return render_error_response(request, f"Internal server error: {e}", 500)
+        
 
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request) -> HTMLResponse:
+    return TEMPLATES.TemplateResponse(
+        request=request,
+        name="file_upload.html",
+        context={
+            "supported_file_formats": [
+                file_format.value for file_format in SupportedFormats
+            ],
+            "coarse_grain_models": [model.name.title() for model in CoarseGrainModels],
+        },
+    )
+
+
+
+@app.post("/upload-file/")
+async def upload_file(
+    request: Request, file: UploadFile | None = File(None), selected_model: str = Form(...)) -> HTMLResponse:
+    #TODO: Extend error handling
+    if not file or not file.filename:
+        return render_error_response(request, f"No file provided", 400)
+    
+    file_format = file.filename.split(".")[-1].lower()
+    if file_format not in SupportedFormats:
+        return render_error_response(request, f"File format '{file_format}' is not supported.", 415)
+    
+    filename = file.filename
+
+    try:
+        file_content = (await file.read()).decode("utf-8")
+    except Exception as e:
+        return render_error_response(request, f"Error reading file: {e}", 400)
+
+    return await process_structure(
+        request = request,
+        file_content = file_content,
+        filename = filename,
+        file_format = file_format,
+        selected_model = selected_model
+    )     
+        
+
+@app.post("/fetch-rcsb")
+async def fetch_rcsb(
+    request: Request, rcsb_id: str | None = Form(None), selected_model: str = Form(...)) -> HTMLResponse:
+    #TODO: Extend error handling
+    if not rcsb_id:
+        return render_error_response(request, f"No structure ID provided", 400)
+    
+    file_content = await fetch_rcsb_content(rcsb_id)
+    if file_content is None:
+        return render_error_response(request, f"Structure ID '{rcsb_id}' not found.", 404)
+    
+    filename = f"{rcsb_id.strip().upper()}.cif"
+    file_format = "cif"
+
+    return await process_structure(
+        request = request,
+        file_content = file_content,
+        filename = filename,
+        file_format = file_format,
+        selected_model = selected_model
+    )     
+    
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="127.0.0.1", port=5050)
