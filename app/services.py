@@ -1,4 +1,5 @@
 import httpx
+from httpx import HTTPStatusError
 
 client = httpx.AsyncClient()
 
@@ -19,7 +20,7 @@ async def fetch_rcsb_file(rcsb_id: str) -> str:
         response = await client.get(url)
         response.raise_for_status()
         return response.text
-    except httpx.HTTPError as e:
+    except HTTPStatusError as e:
         if e.response.status_code == 404:
             raise RCSBNotFoundError(rcsb_id) from e
         else:

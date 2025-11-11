@@ -1,7 +1,7 @@
 import enum
 from collections import defaultdict
-from io import StringIO
 from typing import Any
+from io import StringIO
 
 import uvicorn
 from Bio.PDB.MMCIFParser import MMCIFParser
