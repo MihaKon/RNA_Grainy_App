@@ -58,9 +58,6 @@ async def process_structure(request: Request, file_content: str, filename: str, 
         parser = PDBParser(QUIET=True)
         coarse_structure = parser.get_structure(filename, f)
 
-        if file_format == SupportedFormats.CIF.value:
-            file_format = "mmcif"
-
         initial_data = {
             "filename": filename,
             "file_format": [file_format, "pdb"],
