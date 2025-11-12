@@ -1,8 +1,8 @@
 import enum
 from collections import defaultdict
-from typing import Any
-from io import StringIO
 
+from io import StringIO
+from typing import DefaultDict, Any
 import uvicorn
 from Bio.PDB.MMCIFParser import MMCIFParser
 from Bio.PDB.PDBParser import PDBParser
@@ -67,7 +67,8 @@ async def process_structure(request: Request, file_content: str, filename: str, 
             ],
             "selected_model": selected_model,
         }
-        context: defaultdict[str, str | list[Any] | None] = defaultdict(list, initial_data)
+        
+        context: DefaultDict[str, Any] = defaultdict(list, initial_data)
 
         # Temporary placeholder for all the data
         # TODO: when discusiing what data to export we will refactor it
