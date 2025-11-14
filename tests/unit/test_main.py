@@ -115,13 +115,13 @@ def test_fetch_rcsb_invalid_id_returns_404(
     assert response.status_code == 404
 
 
-def test_fetch_rcsb_server_error_returns_500(
+def test_fetch_rcsb_server_error_returns_502(
     client: TestClient, httpx_mock: HTTPXMock
 ) -> None:
     httpx_mock.add_response(
         url="https://files.rcsb.org/download/9XYZ.cif",
         method="GET",
-        status_code=500,
+        status_code=502,
     )
 
     response = client.post(
@@ -129,7 +129,7 @@ def test_fetch_rcsb_server_error_returns_500(
         data={"rcsb_id": "9XYZ", "selected_model": CoarseGrainModels.DUMMY.name},
     )
     
-    assert response.status_code == 500
+    assert response.status_code == 502
 
 
 def test_fetch_rcsb_without_id_returns_400(client: TestClient) -> None:
