@@ -23,7 +23,6 @@ async def fetch_rcsb_file(rcsb_id: str) -> str:
     except HTTPStatusError as e:
         if e.response.status_code == 404:
             raise RCSBNotFoundError(rcsb_id) from e
-        else:
-            raise RCSBServiceError(f"HTTP Error: {e}") from e
+        raise RCSBServiceError(f"HTTP Error: {e}") from e
     except httpx.RequestError as e:
         raise RCSBServiceError(f"Request error: {e}") from e

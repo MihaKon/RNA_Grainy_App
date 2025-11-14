@@ -43,53 +43,49 @@ def render_error_response(request: Request, error: str, status_code: int) -> HTM
         status_code=status_code,
     )
 
-async def process_structure(request: Request, file_content: str, filename: str, file_format: str, selected_model: str) -> HTMLResponse:
-    try:        
-        file_like = StringIO(file_content)
+async def process_structure(request: Request, file_content: str, filename: str, file_format: str, selected_model: str) -> HTMLResponse:     
+    file_like = StringIO(file_content)
 
-        parser = FORMAT_PARSERS[SupportedFormats(file_format)](QUIET=True)
+    parser = FORMAT_PARSERS[SupportedFormats(file_format)](QUIET=True)
 
-        original_structure: Structure = parser.get_structure(filename, file_like)
-        coarse_file = transform_to_coarse_grain(
-            original_structure, getattr(CoarseGrainModels, selected_model.upper())
-        )
+    original_structure: Structure = parser.get_structure(filename, file_like)
+    coarse_file = transform_to_coarse_grain(
+        original_structure, getattr(CoarseGrainModels, selected_model.upper())
+    )
 
-        f = StringIO(coarse_file.getvalue())
-        parser = PDBParser(QUIET=True)
-        coarse_structure = parser.get_structure(filename, f)
+    f = StringIO(coarse_file.getvalue())
+    parser = PDBParser(QUIET=True)
+    coarse_structure = parser.get_structure(filename, f)
 
-        if file_format == SupportedFormats.CIF.value:
-            file_format = "mmcif"
-            
-        initial_data = {
-            "filename": filename,
-            "file_format": [file_format, "pdb"],
-            "file_data": [
-                file_like.getvalue(),
-                coarse_file.getvalue(),
-            ],
-            "selected_model": selected_model,
-        }
+    if file_format == SupportedFormats.CIF.value:
+        file_format = "mmcif"
         
-        context: DefaultDict[str, Any] = defaultdict(list, initial_data)
+    initial_data = {
+        "filename": filename,
+        "file_format": [file_format, "pdb"],
+        "file_data": [
+            file_like.getvalue(),
+            coarse_file.getvalue(),
+        ],
+        "selected_model": selected_model,
+    }
+    
+    context: DefaultDict[str, Any] = defaultdict(list, initial_data)
 
-        # Temporary placeholder for all the data
-        # TODO: when discusiing what data to export we will refactor it
-        # to separate functions
-        entity_keys = ["atoms", "chains", "models", "residues"]
-        for structure in [original_structure, coarse_structure]:
-            for key in entity_keys:
-                method_to_call = getattr(structure, f"get_{key}")
-                count = sum(1 for _ in method_to_call())
-                context[key].append(count)  # type: ignore
-        return TEMPLATES.TemplateResponse(
-            request=request,
-            name="comparison.html",
-            context=context,
-        )
-
-    except Exception as e:
-        return render_error_response(request, f"Internal server error: {e}", 500)
+    # Temporary placeholder for all the data
+    # TODO: when discusiing what data to export we will refactor it
+    # to separate functions
+    entity_keys = ["atoms", "chains", "models", "residues"]
+    for structure in [original_structure, coarse_structure]:
+        for key in entity_keys:
+            method_to_call = getattr(structure, f"get_{key}")
+            count = sum(1 for _ in method_to_call())
+            context[key].append(count)  # type: ignore
+    return TEMPLATES.TemplateResponse(
+        request=request,
+        name="comparison.html",
+        context=context,
+    )
         
 
 @app.get("/", response_class=HTMLResponse)
@@ -152,7 +148,7 @@ async def fetch_rcsb(
             selected_model = selected_model
         )
     except RCSBServiceError as e:
-        return render_error_response(request, f"Internal server error: {e}", 500)
+        return render_error_response(request, f"The request failed. {e}", 502)
     except RCSBNotFoundError as e:
         return render_error_response(request, f"{e}", 404)
 
