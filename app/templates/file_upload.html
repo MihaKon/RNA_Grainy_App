@@ -1,51 +1,116 @@
 {% extends "base.html" %}
 
 {% from "components/ui_button.html" import ui_button %}
+{% from "components/error_alert.html" import error_alert %}
 
 {% block content %}
 <div id="upload-container" class="flex w-full items-center justify-center">
     <form
-        hx-post="/uploadfile/"
+        hx-post="/upload-file/"
         hx-target="#upload-container"
         hx-swap="innerHTML"
         hx-encoding="multipart/form-data"
+        hx-target-error="#errors"
         x-data="{
             modelError: false,
             fileError: false,
             open: false,
             selectedLabel: 'Select model',
             selectedModel: '',
+            rcsbID: '',
+            fileObject: null,
             validate() {
                 this.modelError = !this.selectedModel;
-                this.fileError = !$refs.fileInput.value;
+
+                const selectedFile = $refs.fileInput.value;
+                const selectedRCSBFile = this.rcsbID.trim() !== '';
+
+                this.fileError = !selectedFile && !selectedRCSBFile;
+
                 return !this.modelError && !this.fileError;
             },
             toggle() { this.open = !this.open },
             close(focusAfter) { if (!this.open) return; this.open = false; focusAfter && focusAfter.focus() }
         }"
         @htmx:before-request="if (!validate()) { event.preventDefault(); }"
+
+        @htmx:config-request="  
+        if (rcsbID.trim() !== '') {
+            event.detail.path = '/fetch-rcsb/';
+        } else {
+            event.detail.path = '/upload-file/';
+        }"
         class="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-6 w-md"
         novalidate
         >
         <h2 class="text-2xl font-bold text-secondary text-center">Upload File</h2>
+
+        <div id="errors"
+            @htmx:after-swap="$el.classList.toggle('hidden', $el.innerHTML.trim() === '')"
+            class="hidden"
+            >
+            {% if error %}
+                {% include "components/error_alert.html" %}
+            {% endif %}
+        </div>
+
         <p class="text-sm text-tertiary text-center">
             Supported formats:
             {% for file_format in supported_file_formats %}{{ '.'~file_format~', ' }}{% endfor %}
         </p>
 
         <div class="flex flex-col gap-2">
-            <label for="file" class="text-secondary font-medium">Choose file</label>
-            <input
-                id="file"
-                name="file"
-                type="file"
-                x-ref="fileInput"
-                required
-                :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
-                class="block w-full text-sm text-primary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium cursor-pointer file:cursor-pointer file:bg-primary file:text-white hover:file:bg-secondary hover:cursor-pointer border shadow-sm focus:ring-2 focus:ring-focus"
-                accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}"
-            >
-            <p x-show="fileError" x-cloak class="text-sm font-semibold text-danger">Please select a file to proceed.</p>
+            <label for="file" class="text-secondary font-medium">Upload your structure file</label>
+            <div class="flex">
+                <input
+                    id="file"
+                    name="file"
+                    type="file"
+                    x-ref="fileInput"
+                    :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
+                    class="block w-full text-sm text-primary outline-none rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium cursor-pointer file:cursor-pointer file:bg-primary file:text-white hover:file:bg-secondary hover:cursor-pointer border shadow-sm focus:ring-2 focus:ring-focus transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                    accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}"
+                    :disabled="rcsbID.trim() !== ''"
+                    :required="rcsbID.trim() === ''"
+                    @change="fileObject = $event.target.files[0]; if (fileObject) { rcsbID = '' }"                
+                    >
+                <button
+                    type="button"
+                    @click="$refs.fileInput.value = null; fileObject = null;"
+                    :class="{ 'hidden': !fileObject, '': fileObject }"
+                    class="ml-2 flex-shrink-0 text-gray-400 hover:text-danger hover:cursor-pointer"
+                    aria-label="Remove file"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="relative py-2">
+                <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                    <span class="w-full border-t border-gray-300"></span>
+                </div>
+                <div class="relative flex justify-center">
+                    <span class="bg-white px-3 text-sm font-medium text-gray-500">
+                            Or
+                    </span>
+                </div>
+            </div>
+            <div class="flex flex-col gap-2">
+                <label for="rcsb-file" class="text-secondary font-medium">Search your structure in RCSB PDB database</label>
+                <input
+                    id="rcsb-file"
+                    name="rcsb_id"
+                    type="text" 
+                    x-model="rcsbID"
+                    placeholder="Enter structure ID (e.g., 1RNA)"
+                    :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
+                    class="block w-full text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-4 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                    :disabled="fileObject !==null"
+                    :required="fileObject === null"
+                    @input="if (rcsbID.trim() !== '') { $refs.fileInput.value = null; fileObject = null }"
+                >
+                <p x-show="fileError" x-cloak class="text-sm font-semibold text-danger">Please select a file OR enter a structure ID to proceed.</p>
+            </div>
+
         </div>
 
         <div class="flex flex-col">
@@ -66,7 +131,7 @@
                         :aria-expanded="open"
                         :aria-controls="$id('dropdown-button')"
                         :class="{ 'border-danger': modelError, 'border-gray-300': !modelError }"
-                        class="relative cursor-pointer flex items-center whitespace-nowrap justify-center min-w-48 gap-2 py-2 rounded-lg shadow-sm px-4 text-primary bg-white border focus:ring-2 focus:ring-focus"
+                        class="relative cursor-pointer flex items-center whitespace-nowrap justify-center min-w-48 gap-2 py-2 rounded-lg shadow-sm px-4 text-primary bg-white border focus:ring-2 focus:ring-focus outline-none"
                     >
                         <span class="text-sm text-primary" x-text="selectedLabel"></span>
                         <i class="fa-2xs fa-solid fa-chevron-down transition-transform duration-300" :class="{'fa-rotate-180': open}"></i>
@@ -76,7 +141,7 @@
                         x-ref="panel"
                         x-show="open"
                         x-transition
-                        @click.outside="close($refs.button)"
+                        @click.outside="close($refs.button); $refs.button.blur()"
                         :id="$id('dropdown-button')"
                         x-cloak
                         class="absolute left-0 min-w-48 rounded-lg shadow-sm mt-2 z-10 origin-top-left bg-white p-1.5 outline-none border border-gray-200"
