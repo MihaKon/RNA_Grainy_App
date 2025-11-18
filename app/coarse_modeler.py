@@ -1,25 +1,11 @@
-import enum
-import json
 from dataclasses import dataclass
 from io import StringIO
-from typing import Any
 
 from Bio.PDB import Atom
 from Bio.PDB.PDBIO import PDBIO, Select
 from Bio.PDB.Structure import Structure
 
-from app.settings import BASE_DIR
-
-COARSE_GRAIN_MODELS_DIR = BASE_DIR / "coarse_grain_models"
-
-
-class CoarseGrainModels(enum.Enum):
-    DUMMY = "simrna.json"
-
-    def model(self) -> dict[str, Any]:
-        with open(COARSE_GRAIN_MODELS_DIR / self.value) as f:
-            result = json.load(f)
-        return result
+from app.models import CoarseGrainModels
 
 
 @dataclass
