@@ -1,0 +1,24 @@
+{% macro primary_button(id='', variant='primary', text='', classes='', button_type='button', attrs='', href=None) %}
+  {% set base_classes = "py-3 hover:cursor-pointer text-white font-semibold rounded-xl shadow-md transition transform duration-300 ease-in-out hover:scale-[1.02]" %}
+  {% set variants = {"primary": "bg-primary hover:bg-secondary", "danger": "bg-red-500 hover:bg-red-700"} %}
+  {% set all_classes = [
+      base_classes,
+      variants[variant] | default(variants['primary']),
+      classes
+    ] %}
+  {% if href %}
+    <a id="{{ id }}"
+       href="{{ href }}"
+       class="{{ all_classes | join(" ") }}"
+       {{ attrs | safe }}>
+      {{ text }}
+    </a>
+  {% else %}
+    <button id="{{ id }}"
+            type="{{ button_type }}"
+            class="{{ all_classes | join(" ") }}"
+            {{ attrs | safe }}>
+      {{ text }}
+    </button>
+  {% endif %}
+{% endmacro %}
