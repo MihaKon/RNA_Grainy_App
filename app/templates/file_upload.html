@@ -2,7 +2,7 @@
 {% from "components/primary_button.html" import primary_button %}
 {% from "components/error_alert.html" import error_alert %}
 {% block content %}
-<div id="upload-container" class="flex w-full items-center justify-center">
+<div id="upload-container" class="flex w-full items-start pt-20 justify-center">
     <form
         x-data="fileUploadForm"
         hx-post="/upload/file/"
@@ -84,9 +84,6 @@
                 <p x-show="fileError" x-cloak class="text-sm font-semibold text-danger">Please select a file OR enter a structure ID to proceed.</p>
             </div>
 
-        </div>
-
-        <div class="flex flex-col gap-2">
             <div class="flex justify-between gap-2">
                 <label class="text-secondary font-medium items-center flex">Select CG Model</label>
                 <div x-data="{ open:false }"
@@ -123,27 +120,45 @@
                 </div>
             </div>
             <p x-show="modelError" x-cloak class="text-sm font-semibold text-danger">Please select a coarse-grain model to proceed.</p>
-            
-            <div class="flex justify-between">
-                <label for="model-ids" class="text-secondary font-medium items-center flex">Select model</label>
-                <input
-                    id="model-ids"
-                    name="model_ids"
-                    type="text" 
-                    placeholder="e.g. 1, 2 (empty=0, -1=all)"
-                    class="relative text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-4 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+
+            <div x-data="{ showAdvancedOptions: false}" class="flex flex-col gap-2 border-t border-gray-300 mt-2 ">
+                <button 
+                    type="button" 
+                    @click="showAdvancedOptions = !showAdvancedOptions"
+                    class="focus:cursor-pointer mt-4 flex w-full items-center justify-between text-secondary font-medium hover:text-primary transition-colors focus:outline-none"
                 >
-            </div>
-            
-            <div class="flex justify-between">
-                <label for="chain-ids" class="text-secondary font-medium items-center flex">Select chain</label>
-                <input
-                    id="chain-ids"
-                    name="chain_ids"
-                    type="text" 
-                    placeholder="e.g. A, B (empty=all)"
-                    class="relative text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-4 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                >
+                    <span>Show advanced options</span>
+                    <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300" 
+                       :class="{'rotate-180': showAdvancedOptions}"></i>
+                </button>
+                <div 
+                    x-show="showAdvancedOptions"
+                    x-collapse
+                    x-cloak
+                    class="flex flex-col gap-2">
+                    <div class="flex justify-between">
+                        <label for="model-ids" class="text-secondary text-sm font-medium items-center flex">Select model</label>
+                        <input
+                            id="model-ids"
+                            name="model_ids"
+                            type="text" 
+                            placeholder="e.g. 1, 2 (-1=all)"
+                            class="w-[75%] relative text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-3 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                        >
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <label for="chain-ids" class="text-secondary text-sm font-medium items-center flex">Select chain</label>
+                        <input
+                            id="chain-ids"
+                            name="chain_ids"
+                            type="text" 
+                            placeholder="e.g. A, B"
+                            class="w-[75%] relative text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-3 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                        >
+                    </div>            
+                </div>                
+                
             </div>
         </div>
         {{ primary_button(text='Submit', button_type="submit", classes='w-full') }}
