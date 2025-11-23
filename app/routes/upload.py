@@ -33,13 +33,14 @@ def process_and_render_comparison(
     filename: str,
     file_format: SupportedFormats,
     selected_model: CoarseGrainModels,
-    structure_model_id: int,
+    model_ids: str,
+    chain_ids: str,
 ) -> HTMLResponse:
     original_structure = StructureProcessor.parse_structure(
         file_content, filename, file_format
     )
     coarse_content = StructureProcessor.apply_coarse_graining(
-        original_structure, selected_model, structure_model_id
+        original_structure, selected_model, model_ids, chain_ids
     )
     coarse_structure = StructureProcessor.parse_structure(
         coarse_content,
@@ -69,10 +70,11 @@ async def upload_file(
     request: Request,
     file: UploadFile = File(...),
     selected_model: str = Form(...),
-    structure_model_id: int = Form(0),
+    model_ids: str | None = Form(None),
+    chain_ids: str | None = Form(None)
 ) -> HTMLResponse:
     try:
-        upload_req = FileUploadRequest(file=file, selected_model=selected_model, structure_model_id=structure_model_id)
+        upload_req = FileUploadRequest(file=file, selected_model=selected_model, model_ids = model_ids, chain_ids = chain_ids)
     except Exception as e:
         return render_error_response(request, str(e), 400)
 
@@ -85,7 +87,7 @@ async def upload_file(
     filename = upload_req.file.filename
 
     return process_and_render_comparison(
-        request, file_content, filename, file_format, upload_req.selected_model, upload_req.structure_model_id
+        request, file_content, filename, file_format, upload_req.selected_model, upload_req.model_ids, upload_req.chain_ids
     )
 
 
@@ -94,10 +96,11 @@ async def upload_rcsb(
     request: Request,
     rcsb_id: str = Form(...),
     selected_model: str = Form(...),
-    structure_model_id: int = Form(0),
+    model_ids: str | None = Form(None),
+    chain_ids: str | None = Form(None)
 ) -> HTMLResponse:
     try:
-        rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model, structure_model_id=structure_model_id)
+        rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model, model_ids = model_ids, chain_ids = chain_ids)
     except ValidationError as e:
         return render_error_response(request, e.detail, e.status_code)
 
@@ -111,5 +114,5 @@ async def upload_rcsb(
     filename = f"{rcsb_req.rcsb_id}.{file_format}"
 
     return process_and_render_comparison(
-        request, file_content, filename, file_format, rcsb_req.selected_model, rcsb_req.structure_model_id
+        request, file_content, filename, file_format, rcsb_req.selected_model, rcsb_req.model_ids, rcsb_req.chain_ids
     )

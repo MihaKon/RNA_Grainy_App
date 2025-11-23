@@ -75,7 +75,7 @@
                     type="text" 
                     x-model="rcsbID"
                     placeholder="Enter structure ID (e.g., 1RNA)"
-                    :class="{ 'border-danger': modelError, 'border-gray-300': !modelError }"
+                    :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
                     class="block w-full text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-4 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                     :disabled="fileObject !==null"
                     :required="fileObject === null"
@@ -124,18 +124,27 @@
             </div>
             <p x-show="modelError" x-cloak class="text-sm font-semibold text-danger">Please select a coarse-grain model to proceed.</p>
             
-            <div class="flex justify-between gap-2">
-                <label for="structureModelID" class="text-secondary font-medium items-center flex">Select model</label>
+            <div class="flex justify-between">
+                <label for="model-ids" class="text-secondary font-medium items-center flex">Select model</label>
                 <input
-                    id="structure-model-id"
-                    name="structure_model_id"
+                    id="model-ids"
+                    name="model_ids"
                     type="text" 
-                    x-model="structureModelID"
-                    placeholder="0 by default"
+                    placeholder="e.g. 1, 2 (empty=0, -1=all)"
                     class="relative text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-4 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 >
             </div>
             
+            <div class="flex justify-between">
+                <label for="chain-ids" class="text-secondary font-medium items-center flex">Select chain</label>
+                <input
+                    id="chain-ids"
+                    name="chain_ids"
+                    type="text" 
+                    placeholder="e.g. A, B (empty=all)"
+                    class="relative text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-4 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                >
+            </div>
         </div>
         {{ primary_button(text='Submit', button_type="submit", classes='w-full') }}
     </form>
@@ -151,7 +160,6 @@
             selectedModel: '',
             rcsbID: '',
             fileObject: null,
-            structuremModelID: '',
 
             get hasRcsbID(){
                 return this.rcsbID.trim() !== '';

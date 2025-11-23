@@ -32,7 +32,8 @@ class CoarseGrainModels(Enum):
 
 class UploadBase(BaseModel):
     selected_model: CoarseGrainModels
-    structure_model_id: int
+    model_ids: list[int] | None = None
+    chain_ids: list[str] | None = None
 
     @field_validator("selected_model", mode="before")
     @classmethod
@@ -45,16 +46,28 @@ class UploadBase(BaseModel):
                 raise ValueError(f"Invalid model: {v}. Must be one of {valid_names}")
         return v
     
-    @field_validator("structure_model_id", mode="before")
+    @field_validator("model_ids", mode="before")
     @classmethod
-    def validate_structure_model_id(cls, v):
-        try:
-            val = int(v)
-        except (ValueError, TypeError):
-            raise ValueError("ID must be an integer.")
-        if val < -1:
-            raise ValueError("Value cannot be less than -1.")
-        return val
+    def validate_model_ids(cls, v):
+        if not v or (isinstance(v,str) and not v.strip()):
+            return [0]
+        if isinstance(v, str):
+            v = v.replace(";", ",").replace(" ", ",")
+            parsed_ids = [int(x.strip()) for x in v.split(",") if x.strip()]
+            if -1 in parsed_ids:
+                return None
+            return parsed_ids
+        return v
+
+    @field_validator("chain_ids", mode="before")
+    @classmethod
+    def validate_chain_ids(cls, v):
+        if not v or (isinstance(v, str) and not v.strip()):
+            return None
+        if isinstance(v, str):
+            v = v.replace(";", ",").replace(" ", ",")
+            return [x.strip().upper() for x in v.split(",") if x.strip()]
+        return v.upper()
 
 
 class FileUploadRequest(UploadBase):

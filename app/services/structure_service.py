@@ -20,8 +20,8 @@ class StructureProcessor:
         return parser.get_structure(filename, file_like)  # type: ignore
 
     @staticmethod
-    def apply_coarse_graining(structure: Structure, model: CoarseGrainModels, structure_model_id: int) -> str:
-        coarse_file = transform_to_coarse_grain(structure, model, structure_model_id)
+    def apply_coarse_graining(structure: Structure, model: CoarseGrainModels, model_ids: str, chain_ids: str) -> str:
+        coarse_file = transform_to_coarse_grain(structure, model, model_ids, chain_ids)
         return coarse_file.getvalue()
 
     @staticmethod
