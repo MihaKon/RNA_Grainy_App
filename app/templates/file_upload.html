@@ -41,8 +41,8 @@
                     name="file"
                     type="file"
                     x-ref="fileInput"
+                    class="block w-full text-sm text-primary outline-none rounded-lg border shadow-sm focus:ring-2 focus:ring-focus transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium cursor-pointer file:cursor-pointer file:bg-primary file:text-white hover:file:bg-secondary hover:cursor-pointer"
                     :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
-                    class="block w-full text-sm text-primary outline-none rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium cursor-pointer file:cursor-pointer file:bg-primary file:text-white hover:file:bg-secondary hover:cursor-pointer border shadow-sm focus:ring-2 focus:ring-focus transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                     accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}"
                     :disabled="hasRcsbID"
                     :required="!hasRcsbID"
@@ -51,7 +51,8 @@
                 <button
                     type="button"
                     @click="clearFile()"
-                    :class="{ 'hidden': !fileObject, '': fileObject }"
+                    x-show="fileObject"
+                    x-cloak
                     class="ml-2 flex-shrink-0 text-gray-400 hover:text-danger hover:cursor-pointer"
                     aria-label="Remove file"
                 >
@@ -76,7 +77,7 @@
                     type="text" 
                     x-model="rcsbID"
                     placeholder="Enter structure ID (e.g., 1RNA)"
-                    :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
+                    :class="{ 'border-danger': modelError, 'border-gray-300': !modelError }"
                     class="block w-full text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-4 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                     :disabled="fileObject !==null"
                     :required="fileObject === null"
@@ -90,44 +91,31 @@
         <div class="flex flex-col gap-2">
             <div class="flex justify-between gap-2">
                 <label class="text-secondary font-medium items-center flex">Select CG Model</label>
-                <div
-                    x-on:keydown.escape.prevent.stop="closeDropdown($refs.dropdownBtn)"
-                    x-on:focusin.window="!$refs.panel.contains($event.target) && closeDropdown()"
-                    x-id="['dropdown-button']"
+                <div x-data="{ open:false }"
                     class="relative"
                 >
                     <input type="hidden" name="selected_model" x-model="selectedModel">
 
                     <button
                         type="button"
-                        x-ref="dropdownBtn"
-                        @click="toggleDropdown()"
-                        :aria-expanded="dropdownOpen"
-                        :aria-controls="$id('dropdown-button')"
+                        @click="open = !open"
+                        @click.outside="open=false"
                         :class="{ 'border-danger': modelError, 'border-gray-300': !modelError }"
                         class="relative cursor-pointer flex items-center whitespace-nowrap justify-center min-w-48 gap-2 py-2 rounded-lg shadow-sm px-4 text-primary bg-white border focus:ring-2 focus:ring-focus outline-none"
                     >
                         <span class="text-sm text-primary" x-text="selectedLabel"></span>
-                        <i class="fa-2xs fa-solid fa-chevron-down transition-transform duration-300" :class="{'fa-rotate-180': dropdownOpen}"></i>
+                        <i class="fa-2xs fa-solid fa-chevron-down transition-transform duration-300" :class="{'fa-rotate-180': open}"></i>
                     </button>
 
-                    <div
-                        x-ref="dropdownPanel"
-                        x-show="dropdownOpen"
-                        x-transition
-                        @click.outside="closeDropdown($refs.dropdownBtn)"
-                        :id="$id('dropdown-button')"
-                        x-cloak
-                        class="absolute left-0 min-w-48 rounded-lg shadow-sm mt-2 z-10 origin-top-left bg-white p-1.5 outline-none border border-gray-200"
-                    >
+                    <div x-show="open" x-transition x-cloak
+                        class="absolute left-0 min-w-48 rounded-lg shadow-sm mt-2 z-10 origin-top-left bg-white p-1.5 outline-none border border-gray-200">
                         <ul class="font-medium text-primary">
                             {% for model in coarse_grain_models %}
                             <li>
                                 <button
                                     type="button"
-                                    @click="selectModel('{{model}}', $refs.dropdownBtn)"
-                                    class="flex cursor-pointer items-center w-full px-3 py-1.5 rounded-lg hover:bg-gray-100"
-                                >
+                                    @click="selectModel('{{model}}', open=false)"
+                                    class="flex cursor-pointer items-center w-full px-3 py-1.5 rounded-lg hover:bg-gray-100">
                                     {{ model }}
                                 </button>
                             </li>
@@ -139,12 +127,12 @@
             <p x-show="modelError" x-cloak class="text-sm font-semibold text-danger">Please select a coarse-grain model to proceed.</p>
             
             <div class="flex justify-between gap-2">
-                <label for="chain" class="text-secondary font-medium items-center flex">Select model</label>
+                <label for="pdbModelID" class="text-secondary font-medium items-center flex">Select model</label>
                 <input
-                    id="model"
-                    name="model"
+                    id="pdbModelID"
+                    name="pdbModelID"
                     type="text" 
-                    x-model="chain"
+                    x-model="pdbModelID"
                     placeholder="0 by default"
                     class="relative text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-4 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 >
@@ -160,12 +148,12 @@
         Alpine.data('fileUploadForm', () => ({
             modelError: false,
             fileError: false,
-            open: false,
+
             selectedLabel: 'Select model',
             selectedModel: '',
             rcsbID: '',
             fileObject: null,
-            chain:'',
+            pdbModelID: '',
 
             get hasRcsbID(){
                 return this.rcsbID.trim() !== '';
@@ -185,11 +173,7 @@
             },
 
             configureRequest(){
-                if(this.hasRcsbID){
-                    event.detail.path = '/fetch-rcsb/';
-                } else{
-                    event.detail.path = '/upload-file/';
-                }
+                event.detail.path = this.hasRcsbID ? '/fetch-rcsb/' : '/upload-file/';
             },
             
             handleFileInput(){
@@ -210,20 +194,9 @@
                 }
             },
 
-            toggleDropdown(){
-                this.dropdownOpen = !this.dropdownOpen;
-            },
-
-            closeDropdown(focusAfter) {
-                if (!this.dropdownOpen) return;
-                this.dropdownOpen = false;
-                if (focusAfter) focusAfter.focus();
-            },
-
             selectModel(modelName, focusAfter) {
                 this.selectedModel = modelName;
                 this.selectedLabel = modelName;
-                this.closeDropdown(focusAfter);
             }
         }));
     });
