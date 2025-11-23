@@ -125,12 +125,12 @@
             <p x-show="modelError" x-cloak class="text-sm font-semibold text-danger">Please select a coarse-grain model to proceed.</p>
             
             <div class="flex justify-between gap-2">
-                <label for="pdbModelID" class="text-secondary font-medium items-center flex">Select model</label>
+                <label for="structureModelID" class="text-secondary font-medium items-center flex">Select model</label>
                 <input
-                    id="pdbModelID"
-                    name="pdbModelID"
+                    id="structure-model-id"
+                    name="structure_model_id"
                     type="text" 
-                    x-model="pdbModelID"
+                    x-model="structureModelID"
                     placeholder="0 by default"
                     class="relative text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-4 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 >
@@ -151,7 +151,7 @@
             selectedModel: '',
             rcsbID: '',
             fileObject: null,
-            pdbModelID: '',
+            structuremModelID: '',
 
             get hasRcsbID(){
                 return this.rcsbID.trim() !== '';
@@ -180,7 +180,7 @@
                     this.rcsbID='';
                 }
             },
-
+            
             clearFile(){
                 this.$refs.fileInput.value = null; 
                 this.fileObject = null;

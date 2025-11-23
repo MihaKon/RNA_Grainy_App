@@ -32,6 +32,7 @@ class CoarseGrainModels(Enum):
 
 class UploadBase(BaseModel):
     selected_model: CoarseGrainModels
+    structure_model_id: int
 
     @field_validator("selected_model", mode="before")
     @classmethod
@@ -43,6 +44,17 @@ class UploadBase(BaseModel):
                 valid_names = [e.name for e in CoarseGrainModels]
                 raise ValueError(f"Invalid model: {v}. Must be one of {valid_names}")
         return v
+    
+    @field_validator("structure_model_id", mode="before")
+    @classmethod
+    def validate_structure_model_id(cls, v):
+        try:
+            val = int(v)
+        except (ValueError, TypeError):
+            raise ValueError("ID must be an integer.")
+        if val < -1:
+            raise ValueError("Value cannot be less than -1.")
+        return val
 
 
 class FileUploadRequest(UploadBase):
