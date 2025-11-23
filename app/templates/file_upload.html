@@ -1,13 +1,11 @@
 {% extends "base.html" %}
-
-{% from "components/ui_button.html" import ui_button %}
+{% from "components/primary_button.html" import primary_button %}
 {% from "components/error_alert.html" import error_alert %}
-
 {% block content %}
 <div id="upload-container" class="flex w-full items-center justify-center">
     <form
         x-data="fileUploadForm"
-        hx-post="/upload-file/"
+        hx-post="/upload/file/"
         hx-target="#upload-container"
         hx-swap="innerHTML"
         hx-encoding="multipart/form-data"
@@ -139,7 +137,7 @@
             </div>
             
         </div>
-        {{ ui_button(text='Submit', button_type="submit", classes='w-full') }}
+        {{ primary_button(text='Submit', button_type="submit", classes='w-full') }}
     </form>
 </div>
 
@@ -173,7 +171,7 @@
             },
 
             configureRequest(){
-                event.detail.path = this.hasRcsbID ? '/fetch-rcsb/' : '/upload-file/';
+                event.detail.path = this.hasRcsbID ? '/upload/rcsb/' : '/upload/file/';
             },
             
             handleFileInput(){
