@@ -14,6 +14,10 @@
               class="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-6 w-md"
               novalidate>
             <h2 class="text-2xl font-bold text-secondary text-center">Upload File</h2>
+            <p class="text-sm text-tertiary text-center">
+                Supported formats:
+                {% for file_format in supported_file_formats %}{{ '.'~file_format~', ' }}{% endfor %}
+            </p>
             <div id="errors"
                  @htmx:after-swap="$el.classList.toggle('hidden', $el.innerHTML.trim() === '')"
                  class="hidden">
@@ -21,10 +25,6 @@
                     {% include "components/error_alert.html" %}
                 {% endif %}
             </div>
-            <p class="text-sm text-tertiary text-center">
-                Supported formats:
-                {% for file_format in supported_file_formats %}{{ '.'~file_format~', ' }}{% endfor %}
-            </p>
             <div class="flex flex-col gap-2">
                 <label for="file" class="text-secondary font-medium">Upload your structure file</label>
                 <div class="flex">

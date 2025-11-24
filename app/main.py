@@ -4,7 +4,8 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.models import CoarseGrainModels, SupportedFormats
+from app.coarse_grain.models import CoarseGrainModels
+from app.models import SupportedFormats
 from app.routes.upload import router as upload_router
 from app.settings import STATIC_DIR, TEMPLATES
 
@@ -18,7 +19,7 @@ app.include_router(upload_router)
 async def root(request: Request) -> HTMLResponse:
     return TEMPLATES.TemplateResponse(
         request=request,
-        name="file_upload.html",
+        name="upload_form.html",
         context={
             "supported_file_formats": [
                 file_format.value for file_format in SupportedFormats

@@ -1,13 +1,11 @@
-import json
 from enum import Enum
-from typing import Any
 
 from Bio.PDB.MMCIFParser import MMCIFParser
 from Bio.PDB.PDBParser import PDBParser
 from fastapi import UploadFile
 from pydantic import BaseModel, field_validator
 
-from app.settings import COARSE_GRAIN_MODELS_DIR
+from app.coarse_grain.models import CoarseGrainModels
 
 
 class SupportedFormats(str, Enum):
@@ -19,15 +17,6 @@ FORMAT_PARSERS = {
     SupportedFormats.PDB: PDBParser,
     SupportedFormats.CIF: MMCIFParser,
 }
-
-
-class CoarseGrainModels(Enum):
-    DUMMY = "simrna.json"
-
-    def model(self) -> dict[str, Any]:
-        with open(COARSE_GRAIN_MODELS_DIR / self.value) as f:
-            result = json.load(f)
-        return result
 
 
 class UploadBase(BaseModel):

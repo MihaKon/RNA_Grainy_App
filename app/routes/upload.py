@@ -1,6 +1,7 @@
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
 
+from app import messages
 from app.exceptions import FileProcessingError, ValidationError
 from app.models import (
     CoarseGrainModels,
@@ -13,18 +14,6 @@ from app.services.structure_service import StructureProcessor
 from app.settings import TEMPLATES
 
 router = APIRouter(prefix="/upload", tags=["upload"])
-
-
-def render_error_response(
-    request: Request, error: str, status_code: int
-) -> HTMLResponse:
-    context = {"error": error}
-    return TEMPLATES.TemplateResponse(
-        request=request,
-        name="components/error_alert.html",
-        context=context,
-        status_code=status_code,
-    )
 
 
 def process_and_render_comparison(
@@ -72,12 +61,15 @@ async def upload_file(
     try:
         upload_req = FileUploadRequest(file=file, selected_model=selected_model)
     except Exception as e:
-        return render_error_response(request, str(e), 400)
+        return messages.render_form_error_message(request, str(e), 400)
 
     try:
         file_content = (await upload_req.file.read()).decode("utf-8")
     except Exception as e:
         raise FileProcessingError(f"Error reading file: {e}")
+
+    if file_content == "":
+        return messages.render_form_error_message(request, "The file is empty.", 400)
 
     file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower())
     filename = upload_req.file.filename
@@ -96,7 +88,7 @@ async def upload_rcsb(
     try:
         rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model)
     except ValidationError as e:
-        return render_error_response(request, e.detail, e.status_code)
+        return messages.render_form_error_message(request, e.detail, e.status_code)
 
     file_content = await fetch_rcsb_file(rcsb_req.rcsb_id)
     if file_content is None:
