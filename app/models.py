@@ -24,14 +24,12 @@ class UploadBase(BaseModel):
 
     @field_validator("selected_model", mode="before")
     @classmethod
-    def validate_model(cls, v):
-        if isinstance(v, str):
-            try:
-                return CoarseGrainModels[v.upper()]
-            except KeyError:
-                valid_names = [e.name for e in CoarseGrainModels]
-                raise ValueError(f"Invalid model: {v}. Must be one of {valid_names}")
-        return v
+    def validate_model(cls, v: str) -> CoarseGrainModels:
+        try:
+            return CoarseGrainModels[v.upper()]
+        except KeyError:
+            valid_names = [e.name for e in CoarseGrainModels]
+            raise ValueError(f"Invalid model: {v}. Must be one of {valid_names}")
 
 
 class FileUploadRequest(UploadBase):
@@ -39,7 +37,7 @@ class FileUploadRequest(UploadBase):
 
     @field_validator("file")
     @classmethod
-    def validate_file(cls, v):
+    def validate_file(cls, v: UploadFile) -> UploadFile:
         if not v.filename:
             raise ValueError("No file provided")
         ext = v.filename.split(".")[-1].lower()
@@ -54,6 +52,6 @@ class RCSBRequest(UploadBase):
     rcsb_id: str
 
     @field_validator("rcsb_id")
-    def validate_rcsb_id(cls, v):
+    def validate_rcsb_id(cls, v: str) -> str:
         v = v.strip().upper()
         return v

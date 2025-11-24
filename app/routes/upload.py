@@ -59,7 +59,7 @@ async def upload_file(
     selected_model: str = Form(...),
 ) -> HTMLResponse:
     try:
-        upload_req = FileUploadRequest(file=file, selected_model=selected_model)
+        upload_req = FileUploadRequest(file=file, selected_model=selected_model)  # type: ignore
     except Exception as e:
         return messages.render_form_error_message(request, str(e), 400)
 
@@ -71,8 +71,8 @@ async def upload_file(
     if file_content == "":
         return messages.render_form_error_message(request, "The file is empty.", 400)
 
-    file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower())
-    filename = upload_req.file.filename
+    file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower())  # type: ignore
+    filename: str = upload_req.file.filename  # type: ignore
 
     return process_and_render_comparison(
         request, file_content, filename, file_format, upload_req.selected_model
@@ -86,7 +86,7 @@ async def upload_rcsb(
     selected_model: str = Form(...),
 ) -> HTMLResponse:
     try:
-        rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model)
+        rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model)  # type: ignore
     except ValidationError as e:
         return messages.render_form_error_message(request, e.detail, e.status_code)
 
