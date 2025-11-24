@@ -1,13 +1,11 @@
-import json
 from enum import Enum
-from typing import Any
 
 from Bio.PDB.MMCIFParser import MMCIFParser
 from Bio.PDB.PDBParser import PDBParser
 from fastapi import UploadFile
 from pydantic import BaseModel, field_validator
 
-from app.settings import COARSE_GRAIN_MODELS_DIR
+from app.coarse_grain.models import CoarseGrainModels
 
 
 class SupportedFormats(str, Enum):
@@ -21,15 +19,6 @@ FORMAT_PARSERS = {
 }
 
 
-class CoarseGrainModels(Enum):
-    DUMMY = "simrna.json"
-
-    def model(self) -> dict[str, Any]:
-        with open(COARSE_GRAIN_MODELS_DIR / self.value) as f:
-            result = json.load(f)
-        return result
-
-
 class UploadBase(BaseModel):
     selected_model: CoarseGrainModels
     model_ids: list[int] | None = None
@@ -37,19 +26,17 @@ class UploadBase(BaseModel):
 
     @field_validator("selected_model", mode="before")
     @classmethod
-    def validate_model(cls, v):
-        if isinstance(v, str):
-            try:
-                return CoarseGrainModels[v.upper()]
-            except KeyError:
-                valid_names = [e.name for e in CoarseGrainModels]
-                raise ValueError(f"Invalid model: {v}. Must be one of {valid_names}")
-        return v
-    
+    def validate_model(cls, v: str) -> CoarseGrainModels:
+        try:
+            return CoarseGrainModels[v.upper()]
+        except KeyError:
+            valid_names = [e.name for e in CoarseGrainModels]
+            raise ValueError(f"Invalid model: {v}. Must be one of {valid_names}")
+
     @field_validator("model_ids", mode="before")
     @classmethod
     def validate_model_ids(cls, v):
-        if not v or (isinstance(v,str) and not v.strip()):
+        if not v or (isinstance(v, str) and not v.strip()):
             return [0]
         if isinstance(v, str):
             v = v.replace(";", ",").replace(" ", ",")
@@ -75,7 +62,7 @@ class FileUploadRequest(UploadBase):
 
     @field_validator("file")
     @classmethod
-    def validate_file(cls, v):
+    def validate_file(cls, v: UploadFile) -> UploadFile:
         if not v.filename:
             raise ValueError("No file provided")
         ext = v.filename.split(".")[-1].lower()
@@ -90,6 +77,6 @@ class RCSBRequest(UploadBase):
     rcsb_id: str
 
     @field_validator("rcsb_id")
-    def validate_rcsb_id(cls, v):
+    def validate_rcsb_id(cls, v: str) -> str:
         v = v.strip().upper()
         return v
