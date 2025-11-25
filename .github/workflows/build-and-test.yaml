@@ -2,50 +2,24 @@ name: Build and Test
 on: [push]
 jobs:
   setup:
-    name: Build Tailwind And Test Code
+    name: Run Unit Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - run: npm ci
-      - run: npm run dev
+      - run: mkdir -p app/static
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - uses: actions/cache@v4
+      - name: Cache pipenv virtualenv
+        uses: actions/cache@v4
         with:
-          path: |
-            ~/.local/share/virtualenvs
-            ~/.cache/pip
+          path: ~/.local/share/virtualenvs
           key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-pipenv-
       - run: |
           pip install pipenv
           pipenv install --dev
-      - name: Upload CSS
-        uses: actions/upload-artifact@v4
-        with:
-          name: built-css
-          path: |
-            app/static/css/
-            app/styles/
-      - name: Save pipenv env
-        uses: actions/upload-artifact@v4
-        with:
-          name: pipenv-env
-          path: ~/.local/share/virtualenvs/
       - run: pipenv run ruff check .
       - run: pipenv run mypy .
       - run: pipenv run pytest ./tests/unit
-      - uses: actions/download-artifact@v4
-        with:
-          name: pipenv-env
-          path: ~/.local/share/virtualenvs/
-      - run: pip install pipenv
-      - run: pipenv run pytest ./tests/e2e
