@@ -12,13 +12,13 @@ from app.models import CoarseGrainModels
 class CoarseGrainSelect(Select):
     atoms_subset: list[str]
     residues: list[str]
-    model_ids: str
-    chain_ids: str
+    model_ids: list[str] | None = None
+    chain_ids: list[str] | None = None
 
     def accept_model(self, model: Model.Model) -> int:
         if not self.model_ids:
             return 1
-        if model.get_id() in self.model_ids:
+        if str(model.get_id()) in self.model_ids:
             return 1
         return 0
 
@@ -39,7 +39,7 @@ class CoarseGrainSelect(Select):
 
 
 def transform_to_coarse_grain(
-    original_structure: Structure, coarse_grain_model: CoarseGrainModels, model_ids: str, chain_ids: str
+    original_structure: Structure, coarse_grain_model: CoarseGrainModels, model_ids: list[str] | None = None, chain_ids: list[str] | None = None
 ) -> StringIO:
     model = coarse_grain_model.model()
     selector = CoarseGrainSelect(

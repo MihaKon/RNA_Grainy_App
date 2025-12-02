@@ -21,7 +21,7 @@ FORMAT_PARSERS = {
 
 class UploadBase(BaseModel):
     selected_model: CoarseGrainModels
-    model_ids: list[int] | None = None
+    model_ids: list[str] | None = None
     chain_ids: list[str] | None = None
 
     @field_validator("selected_model", mode="before")
@@ -36,26 +36,29 @@ class UploadBase(BaseModel):
     @field_validator("model_ids", mode="before")
     @classmethod
     def validate_model_ids(cls, v):
-        if not v or (isinstance(v, str) and not v.strip()):
-            return [0]
-        if isinstance(v, str):
-            v = v.replace(";", ",").replace(" ", ",")
-            parsed_ids = [int(x.strip()) for x in v.split(",") if x.strip()]
-            if -1 in parsed_ids:
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return ["0"]
+        if isinstance(v,str):
+            v = v.split(",")
+        if isinstance(v, list):
+            ids = [str(item).strip() for item in v if str(item).strip()]
+            if "-1" in ids:
                 return None
-            return parsed_ids
+            return ids if ids else None         
         return v
 
     @field_validator("chain_ids", mode="before")
     @classmethod
     def validate_chain_ids(cls, v):
-        if not v or (isinstance(v, str) and not v.strip()):
+        if v is None or (isinstance(v, str) and not v.strip()):
             return None
-        if isinstance(v, str):
-            v = v.replace(";", ",").replace(" ", ",")
-            return [x.strip().upper() for x in v.split(",") if x.strip()]
-        return v.upper()
-
+        if isinstance(v,str):
+            v = v.split(",")
+        if isinstance(v, list):
+            chains = [str(item).strip().upper() for item in v if str(item).strip()]
+            return chains if chains else None
+        return v
+    
 
 class FileUploadRequest(UploadBase):
     file: UploadFile

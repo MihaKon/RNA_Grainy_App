@@ -22,8 +22,8 @@ def process_and_render_comparison(
     filename: str,
     file_format: SupportedFormats,
     selected_model: CoarseGrainModels,
-    model_ids: str,
-    chain_ids: str,
+    model_ids: list[str] | None = None,
+    chain_ids: list[str] | None = None,
 ) -> HTMLResponse:
     original_structure = StructureProcessor.parse_structure(
         file_content, filename, file_format
@@ -63,7 +63,7 @@ async def upload_file(
     chain_ids: str | None = Form(None),
 ) -> HTMLResponse:
     try:
-        upload_req = FileUploadRequest(file=file, selected_model=selected_model)  # type: ignore
+        upload_req = FileUploadRequest(file=file, selected_model=selected_model, model_ids=model_ids, chain_ids=chain_ids)  # type: ignore
     except Exception as e:
         return messages.render_form_error_message(request, str(e), 400)
 
@@ -98,7 +98,7 @@ async def upload_rcsb(
     chain_ids: str | None = Form(None),
 ) -> HTMLResponse:
     try:
-        rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model)  # type: ignore
+        rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model,  model_ids=model_ids, chain_ids=chain_ids)  # type: ignore
     except ValidationError as e:
         return messages.render_form_error_message(request, e.detail, e.status_code)
 
