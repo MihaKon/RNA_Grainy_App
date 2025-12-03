@@ -40,7 +40,7 @@ def process_and_render_comparison(
             filtered_content, filename, file_format
         )
     except Exception as e:
-        raise DamagedFileError("Filtered file is damaged or empty. Check your input settings: {e}")
+        raise DamagedFileError(f"Filtered file is damaged or empty. Check your input settings: {e}")
 
     coarse_content = StructureProcessor.apply_coarse_graining(
         filtered_structure, selected_model

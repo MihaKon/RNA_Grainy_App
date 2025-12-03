@@ -62,13 +62,11 @@ def extract_structure_subset(
     selector = ModelAndChainSelect(model_ids = model_ids, chain_ids = chain_ids)
     file = StringIO()
     if file_format == SupportedFormats.CIF:
-        io = MMCIFIO()
-        io.set_structure(original_structure)
-        io.save(file, select=selector)
+        io = MMCIFIO() # type: ignore
     else:
-        io = PDBIO()
-        io.set_structure(original_structure)
-        io.save(file=file, select=selector)
+        io = PDBIO() # type: ignore
 
+    io.set_structure(original_structure)
+    io.save(file, select=selector)  
     return file
 

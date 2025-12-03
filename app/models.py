@@ -35,7 +35,7 @@ class UploadBase(BaseModel):
 
     @field_validator("model_ids", mode="before")
     @classmethod
-    def validate_model_ids(cls, v):
+    def validate_model_ids(cls, v: None | str | list[str]) -> list[int] | None:
         if v is None or (isinstance(v, str) and not v.strip()):
             return [0]
         if isinstance(v,str):
@@ -49,7 +49,7 @@ class UploadBase(BaseModel):
 
     @field_validator("chain_ids", mode="before")
     @classmethod
-    def validate_chain_ids(cls, v):
+    def validate_chain_ids(cls, v: None | str | list[str]) -> list[str] | None:
         if v is None or (isinstance(v, str) and not v.strip()):
             return None
         if isinstance(v,str):
