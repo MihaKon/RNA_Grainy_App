@@ -13,6 +13,8 @@ from app.rcsb import fetch_rcsb_file
 from app.services.structure_service import StructureProcessor
 from app.settings import TEMPLATES
 
+from app.exceptions import DamagedFileError
+
 router = APIRouter(prefix="/upload", tags=["upload"])
 
 
@@ -33,9 +35,12 @@ def process_and_render_comparison(
         original_structure, file_format, model_ids, chain_ids
     )
 
-    filtered_structure = StructureProcessor.parse_structure(
-        filtered_content, filename, file_format
-    )
+    try:
+        filtered_structure = StructureProcessor.parse_structure(
+            filtered_content, filename, file_format
+        )
+    except Exception as e:
+        raise DamagedFileError("Filtered file is damaged or empty. Check your input settings: {e}")
 
     coarse_content = StructureProcessor.apply_coarse_graining(
         filtered_structure, selected_model

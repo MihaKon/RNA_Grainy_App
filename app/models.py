@@ -55,7 +55,7 @@ class UploadBase(BaseModel):
         if isinstance(v,str):
             v = v.split(",")
         if isinstance(v, list):
-            chains = [str(item).strip().upper() for item in v if str(item).strip()]
+            chains = [str(item).strip() for item in v if str(item).strip()]
             return chains if chains else None
         return v
     

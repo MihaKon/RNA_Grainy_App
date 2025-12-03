@@ -28,7 +28,6 @@ class StructureProcessor:
     @staticmethod
     def apply_coarse_graining(structure: Structure, model: CoarseGrainModels) -> str:
         coarse_file = transform_to_coarse_grain(structure, model)
-        print(coarse_file.getvalue())
         return coarse_file.getvalue()
 
     @staticmethod
