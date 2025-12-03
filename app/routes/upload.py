@@ -22,7 +22,7 @@ def process_and_render_comparison(
     filename: str,
     file_format: SupportedFormats,
     selected_model: CoarseGrainModels,
-    model_ids: list[str] | None = None,
+    model_ids: list[int] | None = None,
     chain_ids: list[str] | None = None, 
 ) -> HTMLResponse:
     original_structure = StructureProcessor.parse_structure(

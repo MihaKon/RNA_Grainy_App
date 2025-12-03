@@ -21,7 +21,7 @@ FORMAT_PARSERS = {
 
 class UploadBase(BaseModel):
     selected_model: CoarseGrainModels
-    model_ids: list[str] | None = None
+    model_ids: list[int] | None = None
     chain_ids: list[str] | None = None
 
     @field_validator("selected_model", mode="before")
@@ -37,12 +37,12 @@ class UploadBase(BaseModel):
     @classmethod
     def validate_model_ids(cls, v):
         if v is None or (isinstance(v, str) and not v.strip()):
-            return ["0"]
+            return [0]
         if isinstance(v,str):
             v = v.split(",")
         if isinstance(v, list):
-            ids = [str(item).strip() for item in v if str(item).strip()]
-            if "-1" in ids:
+            ids = [int(x.strip()) for x in v if x.strip()] 
+            if -1 in ids:
                 return None
             return ids if ids else None         
         return v

@@ -21,7 +21,7 @@ class StructureProcessor:
 
     @staticmethod
     def filter_structure(
-        structure: Structure,  file_format: SupportedFormats, model_ids: list[str] | None = None, chain_ids: list[str] | None = None)-> str:
+        structure: Structure,  file_format: SupportedFormats, model_ids: list[int] | None = None, chain_ids: list[str] | None = None)-> str:
         reduced_structure = extract_structure_subset(structure, file_format, model_ids, chain_ids)
         return reduced_structure.getvalue()
 

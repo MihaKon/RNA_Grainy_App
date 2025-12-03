@@ -23,13 +23,13 @@ class CoarseGrainSelect(Select):
 
 @dataclass
 class ModelAndChainSelect(Select):
-    model_ids: list[str] | None = None
+    model_ids: list[int] | None = None
     chain_ids: list[str] | None = None
 
     def accept_model(self, model: Model.Model) -> int:
         if not self.model_ids:
             return 1
-        if str(model.get_id()) in self.model_ids:
+        if model.get_id() in self.model_ids:
             return 1
         return 0
 
@@ -57,7 +57,7 @@ def transform_to_coarse_grain(
     return file
 
 def extract_structure_subset(
-    original_structure: Structure, file_format: SupportedFormats, model_ids: list[str] | None = None, chain_ids: list[str] | None = None
+    original_structure: Structure, file_format: SupportedFormats, model_ids: list[int] | None = None, chain_ids: list[str] | None = None
 ) -> StringIO:
     selector = ModelAndChainSelect(model_ids = model_ids, chain_ids = chain_ids)
     file = StringIO()
