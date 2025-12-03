@@ -23,13 +23,22 @@ def process_and_render_comparison(
     file_format: SupportedFormats,
     selected_model: CoarseGrainModels,
     model_ids: list[str] | None = None,
-    chain_ids: list[str] | None = None,
+    chain_ids: list[str] | None = None, 
 ) -> HTMLResponse:
     original_structure = StructureProcessor.parse_structure(
         file_content, filename, file_format
     )
+
+    filtered_content = StructureProcessor.filter_structure(
+        original_structure, file_format, model_ids, chain_ids
+    )
+
+    filtered_structure = StructureProcessor.parse_structure(
+        filtered_content, filename, file_format
+    )
+
     coarse_content = StructureProcessor.apply_coarse_graining(
-        original_structure, selected_model, model_ids, chain_ids
+        filtered_structure, selected_model
     )
     coarse_structure = StructureProcessor.parse_structure(
         coarse_content,
@@ -39,11 +48,11 @@ def process_and_render_comparison(
 
     context = StructureProcessor.build_comparison_context(
         filename=filename,
-        original_content=file_content,
+        original_content=filtered_content,
         coarse_content=coarse_content,
         file_format=file_format,
         selected_model=selected_model.name,
-        original_structure=original_structure,
+        original_structure=filtered_structure,
         coarse_structure=coarse_structure,
     )
 
@@ -109,7 +118,7 @@ async def upload_rcsb(
         )
 
     file_format = SupportedFormats.CIF
-    filename = f"{rcsb_req.rcsb_id}.{file_format}"
+    filename = rcsb_req.rcsb_id
 
     return process_and_render_comparison(
         request,
