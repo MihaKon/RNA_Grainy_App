@@ -6,4 +6,5 @@ BASE_DIR = pathlib.Path(__file__).resolve().parent
 COARSE_GRAIN_MODELS_DIR = BASE_DIR / "coarse_grain" / "models"
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
+TEMP_DIR = BASE_DIR / "temp"
 TEMPLATES = Jinja2Templates(directory=TEMPLATES_DIR)
