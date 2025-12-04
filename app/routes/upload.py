@@ -11,45 +11,74 @@ from app.models import (
 )
 from app.rcsb import fetch_rcsb_file
 from app.services.structure_service import StructureProcessor
-from app.settings import TEMPLATES
+from app.services.job_service import JobManager
+from app.settings import TEMPLATES, TEMP_DIR
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
-
-def process_and_render_comparison(
+async def handle_job(
     request: Request,
     file_content: str,
     filename: str,
     file_format: SupportedFormats,
+    selected_model: CoarseGrainModels, 
+):
+    job_id = JobManager.create_job_id()
+    JobManager.setup_job_dir(job_id)
+    original_filename: str = f"reference.{file_format.value}"  # type: ignore
+    coarse_filename: str = "coarse.pdb"
+    try:
+        coarse_content = process_and_render_comparison(file_content, filename, file_format, selected_model)
+        await JobManager.create_file(job_id, file_content, original_filename)
+        await JobManager.create_file(job_id, coarse_content, coarse_filename)
+    except Exception as e:
+        JobManager.cleanup_job(job_id)
+        return messages.render_form_error_message(request, f"Processing error: {str(e)}", 500)
+    
+    return render_comparison(request, job_id, filename, file_format, selected_model)
+
+def render_comparison(
+    request: Request,
+    job_id: str,
+    filename: str,
+    file_format: SupportedFormats,
+    selected_model: CoarseGrainModels
+)-> HTMLResponse:
+    context = {  # move to structure processor then
+        "job_id": job_id,
+        "reference_url": f"/api/jobs/{job_id}/reference?ext={file_format.value}", #fix   
+        "coarse_url": f"/api/jobs/{job_id}/coarse?ext=pdb",
+        "filename": filename,
+        "file_format": [file_format.value, SupportedFormats.PDB.value],
+        "selected_model": selected_model,
+    }
+    return TEMPLATES.TemplateResponse(
+        request=request,
+        name="comparison.html",
+        context=context,
+    )
+
+    
+def process_and_render_comparison(
+    file_content: str,
+    filename: str,
+    file_format: SupportedFormats,
     selected_model: CoarseGrainModels,
-) -> HTMLResponse:
+) -> list[str, str]:
     original_structure = StructureProcessor.parse_structure(
         file_content, filename, file_format
     )
     coarse_content = StructureProcessor.apply_coarse_graining(
         original_structure, selected_model
     )
+    """
     coarse_structure = StructureProcessor.parse_structure(
         coarse_content,
         filename,
         SupportedFormats.PDB,
     )
-
-    context = StructureProcessor.build_comparison_context(
-        filename=filename,
-        original_content=file_content,
-        coarse_content=coarse_content,
-        file_format=file_format,
-        selected_model=selected_model.name,
-        original_structure=original_structure,
-        coarse_structure=coarse_structure,
-    )
-
-    return TEMPLATES.TemplateResponse(
-        request=request,
-        name="comparison.html",
-        context=context,
-    )
+    """
+    return coarse_content
 
 
 @router.post("/file/", response_class=HTMLResponse)
@@ -73,10 +102,7 @@ async def upload_file(
 
     file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower())  # type: ignore
     filename: str = upload_req.file.filename  # type: ignore
-
-    return process_and_render_comparison(
-        request, file_content, filename, file_format, upload_req.selected_model
-    )
+    return await handle_job(request, file_content, filename, file_format, upload_req.selected_model)
 
 
 @router.post("/rcsb/", response_class=HTMLResponse)

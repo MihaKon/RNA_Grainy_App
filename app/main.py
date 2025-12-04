@@ -6,13 +6,14 @@ from fastapi.staticfiles import StaticFiles
 
 from app.coarse_grain.models import CoarseGrainModels
 from app.models import SupportedFormats
-from app.routes.upload import router as upload_router
+from app.routes import upload, jobs
 from app.settings import STATIC_DIR, TEMPLATES
 
 app = FastAPI(title="RNA Coarse Grain App", version="0.1.0")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.add_middleware(GZipMiddleware)
-app.include_router(upload_router)
+app.include_router(upload.router)
+app.include_router(jobs.router)
 
 
 @app.get("/", response_class=HTMLResponse)

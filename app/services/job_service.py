@@ -14,9 +14,16 @@ class JobManager:
     
     @staticmethod
     def get_job_dir(job_id: str) -> Path:
+        try:
+            uuid.UUID(job_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid job ID format")
+        
         job_dir = TEMP_DIR / job_id
         if not job_dir.resolve().is_relative_to(TEMP_DIR.resolve()): #path traversal
             raise HTTPException(status_code=400, detail="Invalid job ID path.")
+        
+        return job_dir
 
     @classmethod
     def setup_job_dir(cls, job_id: str ) -> Path:
@@ -25,7 +32,7 @@ class JobManager:
         return job_dir   
     
     @classmethod
-    def create_file(cls, job_id: str, content:str, filename:str) -> str:
+    async def create_file(cls, job_id: str, content:str, filename:str) -> str:
         job_dir = cls.get_job_dir(job_id) 
         file_path = job_dir / filename
         try:
