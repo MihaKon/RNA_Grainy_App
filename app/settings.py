@@ -8,6 +8,6 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 TEMP_DIR = BASE_DIR.parent / "temp"
 TEMPLATES = Jinja2Templates(directory=TEMPLATES_DIR)
-COARSE_FILE_FORMAT = "pdb"
+COARSE_FILE_FORMAT = "mmcif"
 
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
