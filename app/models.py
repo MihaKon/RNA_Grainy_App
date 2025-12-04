@@ -1,7 +1,5 @@
 from enum import Enum
 
-from Bio.PDB.MMCIFParser import MMCIFParser
-from Bio.PDB.PDBParser import PDBParser
 from fastapi import UploadFile
 from pydantic import BaseModel, field_validator
 
@@ -11,13 +9,6 @@ from app.coarse_grain.models import CoarseGrainModels
 class SupportedFormats(str, Enum):
     PDB = "pdb"
     CIF = "cif"
-
-
-FORMAT_PARSERS = {
-    SupportedFormats.PDB: PDBParser,
-    SupportedFormats.CIF: MMCIFParser,
-}
-
 
 class UploadBase(BaseModel):
     selected_model: CoarseGrainModels

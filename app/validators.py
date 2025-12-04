@@ -2,7 +2,7 @@ from typing import Dict
 
 from gemmi import Structure
 
-
+# fix: move to calculations in other issue
 def count_structure_entities(structure: Structure) -> Dict[str, int]:
     """Count atoms, chains, models, and residues in a structure."""
     return {
