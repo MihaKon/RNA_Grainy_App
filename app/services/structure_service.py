@@ -23,8 +23,7 @@ class StructureProcessor:
         return structure
 
     @staticmethod
-    def apply_coarse_graining(structure: gemmi.Structure, model: CoarseGrainModels) -> str: #fix: move to parser
-        """TEST METHOD"""
+    def apply_coarse_graining(structure: gemmi.Structure, model: CoarseGrainModels) -> str:
         coarse_structure = transform_to_coarse_grain(structure, model)
 
         if COARSE_FILE_FORMAT == "pdb":
