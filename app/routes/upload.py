@@ -25,7 +25,7 @@ async def handle_job(
 ):
     job_id = JobManager.create_job_id()
     JobManager.setup_job_dir(job_id)
-    ff = "mmcif" if file_format.value == SupportedFormats.CIF.value else file_format #fix
+    ff = "mmcif" if file_format.value == SupportedFormats.CIF.value else file_format.value #fix
 
     original_filename: str = f"reference.{ff}"  # type: ignore
     coarse_filename: str = "coarse.pdb"
@@ -46,7 +46,7 @@ def render_comparison(
     file_format: SupportedFormats,
     selected_model: CoarseGrainModels
 )-> HTMLResponse:
-    ff = "mmcif" if file_format.value == SupportedFormats.CIF.value else file_format
+    ff = "mmcif" if file_format.value == SupportedFormats.CIF.value else file_format.value
     context = {  # move to structure processor then
         "job_id": job_id,
         "reference_url": f"/api/jobs/{job_id}/reference?ext={ff}", #fix   
