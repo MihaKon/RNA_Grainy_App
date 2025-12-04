@@ -25,7 +25,9 @@ async def handle_job(
 ):
     job_id = JobManager.create_job_id()
     JobManager.setup_job_dir(job_id)
-    original_filename: str = f"reference.{file_format.value}"  # type: ignore
+    ff = "mmcif" if file_format.value == SupportedFormats.CIF.value else file_format #fix
+
+    original_filename: str = f"reference.{ff}"  # type: ignore
     coarse_filename: str = "coarse.pdb"
     try:
         coarse_content = process_and_render_comparison(file_content, filename, file_format, selected_model)
@@ -44,12 +46,13 @@ def render_comparison(
     file_format: SupportedFormats,
     selected_model: CoarseGrainModels
 )-> HTMLResponse:
+    ff = "mmcif" if file_format.value == SupportedFormats.CIF.value else file_format
     context = {  # move to structure processor then
         "job_id": job_id,
-        "reference_url": f"/api/jobs/{job_id}/reference?ext={file_format.value}", #fix   
+        "reference_url": f"/api/jobs/{job_id}/reference?ext={ff}", #fix   
         "coarse_url": f"/api/jobs/{job_id}/coarse?ext=pdb",
         "filename": filename,
-        "file_format": [file_format.value, SupportedFormats.PDB.value],
+        "file_format": [ff, SupportedFormats.PDB.value],
         "selected_model": selected_model,
     }
     return TEMPLATES.TemplateResponse(
