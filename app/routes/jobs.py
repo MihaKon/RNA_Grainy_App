@@ -12,7 +12,7 @@ async def get_job_file(
 ):
     if file_type not in ["reference", "coarse"]:
         raise HTTPException(status_code=400, detail="Invalid file type")
-    filename = f"{file_type}.{ext}" if file_type == "reference" else "coarse.pdb"
+    filename = f"{file_type}.{ext}" if file_type == "reference" else "coarse.mmcif"
     file_path = JobManager.get_file_path(job_id, filename)
 
     return FileResponse(

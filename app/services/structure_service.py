@@ -1,5 +1,4 @@
 from collections import defaultdict
-from io import StringIO
 from typing import Any, DefaultDict
 
 from Bio.PDB.Structure import Structure
@@ -9,20 +8,36 @@ from app.coarse_grain.parser import CoarseGrainModels, transform_to_coarse_grain
 from app.models import SupportedFormats
 from app.validators import count_structure_entities, get_format_parser
 
-
+import  gemmi
 class StructureProcessor:
     @staticmethod
     def parse_structure(
         content: str, filename: str, file_format: SupportedFormats
     ) -> Structure:
-        file_like = StringIO(content)
-        parser: StructureBuilder = get_format_parser(file_format)
-        return parser.get_structure(filename, file_like)  # type: ignore
+        if file_format == SupportedFormats.CIF.value:
+            cif = gemmi.cif.read_string(content)
+            structure = gemmi.make_structure_from_block(cif.sole_block())
+        else:
+            structure = gemmi.read_pdb_string(content)
+        return structure
 
     @staticmethod
-    def apply_coarse_graining(structure: Structure, model: CoarseGrainModels) -> str:
-        coarse_file = transform_to_coarse_grain(structure, model)
-        return coarse_file.getvalue()
+    def apply_coarse_graining(structure: gemmi.Structure, model: CoarseGrainModels) -> str: #fix: move to parser
+        """TEST METHOD"""
+        config = model.model()
+        atom_subset = config["atoms"]
+        residues_subset = config["residues"] # fix: idk if we need this
+
+        subset=[]
+        if atom_subset:
+            subset.append(f"{','.join(atom_subset)}")
+
+        selection_str = ",".join(atom_subset) if subset else "*"
+        selection = gemmi.Selection(f"//*//{selection_str}") 
+        coarse_structure = selection.copy_structure_selection(structure)
+        cif_doc = coarse_structure.make_mmcif_document()
+
+        return cif_doc.as_string()
 
     @staticmethod
     def build_comparison_context(
