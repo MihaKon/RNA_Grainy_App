@@ -9,6 +9,7 @@ from app.models import SupportedFormats
 from app.validators import count_structure_entities, get_format_parser
 from app.settings import COARSE_FILE_FORMAT
 import  gemmi
+
 class StructureProcessor:
     @staticmethod
     def parse_structure(
@@ -24,20 +25,10 @@ class StructureProcessor:
     @staticmethod
     def apply_coarse_graining(structure: gemmi.Structure, model: CoarseGrainModels) -> str: #fix: move to parser
         """TEST METHOD"""
-        config = model.model()
-        atom_subset = config["atoms"]
-        residues_subset = config["residues"] # fix: idk if we need this
-
-        subset=[]
-        if atom_subset:
-            subset.append(f"{','.join(atom_subset)}")
-
-        selection_str = ",".join(atom_subset) if subset else "*"
-        selection = gemmi.Selection(f"//*//{selection_str}") 
-        coarse_structure = selection.copy_structure_selection(structure)
+        coarse_structure = transform_to_coarse_grain(structure, model)
 
         if COARSE_FILE_FORMAT == "pdb":
-            return coarse_structure.make_pdb_string()
+            return coarse_structure.make_pdb_string() 
         
         cif_doc = coarse_structure.make_mmcif_document()
         return cif_doc.as_string()

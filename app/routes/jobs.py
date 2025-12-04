@@ -11,7 +11,7 @@ async def get_job_file(
     file_type: str,
     ext: str
 ):
-    if file_type not in ["reference", "coarse"]:
+    if file_type not in ["reference", "coarse"]: #fix
         raise HTTPException(status_code=400, detail="Invalid file type")
     filename = f"{file_type}.{ext}" if file_type == "reference" else f"coarse.{COARSE_FILE_FORMAT}"
     file_path = JobManager.get_file_path(job_id, filename)
