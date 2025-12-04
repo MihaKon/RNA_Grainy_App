@@ -1,11 +1,9 @@
 import uuid
 import shutil
-import logging
 from pathlib import Path
 from fastapi import HTTPException
 from app.settings import TEMP_DIR
 
-logger = logging.getLogger(__name__)
 
 class JobManager:
     @staticmethod
@@ -39,7 +37,6 @@ class JobManager:
             with open(file_path, "w",  encoding="utf-8") as f: # check aioflies
                 f.write(content)
         except IOError as e:
-            logger.error(f"Failed to write file for job {job_id}: {e}")
             raise HTTPException(status_code=500, detail="File storage error.") 
         return file_path
     
@@ -60,4 +57,3 @@ class JobManager:
         job_dir = cls.get_job_dir(job_id)
         if job_dir.exists():
             shutil.rmtree(job_dir)
-            logger.info(f"Cleaned up job {job_id}")        
