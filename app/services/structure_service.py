@@ -1,14 +1,12 @@
 from collections import defaultdict
 from typing import Any, DefaultDict
 
-from Bio.PDB.Structure import Structure
-from Bio.PDB.StructureBuilder import StructureBuilder
-
 from app.coarse_grain.parser import CoarseGrainModels, transform_to_coarse_grain
 from app.models import SupportedFormats
-from app.validators import count_structure_entities, get_format_parser
+from app.validators import count_structure_entities
 from app.settings import COARSE_FILE_FORMAT
-import  gemmi
+
+from gemmi import Structure, cif, make_structure_from_block, read_pdb_string
 
 class StructureProcessor:
     @staticmethod
@@ -16,14 +14,14 @@ class StructureProcessor:
         content: str, filename: str, file_format: SupportedFormats
     ) -> Structure:
         if file_format == SupportedFormats.CIF.value:
-            cif = gemmi.cif.read_string(content)
-            structure = gemmi.make_structure_from_block(cif.sole_block())
+            dcif = cif.read_string(content)
+            structure = make_structure_from_block(dcif.sole_block())
         else:
-            structure = gemmi.read_pdb_string(content)
+            structure = read_pdb_string(content)
         return structure
 
     @staticmethod
-    def apply_coarse_graining(structure: gemmi.Structure, model: CoarseGrainModels) -> str:
+    def apply_coarse_graining(structure: Structure, model: CoarseGrainModels) -> str:
         coarse_structure = transform_to_coarse_grain(structure, model)
 
         if COARSE_FILE_FORMAT == "pdb":

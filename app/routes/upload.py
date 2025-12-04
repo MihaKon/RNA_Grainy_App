@@ -47,8 +47,8 @@ def render_comparison(
 )-> HTMLResponse:
     context = {  # move to structure processor then
         "job_id": job_id,
-        "reference_url": f"/api/jobs/{job_id}/reference?ext={file_format}", 
-        "coarse_url": f"/api/jobs/{job_id}/coarse?ext={COARSE_FILE_FORMAT}",
+        "reference_url": f"/api/jobs/{job_id}/reference?file_format={file_format}", 
+        "coarse_url": f"/api/jobs/{job_id}/coarse?file_format={COARSE_FILE_FORMAT}",
         "filename": filename,
         "file_format": [file_format, COARSE_FILE_FORMAT],
         "selected_model": selected_model,

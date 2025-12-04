@@ -9,11 +9,11 @@ router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 async def get_job_file(
     job_id: str,
     file_type: str,
-    ext: str
+    file_format: str
 ):
-    if file_type not in ["reference", "coarse"]: #fix
+    if file_type not in ["reference", "coarse"]:
         raise HTTPException(status_code=400, detail="Invalid file type")
-    filename = f"{file_type}.{ext}" if file_type == "reference" else f"coarse.{COARSE_FILE_FORMAT}"
+    filename = f"{file_type}.{file_format}" if file_type == "reference" else f"coarse.{COARSE_FILE_FORMAT}"
     file_path = JobManager.get_file_path(job_id, filename)
 
     return FileResponse(
