@@ -45,14 +45,7 @@ def render_comparison(
     file_format: SupportedFormats,
     selected_model: CoarseGrainModels
 )-> HTMLResponse:
-    context = {  # move to structure processor then
-        "job_id": job_id,
-        "reference_url": f"/api/jobs/{job_id}/reference?file_format={file_format}", 
-        "coarse_url": f"/api/jobs/{job_id}/coarse?file_format={COARSE_FILE_FORMAT}",
-        "filename": filename,
-        "file_format": [file_format, COARSE_FILE_FORMAT],
-        "selected_model": selected_model,
-    }
+    context = StructureProcessor.build_comparison_context(job_id, filename, file_format, selected_model)
     return TEMPLATES.TemplateResponse(
         request=request,
         name="comparison.html",

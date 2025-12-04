@@ -32,27 +32,28 @@ class StructureProcessor:
         
     @staticmethod
     def build_comparison_context(
+        job_id: str,
         filename: str,
-        original_content: str,
-        coarse_content: str,
-        file_format: str,
-        selected_model: str,
-        original_structure: Structure,
-        coarse_structure: Structure,
+        file_format: SupportedFormats,
+        selected_model: CoarseGrainModels
     ) -> DefaultDict[str, Any]:
 
         initial_data = {
+            "job_id": job_id,
+            "reference_url": f"/api/jobs/{job_id}/reference?file_format={file_format}", 
+            "coarse_url": f"/api/jobs/{job_id}/coarse?file_format={COARSE_FILE_FORMAT}",
             "filename": filename,
             "file_format": [file_format, COARSE_FILE_FORMAT],
-            "file_data": [original_content, coarse_content],
             "selected_model": selected_model,
         }
 
         context: DefaultDict[str, Any] = defaultdict(list, initial_data)
 
+        # fix: move to calculations in other issue
+        """
         for structure in [original_structure, coarse_structure]:
             counts = count_structure_entities(structure)
             for key, count in counts.items():
                 context[key].append(count)
-
+        """
         return context
