@@ -12,7 +12,7 @@ from app.models import (
 from app.rcsb import fetch_rcsb_file
 from app.services.structure_service import StructureProcessor
 from app.services.job_service import JobManager
-from app.settings import TEMPLATES, TEMP_DIR
+from app.settings import TEMPLATES, TEMP_DIR, COARSE_FILE_FORMAT
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
@@ -25,10 +25,9 @@ async def handle_job(
 ):
     job_id = JobManager.create_job_id()
     JobManager.setup_job_dir(job_id)
-    ff = "mmcif" if file_format.value == SupportedFormats.CIF.value else file_format.value #fix
 
-    original_filename: str = f"reference.{ff}"  # type: ignore
-    coarse_filename: str = "coarse.mmcif"
+    original_filename: str = f"reference.{file_format}"  # type: ignore
+    coarse_filename: str = f"coarse.{COARSE_FILE_FORMAT}"
     try:
         coarse_content = process_and_render_comparison(file_content, filename, file_format, selected_model)
         await JobManager.create_file(job_id, file_content, original_filename)
@@ -46,13 +45,12 @@ def render_comparison(
     file_format: SupportedFormats,
     selected_model: CoarseGrainModels
 )-> HTMLResponse:
-    ff = "mmcif" if file_format.value == SupportedFormats.CIF.value else file_format.value
     context = {  # move to structure processor then
         "job_id": job_id,
-        "reference_url": f"/api/jobs/{job_id}/reference?ext={ff}", #fix   
-        "coarse_url": f"/api/jobs/{job_id}/coarse?ext=mmcif",
+        "reference_url": f"/api/jobs/{job_id}/reference?ext={file_format}", #fix   
+        "coarse_url": f"/api/jobs/{job_id}/coarse?ext={COARSE_FILE_FORMAT}",
         "filename": filename,
-        "file_format": [ff, "mmcif"],
+        "file_format": [file_format, COARSE_FILE_FORMAT],
         "selected_model": selected_model,
     }
     return TEMPLATES.TemplateResponse(
@@ -103,7 +101,7 @@ async def upload_file(
     if file_content == "":
         return messages.render_form_error_message(request, "The file is empty.", 400)
 
-    file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower())  # type: ignore
+    file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower()).value  # type: ignore
     filename: str = upload_req.file.filename  # type: ignore
     return await handle_job(request, file_content, filename, file_format, upload_req.selected_model)
 
@@ -125,7 +123,7 @@ async def upload_rcsb(
             "Something went wrong during fetching from RCSB database."
         )
 
-    file_format = SupportedFormats.CIF
+    file_format = SupportedFormats.CIF.value
     filename = f"{rcsb_req.rcsb_id}.{file_format}"
 
     return process_and_render_comparison(

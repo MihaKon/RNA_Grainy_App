@@ -7,7 +7,7 @@ from Bio.PDB.StructureBuilder import StructureBuilder
 from app.coarse_grain.parser import CoarseGrainModels, transform_to_coarse_grain
 from app.models import SupportedFormats
 from app.validators import count_structure_entities, get_format_parser
-
+from app.settings import COARSE_FILE_FORMAT
 import  gemmi
 class StructureProcessor:
     @staticmethod
@@ -35,10 +35,13 @@ class StructureProcessor:
         selection_str = ",".join(atom_subset) if subset else "*"
         selection = gemmi.Selection(f"//*//{selection_str}") 
         coarse_structure = selection.copy_structure_selection(structure)
+
+        if COARSE_FILE_FORMAT == "pdb":
+            return coarse_structure.make_pdb_string()
+        
         cif_doc = coarse_structure.make_mmcif_document()
-
         return cif_doc.as_string()
-
+        
     @staticmethod
     def build_comparison_context(
         filename: str,
@@ -49,11 +52,10 @@ class StructureProcessor:
         original_structure: Structure,
         coarse_structure: Structure,
     ) -> DefaultDict[str, Any]:
-        display_format = "mmcif" if file_format == SupportedFormats.CIF else file_format
 
         initial_data = {
             "filename": filename,
-            "file_format": [display_format, SupportedFormats.PDB.value],
+            "file_format": [file_format, COARSE_FILE_FORMAT],
             "file_data": [original_content, coarse_content],
             "selected_model": selected_model,
         }
