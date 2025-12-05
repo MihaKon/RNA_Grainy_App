@@ -17,25 +17,11 @@ from app.settings import TEMPLATES
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
-def render_comparison(
-    request: Request,
-    job_id: str,
-    filename: str,
-    file_format: SupportedFormats,
-    selected_model: CoarseGrainModels
-)-> HTMLResponse:
-    context = StructureProcessor.build_comparison_context(job_id, filename, file_format, selected_model)
-    return TEMPLATES.TemplateResponse(
-        request=request,
-        name="comparison.html",
-        context=context,
-    )
-
 def process_structure(
     file_content: str,
     file_format: SupportedFormats,
     selected_model: CoarseGrainModels,
-) -> list[str, str]:
+) -> str:
     original_structure = StructureProcessor.parse_structure(
         file_content, file_format
     )
@@ -60,7 +46,7 @@ async def run_job_processing(
     await JobManager.create_file(job_id, file_content, original_filename)
     await JobManager.create_file(job_id, coarse_content, coarse_filename)
     
-async def handle_request(
+async def handle_request_and_render(
     request: Request,
     file_content: str,
     filename: str,
@@ -69,12 +55,18 @@ async def handle_request(
 ) -> HTMLResponse:
     job_id = JobManager.create_job_id()
     try:
-        await run_job_processing(job_id, file_content, file_format, selected_model) 
+        await run_job_processing(job_id, file_content, file_format, selected_model)
     except Exception as e:
         JobManager.cleanup_job(job_id)
         return messages.render_form_error_message(request, f"Processing error: {str(e)}", 500)
     
-    return render_comparison(request, job_id, filename, file_format, selected_model)
+    context = StructureProcessor.build_comparison_context(job_id, filename, file_format, selected_model)
+    return TEMPLATES.TemplateResponse(
+        request=request,
+        name="comparison.html",
+        context=context,
+    )
+
 
 @router.post("/file/", response_class=HTMLResponse)
 async def upload_file(
