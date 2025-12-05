@@ -131,6 +131,7 @@ class TestFileUpload:
             files={"file": (cif_file.name, cif_file, "text/plain")},
             data={"selected_model": CoarseGrainModels.DUMMY.name},
         )
+        
         assert response.status_code == 200
 
     def test_file_upload_without_model_selection_returns_422(

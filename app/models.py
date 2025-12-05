@@ -8,9 +8,10 @@ from app.coarse_grain.models import CoarseGrainModels
 
 class SupportedFormats(str, Enum):
     PDB = "pdb"
-    CIF = "mmcif"
+    CIF = "cif"
+    MMCIF = "mmcif"
     
-COARSE_FILE_FORMAT = SupportedFormats.CIF
+COARSE_FILE_FORMAT = SupportedFormats.MMCIF
 
 
 class UploadBase(BaseModel):
