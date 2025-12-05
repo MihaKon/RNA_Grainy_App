@@ -38,8 +38,9 @@ async def run_job_processing(
     selected_model: CoarseGrainModels
 ) -> None:
     JobManager.setup_job_dir(job_id)
-
-    original_filename: str = f"reference.{file_format.value}"  # type: ignore
+        
+    original_format = file_format.normalize_format()
+    original_filename: str = f"reference.{original_format.value}"  
     coarse_filename: str = f"coarse.{COARSE_FILE_FORMAT.value}"
     coarse_content = process_structure(file_content, file_format, selected_model)
 
