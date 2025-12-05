@@ -12,7 +12,7 @@ async def get_job_file(
     job_id: str,
     file_type: str,
     file_format: str
-):
+) -> FileResponse:
     if file_type not in FILE_TYPES:
         raise HTTPException(status_code=400, detail="Invalid file type")
     if file_format not in (SupportedFormats.PDB.value, SupportedFormats.CIF.value):

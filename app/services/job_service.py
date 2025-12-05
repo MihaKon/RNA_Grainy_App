@@ -7,7 +7,7 @@ from app.settings import TEMP_DIR
 
 class JobManager:    
     @staticmethod
-    def check_path(job_dir: str):
+    def check_path(job_dir: Path) -> None:
         if not job_dir.resolve().is_relative_to(TEMP_DIR.resolve()): 
             raise HTTPException(status_code=400, detail="Invalid job ID path.")
 
@@ -34,13 +34,13 @@ class JobManager:
         return job_dir   
     
     @classmethod
-    def reconstruct_file_path(cls, job_id: str, filename:str)-> str:
+    def reconstruct_file_path(cls, job_id: str, filename:str)-> Path:
         job_dir = cls.get_job_dir(job_id) 
         file_path = job_dir / filename
         return file_path
     
     @classmethod
-    async def create_file(cls, job_id: str, content:str, filename:str) -> str:
+    async def create_file(cls, job_id: str, content:str, filename:str) -> Path:
         file_path = cls.reconstruct_file_path(job_id, filename)
         try:
             with open(file_path, "w",  encoding="utf-8") as f:
@@ -61,7 +61,7 @@ class JobManager:
         return file_path
 
     @classmethod
-    def cleanup_job(cls, job_id: str):
+    def cleanup_job(cls, job_id: str) -> None:
         job_dir = cls.get_job_dir(job_id)
         if job_dir.exists():
             shutil.rmtree(job_dir)

@@ -34,8 +34,8 @@ def process_structure(
 async def run_job_processing(
     job_id: str,
     file_content: str,
-    file_format: str,
-    selected_model: str
+    file_format: SupportedFormats,
+    selected_model: CoarseGrainModels
 ) -> None:
     JobManager.setup_job_dir(job_id)
 
