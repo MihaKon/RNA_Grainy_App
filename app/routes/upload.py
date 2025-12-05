@@ -90,7 +90,7 @@ async def upload_file(
     file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower()) # type: ignore
     filename: str = upload_req.file.filename  # type: ignore
 
-    return await handle_request(request, file_content, filename, file_format, upload_req.selected_model)
+    return await handle_request_and_render(request, file_content, filename, file_format, upload_req.selected_model)
 
 
 @router.post("/rcsb/", response_class=HTMLResponse)
@@ -113,5 +113,5 @@ async def upload_rcsb(
     file_format = SupportedFormats.CIF
     filename = f"{rcsb_req.rcsb_id}.{file_format}"
 
-    return await handle_request(request, file_content, filename, file_format, rcsb_req.selected_model)
+    return await handle_request_and_render(request, file_content, filename, file_format, rcsb_req.selected_model)
 
