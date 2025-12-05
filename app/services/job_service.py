@@ -45,8 +45,8 @@ class JobManager:
         try:
             with open(file_path, "w",  encoding="utf-8") as f:
                 f.write(content)
-        except IOError as e:
-            raise HTTPException(status_code=500, detail="File storage error.") 
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"File storage error, {e}") 
         
         return file_path
     
