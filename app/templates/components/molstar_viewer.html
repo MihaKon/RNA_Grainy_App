@@ -1,4 +1,4 @@
-{% macro molstar_viewer(container_id, file_data='', file_format= '', classes='') %}
+{% macro molstar_viewer(container_id, urls=[], file_format= '', classes='') %}
 <div id="{{ container_id }}" class="w-1/2 {{ classes }}"></div>
 
 <script type="text/javascript">
@@ -17,16 +17,16 @@
         pdbProvider: 'rcsb',
         emdbProvider: 'rcsb',
     }).then(viewer => {
-        const fileDataArray = {{ file_data | tojson }};
+        const urlArray = {{ urls | tojson }};
         const fileFormatArray = {{ file_format | tojson }};
 
         let loadPromise = Promise.resolve();
 
-        fileDataArray.forEach((data, index) => {
+        urlArray.forEach((url, index) => {
             const format = fileFormatArray[index];
 
             loadPromise = loadPromise.then(() => {
-                return viewer.loadStructureFromData(data, format);
+                return viewer.loadStructureFromUrl(url, format);
             });
         });
 
