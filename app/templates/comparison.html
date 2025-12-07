@@ -13,6 +13,8 @@
                 <li>Models count: {{ models }}</li>
                 <li>Residues count: {{ residues }}</li>
                 <li>Selected model: {{ selected_model }}</li>
+                <li>Reference url: {{ reference_url }}</li>
+                <li>Corase url: {{ coarse_url }}</li>
             </ul>
             <div class="flex flex-col gap-4 mt-4">
                 <div x-show="!showMolViewer" x-cloak class="flex w-full justify-center">
@@ -39,6 +41,8 @@
              class="relative w-full h-full self-center justify-center"
              x-show="showMolViewer"
              x-cloak
-             @click.stop>{{ molstar_viewer('molstar-container', file_data=file_data, file_format=file_format) }}</div>
+        >
+        {{ molstar_viewer('molstar-container', urls=[reference_url,coarse_url], file_format=file_format) }}
+        </div>
     </div>
 {% endblock %}

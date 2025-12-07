@@ -8,59 +8,62 @@ from app.models import (
     FileUploadRequest,
     RCSBRequest,
     SupportedFormats,
+    COARSE_FILE_FORMAT
 )
 from app.rcsb import fetch_rcsb_file
 from app.services.structure_service import StructureProcessor
+from app.services.job_service import JobManager
 from app.settings import TEMPLATES
 
 from app.exceptions import DamagedFileError
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
+def process_structure(
+    file_content: str,
+    file_format: SupportedFormats,
+    selected_model: CoarseGrainModels,
+) -> str:
+    original_structure = StructureProcessor.parse_structure(
+        file_content, file_format
+    )
+    coarse_content = StructureProcessor.apply_coarse_graining(
+        original_structure, selected_model
+    )
 
-def process_and_render_comparison(
+    return coarse_content
+
+async def run_job_processing(
+    job_id: str,
+    file_content: str,
+    file_format: SupportedFormats,
+    selected_model: CoarseGrainModels
+) -> None:
+    JobManager.setup_job_dir(job_id)
+        
+    original_format = file_format.normalize_format()
+    original_filename: str = f"reference.{original_format.value}"  
+    coarse_filename: str = f"coarse.{COARSE_FILE_FORMAT.value}"
+    coarse_content = process_structure(file_content, file_format, selected_model)
+
+    await JobManager.create_file(job_id, file_content, original_filename)
+    await JobManager.create_file(job_id, coarse_content, coarse_filename)
+    
+async def handle_request_and_render(
     request: Request,
     file_content: str,
     filename: str,
     file_format: SupportedFormats,
-    selected_model: CoarseGrainModels,
-    model_ids: list[int] | None = None,
-    chain_ids: list[str] | None = None, 
+    selected_model: CoarseGrainModels
 ) -> HTMLResponse:
-    original_structure = StructureProcessor.parse_structure(
-        file_content, filename, file_format
-    )
-
-    filtered_content = StructureProcessor.filter_structure(
-        original_structure, file_format, model_ids, chain_ids
-    )
-
+    job_id = JobManager.create_job_id()
     try:
-        filtered_structure = StructureProcessor.parse_structure(
-            filtered_content, filename, file_format
-        )
+        await run_job_processing(job_id, file_content, file_format, selected_model)
     except Exception as e:
-        raise DamagedFileError(f"Filtered file is damaged or empty. Check your input settings: {e}")
-
-    coarse_content = StructureProcessor.apply_coarse_graining(
-        filtered_structure, selected_model
-    )
-    coarse_structure = StructureProcessor.parse_structure(
-        coarse_content,
-        filename,
-        SupportedFormats.PDB,
-    )
-
-    context = StructureProcessor.build_comparison_context(
-        filename=filename,
-        original_content=filtered_content,
-        coarse_content=coarse_content,
-        file_format=file_format,
-        selected_model=selected_model.name,
-        original_structure=filtered_structure,
-        coarse_structure=coarse_structure,
-    )
-
+        JobManager.cleanup_job(job_id)
+        return messages.render_form_error_message(request, f"Processing error: {str(e)}", 500)
+    
+    context = StructureProcessor.build_comparison_context(job_id, filename, file_format, selected_model)
     return TEMPLATES.TemplateResponse(
         request=request,
         name="comparison.html",
@@ -89,18 +92,10 @@ async def upload_file(
     if file_content == "":
         return messages.render_form_error_message(request, "The file is empty.", 400)
 
-    file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower())  # type: ignore
+    file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower()) # type: ignore
     filename: str = upload_req.file.filename  # type: ignore
 
-    return process_and_render_comparison(
-        request,
-        file_content,
-        filename,
-        file_format,
-        upload_req.selected_model,
-        upload_req.model_ids,
-        upload_req.chain_ids,
-    )
+    return await handle_request_and_render(request, file_content, filename, file_format, upload_req.selected_model)
 
 
 @router.post("/rcsb/", response_class=HTMLResponse)
@@ -125,12 +120,5 @@ async def upload_rcsb(
     file_format = SupportedFormats.CIF
     filename = rcsb_req.rcsb_id
 
-    return process_and_render_comparison(
-        request,
-        file_content,
-        filename,
-        file_format,
-        rcsb_req.selected_model,
-        rcsb_req.model_ids,
-        rcsb_req.chain_ids,
-    )
+    return await handle_request_and_render(request, file_content, filename, file_format, rcsb_req.selected_model)
+
