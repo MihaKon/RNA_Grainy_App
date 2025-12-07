@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Any, DefaultDict
 
-from app.coarse_grain.parser import CoarseGrainModels, transform_to_coarse_grain
+from app.coarse_grain.parser import CoarseGrainModels, transform_structure
 from app.models import SupportedFormats, COARSE_FILE_FORMAT
 
 from gemmi import Structure, cif, make_structure_from_block, read_pdb_string
@@ -20,7 +20,7 @@ class StructureProcessor:
 
     @staticmethod
     def apply_coarse_graining(structure: Structure, model: CoarseGrainModels) -> str:
-        coarse_structure = transform_to_coarse_grain(structure, model)
+        coarse_structure = transform_structure(structure=structure, coarse_grain_model=model)
 
         if COARSE_FILE_FORMAT == SupportedFormats.PDB:
             return coarse_structure.make_pdb_string() 
