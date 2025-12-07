@@ -36,13 +36,13 @@ class StructureProcessor:
         selected_model: CoarseGrainModels
     ) -> DefaultDict[str, Any]:
 
-        original_format = file_format.normalize_format()
+        reference_format = file_format.normalize_format()
         initial_data = {
             "job_id": job_id,
-            "reference_url": f"/api/jobs/{job_id}/reference?file_format={original_format.value}", 
+            "reference_url": f"/api/jobs/{job_id}/reference?file_format={reference_format.value}", 
             "coarse_url": f"/api/jobs/{job_id}/coarse?file_format={COARSE_FILE_FORMAT.value}",
             "filename": filename,
-            "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
+            "file_format": [reference_format.value, COARSE_FILE_FORMAT.value],
             "selected_model": selected_model.name,
         }
 
