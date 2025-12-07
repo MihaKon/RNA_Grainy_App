@@ -19,34 +19,21 @@ from app.exceptions import DamagedFileError
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
-def process_structure(
-    file_content: str,
-    file_format: SupportedFormats,
-    selected_model: CoarseGrainModels,
-) -> str:
-    original_structure = StructureProcessor.parse_structure(
-        file_content, file_format
-    )
-    coarse_content = StructureProcessor.apply_coarse_graining(
-        original_structure, selected_model
-    )
-
-    return coarse_content
-
 async def run_job_processing(
     job_id: str,
     file_content: str,
     file_format: SupportedFormats,
-    selected_model: CoarseGrainModels
+    selected_model: CoarseGrainModels,
+    chain_ids: list[str] | None = None,  
+    model_ids: list[int] | None = None  
 ) -> None:
+    coarse_content = StructureProcessor.process_and_serialize_job(
+        file_content, file_format, model_ids, chain_ids, selected_model
+    )
     JobManager.setup_job_dir(job_id)
-        
     reference_format = file_format.normalize_format()
-    
     reference_filename: str = f"reference.{reference_format.value}"  
     coarse_filename: str = f"coarse.{COARSE_FILE_FORMAT.value}"
-    
-    coarse_content = process_structure(file_content, file_format, selected_model)
 
     await JobManager.create_file(job_id, file_content, reference_filename)
     await JobManager.create_file(job_id, coarse_content, coarse_filename)
@@ -56,11 +43,13 @@ async def handle_request_and_render(
     file_content: str,
     filename: str,
     file_format: SupportedFormats,
-    selected_model: CoarseGrainModels
+    selected_model: CoarseGrainModels,
+    chain_ids: list[str] | None = None, 
+    model_ids: list[int] | None = None
 ) -> HTMLResponse:
     job_id = JobManager.create_job_id()
     try:
-        await run_job_processing(job_id, file_content, file_format, selected_model)
+        await run_job_processing(job_id, file_content, file_format, selected_model, chain_ids, model_ids)
     except Exception as e:
         JobManager.cleanup_job(job_id)
         return messages.render_form_error_message(request, f"Processing error: {str(e)}", 500)
@@ -97,7 +86,7 @@ async def upload_file(
     file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower()) # type: ignore
     filename: str = upload_req.file.filename  # type: ignore
 
-    return await handle_request_and_render(request, file_content, filename, file_format, upload_req.selected_model)
+    return await handle_request_and_render(request, file_content, filename, file_format, upload_req.selected_model, upload_req.chain_ids, upload_req.model_ids)
 
 
 @router.post("/rcsb/", response_class=HTMLResponse)
@@ -122,5 +111,5 @@ async def upload_rcsb(
     file_format = SupportedFormats.CIF
     filename = rcsb_req.rcsb_id
 
-    return await handle_request_and_render(request, file_content, filename, file_format, rcsb_req.selected_model)
+    return await handle_request_and_render(request, file_content, filename, file_format, rcsb_req.selected_model, rcsb_req.chain_ids, rcsb_req.model_ids)
 

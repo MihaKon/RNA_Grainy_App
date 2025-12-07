@@ -5,6 +5,7 @@ from app.coarse_grain.parser import CoarseGrainModels, transform_structure
 from app.models import SupportedFormats, COARSE_FILE_FORMAT
 
 from gemmi import Structure, cif, make_structure_from_block, read_pdb_string
+from Bio.PDB import DSSP
 
 class StructureProcessor:
     @staticmethod
@@ -19,15 +20,27 @@ class StructureProcessor:
         return structure
 
     @staticmethod
-    def apply_coarse_graining(structure: Structure, model: CoarseGrainModels) -> str:
-        coarse_structure = transform_structure(structure=structure, coarse_grain_model=model)
-
-        if COARSE_FILE_FORMAT == SupportedFormats.PDB:
-            return coarse_structure.make_pdb_string() 
-        
-        cif_doc = coarse_structure.make_mmcif_document()
+    def structure_to_string(structure: Structure, file_format: SupportedFormats) -> str:
+        structure.setup_entities()
+        structure.assign_label_seq_id()
+        if file_format == SupportedFormats.PDB:
+            return structure.make_pdb_string() 
+        cif_doc = structure.make_mmcif_document()
         return cif_doc.as_string()
+
+    @staticmethod
+    def process_and_serialize_job(
+        file_content: str, file_format: SupportedFormats, model_ids: list[int] | None,  chain_ids: list[str] | None, coarse_grain_model: CoarseGrainModels
+    ) -> tuple[str,str]:
+        reference_structure = StructureProcessor.parse_structure(file_content, file_format)
+
+        reference_structure = transform_structure(reference_structure, model_ids=model_ids, chain_ids=chain_ids)
+        coarse_structure = transform_structure(reference_structure, coarse_grain_model=coarse_grain_model)  
         
+        coarse_content = StructureProcessor.structure_to_string(coarse_structure, COARSE_FILE_FORMAT)
+
+        return coarse_content
+            
     @staticmethod
     def build_comparison_context(
         job_id: str,
