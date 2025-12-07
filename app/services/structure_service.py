@@ -5,7 +5,6 @@ from app.coarse_grain.parser import CoarseGrainModels, transform_structure
 from app.models import SupportedFormats, COARSE_FILE_FORMAT
 
 from gemmi import Structure, cif, make_structure_from_block, read_pdb_string
-from Bio.PDB import DSSP
 
 class StructureProcessor:
     @staticmethod

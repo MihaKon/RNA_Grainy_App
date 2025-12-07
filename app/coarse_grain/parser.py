@@ -10,6 +10,9 @@ class StructureSelector:
     chains_subset: list[str] | None = None
 
     def _filter_models(self, structure: Structure) -> None:
+        if self.models_subset is None:
+            return 
+        
         for i in range(len(structure) - 1, -1, -1):
             model = structure[i]
             model_num = int(model.num)

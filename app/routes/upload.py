@@ -15,8 +15,6 @@ from app.services.structure_service import StructureProcessor
 from app.services.job_service import JobManager
 from app.settings import TEMPLATES
 
-from app.exceptions import DamagedFileError
-
 router = APIRouter(prefix="/upload", tags=["upload"])
 
 async def run_job_processing(
