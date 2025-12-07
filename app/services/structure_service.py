@@ -37,9 +37,10 @@ class StructureProcessor:
         reference_structure = transform_structure(reference_structure, model_ids=model_ids, chain_ids=chain_ids)
         coarse_structure = transform_structure(reference_structure, coarse_grain_model=coarse_grain_model)  
         
+        reference_content = StructureProcessor.structure_to_string(reference_structure, file_format)
         coarse_content = StructureProcessor.structure_to_string(coarse_structure, COARSE_FILE_FORMAT)
 
-        return coarse_content
+        return reference_content, coarse_content
             
     @staticmethod
     def build_comparison_context(

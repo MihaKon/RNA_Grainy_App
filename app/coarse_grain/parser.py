@@ -9,18 +9,28 @@ class StructureSelector:
     models_subset: list[int] | None = None
     chains_subset: list[str] | None = None
 
+    def _filter_models(self, structure: Structure) -> None:
+        for i in range(len(structure) - 1, -1, -1):
+            model = structure[i]
+            model_num = int(model.num)
+
+            if model_num not in self.models_subset:
+                del structure[i]
+                
     def _build_selection_query(self) -> str:
         atoms = ",".join(self.atoms_subset) if self.atoms_subset else "*"
-        models = ",".join(map(str, self.models_subset)) if self.models_subset else "*"
         chains = ",".join(self.chains_subset) if self.chains_subset else "*"
 
-        query = f"/{models}/{chains}//{atoms}" # query = f"/{models}/{chains}/{residues}/{atoms}
+        query = f"/*/{chains}//{atoms}"
         return query
     
     def select(self, structure: Structure) -> Structure:
         query = self._build_selection_query()
         selection = Selection(query) 
-        return selection.copy_structure_selection(structure)
+        new_structure =  selection.copy_structure_selection(structure)
+        if self.models_subset is not None:
+            self._filter_models(new_structure)
+        return new_structure
 
 def transform_structure(
     structure: Structure, 

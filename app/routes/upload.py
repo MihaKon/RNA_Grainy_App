@@ -27,7 +27,7 @@ async def run_job_processing(
     chain_ids: list[str] | None = None,  
     model_ids: list[int] | None = None  
 ) -> None:
-    coarse_content = StructureProcessor.process_and_serialize_job(
+    reference_content, coarse_content = StructureProcessor.process_and_serialize_job(
         file_content, file_format, model_ids, chain_ids, selected_model
     )
     JobManager.setup_job_dir(job_id)
@@ -35,7 +35,7 @@ async def run_job_processing(
     reference_filename: str = f"reference.{reference_format.value}"  
     coarse_filename: str = f"coarse.{COARSE_FILE_FORMAT.value}"
 
-    await JobManager.create_file(job_id, file_content, reference_filename)
+    await JobManager.create_file(job_id, reference_content, reference_filename)
     await JobManager.create_file(job_id, coarse_content, coarse_filename)
     
 async def handle_request_and_render(

@@ -38,7 +38,7 @@ class UploadBase(BaseModel):
     @classmethod
     def validate_model_ids(cls, v: None | str | list[str]) -> list[int] | None:
         if v is None or (isinstance(v, str) and not v.strip()):
-            return [0]
+            return [1]
         if isinstance(v,str):
             v = v.split(",")
         if isinstance(v, list):
