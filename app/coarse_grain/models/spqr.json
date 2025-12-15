@@ -1,0 +1,45 @@
+{
+  "residues": [],
+  "atoms": [
+    "P",
+    "Ribose_CM",
+    "Base_V1",
+    "Base_V2",
+    "Base_V3"
+  ],
+  "model_name": "SPQR",
+  "beads_per_residue": 5,
+  "mapping": {
+    "nucleotide": {
+      "residues": ["A", "G", "C", "U"],
+      "atoms": {
+        "S1": "P",
+        "S2": "Ribose_CM",
+        "S3": "Base_V1",
+        "S4": "Base_V2",
+        "S5": "Base_V3"
+      },
+      "description": {
+        "S1": "Phosphate group (on P atom)",
+        "S2": "Ribose Geometric Center (Virtual bead)",
+        "S3-S5": "Abstract rigid triplet defining base center and orientation (Non-atomic mapping)"
+      }
+    }
+  },
+  "connectivity": {
+    "intra_residue": [
+      ["S1", "S2"],
+      ["S2", "S3"],
+      ["S3", "S4"],
+      ["S4", "S5"],
+      ["S5", "S3"]
+    ],
+    "inter_residue": [
+      {
+        "source": "S2",
+        "target": "S1",
+        "description": "Backbone connection from Ribose (i) to Phosphate (i+1)"
+      }
+    ]
+  }
+}

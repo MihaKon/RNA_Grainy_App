@@ -1,0 +1,49 @@
+{
+  "residues": [],
+  "atoms": [
+    "P",
+    "C1'",
+    "C2'",
+    "C3'",
+    "C4'",
+    "C5'",
+    "O4'",
+    "N9",
+    "N1"
+  ],
+  "model_name": "TOPRNA",
+  "beads_per_residue": 3,
+  "mapping": {
+    "purine": {
+      "residues": ["A", "G"],
+      "atoms": {
+        "S1": "P",
+        "S2": "C4'",
+        "S3": "N9"
+      },
+      "description": "S1: P atom. S2: Geometric center of ribose (avg of C1',C2',C3',C4',C5',O4'). S3: Geometric center of base ring (N and C atoms)."
+    },
+    "pyrimidine": {
+      "residues": ["C", "U"],
+      "atoms": {
+        "S1": "P",
+        "S2": "C4'",
+        "S3": "N1"
+      },
+      "description": "S1: P atom. S2: Geometric center of ribose (avg of C1',C2',C3',C4',C5',O4'). S3: Geometric center of base ring (N and C atoms)."
+    }
+  },
+  "connectivity": {
+    "intra_residue": [
+      ["S1", "S2"],
+      ["S2", "S3"]
+    ],
+    "inter_residue": [
+      {
+        "source": "S2",
+        "target": "S1",
+        "description": "Backbone connection from Sugar Center (i) to Phosphate (i+1)"
+      }
+    ]
+  }
+}

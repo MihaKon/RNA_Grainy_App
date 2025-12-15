@@ -4,41 +4,34 @@
     "P",
     "C4'",
     "N9",
-    "C2",
-    "C6",
     "N1"
   ],
-  "model_name": "SimRNA",
-  "beads_per_residue": 5,
+  "model_name": "FebRNA",
+  "beads_per_residue": 3,
   "mapping": {
     "purine": {
-      "residues": ["A", "G", "DA", "DG"],
+      "residues": ["A", "G"],
       "atoms": {
         "S1": "P",
         "S2": "C4'",
-        "S3": "N9",
-        "S4": "C2",
-        "S5": "C6"
-      }
+        "S3": "N9"
+      },
+      "description": "S1: Phosphate (P atom), S2: Ribose (C4' atom), S3: Base (N9 atom)"
     },
     "pyrimidine": {
-      "residues": ["C", "U", "DC", "DT"],
+      "residues": ["C", "U"],
       "atoms": {
         "S1": "P",
         "S2": "C4'",
-        "S3": "N1",
-        "S4": "C2",
-        "S5": "C4"
-      }
+        "S3": "N1"
+      },
+      "description": "S1: Phosphate (P atom), S2: Ribose (C4' atom), S3: Base (N1 atom)"
     }
   },
   "connectivity": {
     "intra_residue": [
       ["S1", "S2"],
-      ["S2", "S3"],
-      ["S3", "S4"],
-      ["S4", "S5"],
-      ["S5", "S3"]
+      ["S2", "S3"]
     ],
     "inter_residue": [
       {

@@ -1,0 +1,44 @@
+{
+  "residues": [],
+  "atoms": [
+    "P",
+    "C4'",
+    "N9",
+    "N1"
+  ],
+  "model_name": "iFoldRNA",
+  "beads_per_residue": 3,
+  "mapping": {
+    "purine": {
+      "residues": ["A", "G"],
+      "atoms": {
+        "S1": "P",
+        "S2": "C4'",
+        "S3": "N9"
+      },
+      "description": "S1: Phosphate Group CM, S2: Sugar Ring CM, S3: Base CM"
+    },
+    "pyrimidine": {
+      "residues": ["C", "U"],
+      "atoms": {
+        "S1": "P",
+        "S2": "C4'",
+        "S3": "N1"
+      },
+      "description": "S1: Phosphate Group CM, S2: Sugar Ring CM, S3: Base CM"
+    }
+  },
+  "connectivity": {
+    "intra_residue": [
+      ["S1", "S2"],
+      ["S2", "S3"]
+    ],
+    "inter_residue": [
+      {
+        "source": "S2",
+        "target": "S1",
+        "description": "Backbone connection from Sugar (i) to Phosphate (i+1)"
+      }
+    ]
+  }
+}

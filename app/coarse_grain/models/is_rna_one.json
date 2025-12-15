@@ -1,0 +1,61 @@
+{
+  "residues": [],
+  "atoms": [
+    "P",
+    "C4'",
+    "N9",
+    "C6",
+    "C2",
+    "N1"
+  ],
+  "model_name": "isRNA1",
+  "beads_per_residue": "4 or 5",
+  "mapping": {
+    "purine": {
+      "residues": ["A", "G"],
+      "atoms": {
+        "S1": "P",
+        "S2": "C4'",
+        "S3": "N9",
+        "S4": "C6",
+        "S5": "C2"
+      },
+      "description": {
+        "S1": "P atom",
+        "S2": "S bead (on C4')",
+        "S3": "RC bead (Core CM: Imidazole ring + C5, C4, N3)",
+        "S4": "AC/GO bead (Hoogsteen edge CM: C6/N6 or C6/O6)",
+        "S5": "AN/GN bead (Sugar edge CM: C2/N1 or C2/N2/N1)"
+      }
+    },
+    "pyrimidine": {
+      "residues": ["C", "U"],
+      "atoms": {
+        "S1": "P",
+        "S2": "C4'",
+        "S3": "N1",
+        "S4": "C2"
+      },
+      "description": {
+        "S1": "P atom",
+        "S2": "S bead (on C4')",
+        "S3": "YC bead (Ring part CM: N1, C5, C6)",
+        "S4": "CN/UO bead (Functional group CM: C2, O2, N3, C4, N4/O4)"
+      }
+    }
+  },
+  "connectivity": {
+    "intra_residue": [
+      ["S1", "S2"],
+      ["S2", "S3"],
+      ["S3", "S4"]
+    ],
+    "inter_residue": [
+      {
+        "source": "S2",
+        "target": "S1",
+        "description": "Backbone connection from S (C4') of residue i to P of residue i+1"
+      }
+    ]
+  }
+}
