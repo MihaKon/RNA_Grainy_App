@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import pathlib
-from typing import Protocol
+from abc import ABC, abstractmethod
+
+from gemmi import Selection, Structure
 
 from app.settings import COARSE_GRAIN_MODELS_DIR
 
@@ -20,34 +22,56 @@ class CoarseGrainModelRegistry:
         return model_cls
 
     @classmethod
-    def get_model(cls, class_name: str) -> type[BaseCoarseGrainModel] | None:
-        return cls._registry.get(class_name)
+    def get_model(cls, class_name: str) -> type[BaseCoarseGrainModel]:
+        if class_name not in cls._registry:
+            available = list(cls._registry.keys())
+            raise KeyError(
+                f"Model '{class_name}' not found. Available models: {available}"
+            )
+        return cls._registry[class_name]
 
     @classmethod
     def get_dropdown_options(cls) -> list[tuple[str, str]]:
-        options = []
-        for key, model_cls in cls._registry.items():
-            dummy_instance = model_cls()
-            options.append((key, dummy_instance.name_verbose))
-
-        return sorted(options, key=lambda x: x[1])
+        return sorted(
+            [(key, model_cls.name_verbose) for key, model_cls in cls._registry.items()],
+            key=lambda x: x[1],
+        )
 
 
-class BaseCoarseGrainModel(Protocol):
+class BaseCoarseGrainModel(ABC):
     name_verbose: str
     JSON_model_file: pathlib.Path
 
-    def filter_atoms(self) -> None:
-        raise NotImplementedError()
+    def __init__(self):
+        self._cached_model_data: dict | None = None
 
-    def add_connections(self) -> None:
-        raise NotImplementedError
+    def read_json_model(self) -> dict:
+        if self._cached_model_data is None:
+            if not self.JSON_model_file or not self.JSON_model_file.exists():
+                raise FileNotFoundError(f"Model file not found: {self.JSON_model_file}")
 
-    def read_json_model(self) -> None:
-        raise NotImplementedError
+            with open(self.JSON_model_file, "r") as f:
+                self._cached_model_data = json.load(f)
 
-    def save_structure(self) -> None:
-        raise NotImplementedError
+        assert self._cached_model_data is not None
+        return self._cached_model_data
+
+    def get_atoms_subset(self) -> list[str]:
+        model_data = self.read_json_model()
+        return model_data.get("atoms", [])
+
+    def _get_selection_query(self) -> str:
+        atoms_subset = self.get_atoms_subset()
+        atoms = ",".join(atoms_subset) if atoms_subset else "*"
+        query = f"//*//{atoms}"
+        return query
+
+    def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
+        """Apply coarse-graining to the structure."""
+        query = self._get_selection_query()
+        selection = Selection(query)
+        coarse_structure = selection.copy_structure_selection(original_structure)
+        return coarse_structure
 
 
 @CoarseGrainModelRegistry.register
@@ -59,31 +83,31 @@ class SimModel(BaseCoarseGrainModel):
 @CoarseGrainModelRegistry.register
 class NASTModel(BaseCoarseGrainModel):
     name_verbose: str = "NAST"
-    JSON_model_file: pathlib.Path = ""
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nast.json"
 
 
 @CoarseGrainModelRegistry.register
 class YUPModel(BaseCoarseGrainModel):
     name_verbose: str = "YUP"
-    JSON_model_file: pathlib.Path = ""
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nast.json"
 
 
 @CoarseGrainModelRegistry.register
 class Nares2PModel(BaseCoarseGrainModel):
     name_verbose: str = "Nares-2P"
-    JSON_model_file: pathlib.Path = ""
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nast.json"
 
 
 @CoarseGrainModelRegistry.register
 class IFoldRNAModel(BaseCoarseGrainModel):
     name_verbose: str = "iFoldRNA"
-    JSON_model_file: pathlib.Path = ""
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nast.json"
 
 
 @CoarseGrainModelRegistry.register
 class TopRNAModel(BaseCoarseGrainModel):
     name_verbose: str = "TopRNA"
-    JSON_model_file: pathlib.Path = ""
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nast.json"
 
 
 @CoarseGrainModelRegistry.register
