@@ -3,8 +3,6 @@ from enum import Enum
 from fastapi import UploadFile
 from pydantic import BaseModel, field_validator
 
-from app.coarse_grain.models import CoarseGrainModels
-
 
 class SupportedFormats(str, Enum):
     PDB = "pdb"
@@ -16,21 +14,12 @@ class SupportedFormats(str, Enum):
             return SupportedFormats.MMCIF
         return self
 
-    
+
 COARSE_FILE_FORMAT = SupportedFormats.MMCIF
 
 
 class UploadBase(BaseModel):
-    selected_model: CoarseGrainModels
-
-    @field_validator("selected_model", mode="before")
-    @classmethod
-    def validate_model(cls, v: str) -> CoarseGrainModels:
-        try:
-            return CoarseGrainModels[v.upper()]
-        except KeyError:
-            valid_names = [e.name for e in CoarseGrainModels]
-            raise ValueError(f"Invalid model: {v}. Must be one of {valid_names}")
+    selected_model: str
 
 
 class FileUploadRequest(UploadBase):

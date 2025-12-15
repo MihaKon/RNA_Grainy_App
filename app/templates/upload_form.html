@@ -96,14 +96,15 @@
                              @click.outside="close($refs.button); $refs.button.blur()"
                              :id="$id('dropdown-button')"
                              x-cloak
-                             class="absolute left-0 min-w-48 rounded-lg shadow-sm mt-2 z-10 origin-top-left bg-white p-1.5 outline-none border border-gray-200">
+                             class="absolute left-0 min-w-48 max-h-40 overflow-y-auto rounded-lg shadow-sm mt-2 z-10 origin-top-left bg-white p-1.5 outline-none border border-gray-200">
                             <ul class="font-medium text-primary">
-                                {% for model in coarse_grain_models %}
+                                {% for model_id,model_name in coarse_grain_models %}
                                     <li>
                                         <button type="button"
-                                                @click="selectedModel = '{{ model }}'; selectedLabel = '{{ model }}'; close($refs.button)"
-                                                class="flex cursor-pointer items-center w-full px-3 py-1.5 rounded-lg hover:bg-gray-100">
-                                            {{ model }}
+                                            {# 1. Store the ID in the value variable, Store the NAME in the label variable #}
+                                            @click="selectedModel = '{{ model_id }}'; selectedLabel = '{{ model_name }}'; close($refs.button)"
+                                            class="flex cursor-pointer items-center w-full px-3 py-1.5 rounded-lg hover:bg-gray-100">
+                                            {{ model_name }}
                                         </button>
                                     </li>
                                 {% endfor %}

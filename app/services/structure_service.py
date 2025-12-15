@@ -1,16 +1,15 @@
 from collections import defaultdict
 from typing import Any, DefaultDict
 
-from app.coarse_grain.parser import CoarseGrainModels, transform_to_coarse_grain
-from app.models import SupportedFormats, COARSE_FILE_FORMAT
-
 from gemmi import Structure, cif, make_structure_from_block, read_pdb_string
+
+from app.coarse_grain.parser import process_structure_with_coarse_grain_model
+from app.models import COARSE_FILE_FORMAT, SupportedFormats
+
 
 class StructureProcessor:
     @staticmethod
-    def parse_structure(
-        content: str, file_format: SupportedFormats
-    ) -> Structure:
+    def parse_structure(content: str, file_format: SupportedFormats) -> Structure:
         if file_format == SupportedFormats.CIF:
             dcif = cif.read_string(content)
             structure = make_structure_from_block(dcif.sole_block())
@@ -19,31 +18,30 @@ class StructureProcessor:
         return structure
 
     @staticmethod
-    def apply_coarse_graining(structure: Structure, model: CoarseGrainModels) -> str:
-        coarse_structure = transform_to_coarse_grain(structure, model)
+    def apply_coarse_graining(structure: Structure, model: str) -> str:
+        coarse_structure = process_structure_with_coarse_grain_model(structure, model)
 
         if COARSE_FILE_FORMAT == SupportedFormats.PDB:
-            return coarse_structure.make_pdb_string() 
-        
+            return coarse_structure.make_pdb_string()
+
         cif_doc = coarse_structure.make_mmcif_document()
         return cif_doc.as_string()
-        
+
     @staticmethod
     def build_comparison_context(
         job_id: str,
         filename: str,
         file_format: SupportedFormats,
-        selected_model: CoarseGrainModels
+        selected_model: str,
     ) -> DefaultDict[str, Any]:
-
         original_format = file_format.normalize_format()
         initial_data = {
             "job_id": job_id,
-            "reference_url": f"/api/jobs/{job_id}/reference?file_format={original_format.value}", 
+            "reference_url": f"/api/jobs/{job_id}/reference?file_format={original_format.value}",
             "coarse_url": f"/api/jobs/{job_id}/coarse?file_format={COARSE_FILE_FORMAT.value}",
             "filename": filename,
             "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
-            "selected_model": selected_model.name,
+            "selected_model": str,
         }
 
         context: DefaultDict[str, Any] = defaultdict(list, initial_data)
