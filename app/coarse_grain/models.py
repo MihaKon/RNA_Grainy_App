@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import pathlib
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from gemmi import Selection, Structure
 
@@ -89,70 +89,70 @@ class NASTModel(BaseCoarseGrainModel):
 @CoarseGrainModelRegistry.register
 class YUPModel(BaseCoarseGrainModel):
     name_verbose: str = "YUP"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nast.json"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "yup.json"
 
 
 @CoarseGrainModelRegistry.register
 class Nares2PModel(BaseCoarseGrainModel):
     name_verbose: str = "Nares-2P"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nast.json"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / ".json"
 
 
 @CoarseGrainModelRegistry.register
 class IFoldRNAModel(BaseCoarseGrainModel):
     name_verbose: str = "iFoldRNA"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nast.json"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "ifoldrna.json"
 
 
 @CoarseGrainModelRegistry.register
 class TopRNAModel(BaseCoarseGrainModel):
     name_verbose: str = "TopRNA"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nast.json"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "toprna.json"
 
 
 @CoarseGrainModelRegistry.register
 class IsRNAOneModel(BaseCoarseGrainModel):
     name_verbose: str = "IsRNA1"
-    JSON_model_file: pathlib.Path = ""
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "is_rna_one.json"
 
 
 @CoarseGrainModelRegistry.register
 class IsRNATwoModel(BaseCoarseGrainModel):
     name_verbose: str = "IsRNA2"
-    JSON_model_file: pathlib.Path = ""
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "is_rna_two.json"
 
 
 @CoarseGrainModelRegistry.register
 class SPQRModel(BaseCoarseGrainModel):
     name_verbose: str = "SPQR"
-    JSON_model_file: pathlib.Path = ""
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "spqr.json"
 
 
 @CoarseGrainModelRegistry.register
 class MRNAModel(BaseCoarseGrainModel):
     name_verbose: str = "mRNA"
-    JSON_model_file: pathlib.Path = ""
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / ".json"
 
 
 @CoarseGrainModelRegistry.register
 class HireModel(BaseCoarseGrainModel):
     name_verbose: str = "HireRNA"
-    JSON_model_file: pathlib.Path = ""
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "hire_rna.json"
 
 
 @CoarseGrainModelRegistry.register
 class OxModel(BaseCoarseGrainModel):
     name_verbose: str = "oxRNA"
-    JSON_model_file: pathlib.Path = ""
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "ox_rna.json"
 
 
 @CoarseGrainModelRegistry.register
 class FebModel(BaseCoarseGrainModel):
     name_verbose: str = "FebRNA"
-    JSON_model_file: pathlib.Path = ""
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "feb_rna.json"
 
 
 @CoarseGrainModelRegistry.register
 class VFoldModel(BaseCoarseGrainModel):
     name_verbose: str = "VFold"
-    JSON_model_file: pathlib.Path = ""
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "v_fold.json"
