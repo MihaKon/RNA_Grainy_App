@@ -4,7 +4,7 @@ import json
 import pathlib
 from abc import ABC
 
-from gemmi import Selection, Structure
+from gemmi import Connection, ConnectionType, Selection, Structure
 
 from app.settings import COARSE_GRAIN_MODELS_DIR
 
@@ -41,9 +41,7 @@ class CoarseGrainModelRegistry:
 class BaseCoarseGrainModel(ABC):
     name_verbose: str
     JSON_model_file: pathlib.Path
-
-    def __init__(self):
-        self._cached_model_data: dict | None = None
+    _cached_model_data: dict | None = None
 
     def read_json_model(self) -> dict:
         if self._cached_model_data is None:
@@ -56,21 +54,80 @@ class BaseCoarseGrainModel(ABC):
         assert self._cached_model_data is not None
         return self._cached_model_data
 
-    def get_atoms_subset(self) -> list[str]:
+    def get_atoms_subset_mapping(self) -> dict[str, list]:
         model_data = self.read_json_model()
-        return model_data.get("atoms", [])
+        mapping = model_data.get("mapping", [])
+        allowed_atoms = {}
+        for group in mapping.values():
+            for res_name in group["residues"]:
+                allowed_atoms[res_name] = list(group["atoms"].values())
+        return allowed_atoms
 
     def _get_selection_query(self) -> str:
-        atoms_subset = self.get_atoms_subset()
+        atoms_subset = self.get_atoms_subset_mapping()
         atoms = ",".join(atoms_subset) if atoms_subset else "*"
         query = f"//*//{atoms}"
         return query
 
     def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
         """Apply coarse-graining to the structure."""
-        query = self._get_selection_query()
-        selection = Selection(query)
-        coarse_structure = selection.copy_structure_selection(original_structure)
+        # query = self._get_selection_query()
+        # selection = Selection(query)
+        # coarse_structure = selection.copy_structure_selection(original_structure)
+        coarse_structure = original_structure
+        coarse_structure.clear_conect()
+        allowed_atoms = self.get_atoms_subset_mapping()
+        for model in coarse_structure:
+            for chain in model:
+                for res_id in range(len(chain) - 1, -1, -1):
+                    res = chain[res_id]
+                    if not res.het_flag == "A":
+                        del chain[res_id]
+                        continue
+
+                    if res.name in allowed_atoms:
+                        keep_list = allowed_atoms[res.name]
+                        for atom_id in range(len(res) - 1, -1, -1):
+                            if res[atom_id].name not in keep_list:
+                                del res[atom_id]
+
+        coarse_structure.remove_empty_chains()
+        coarse_structure.assign_serial_numbers(numbered_ter=True)
+
+        for model in coarse_structure:
+            for chain in model:
+                for i, res in enumerate(chain):
+                    if i > 0:
+                        conn = Connection()
+                        conn.type = ConnectionType.Covale
+                        conn.partner1.atom_name = chain[i - 1][-1].name
+                        conn.partner1.chain_name = chain.name
+                        conn.partner1.res_id.name = chain[i - 1].name
+                        conn.partner1.res_id.segment = chain[i - 1].segment
+                        conn.partner1.res_id.seqid = chain[i - 1].seqid
+                        conn.partner2.atom_name = res[0].name
+                        conn.partner2.chain_name = chain.name
+                        conn.partner2.res_id.name = res.name
+                        conn.partner2.res_id.segment = res.segment
+                        conn.partner2.res_id.seqid = res.seqid
+                        coarse_structure.connections.append(conn)
+                    for atom_id in range(1, len(res) - 1):
+                        conn = Connection()
+                        conn.type = ConnectionType.Covale
+                        conn.partner1.atom_name = res[atom_id - 1].name
+                        conn.partner1.chain_name = chain.name
+                        conn.partner1.res_id.name = res.name
+                        conn.partner1.res_id.segment = res.segment
+                        conn.partner1.res_id.seqid = res.seqid
+                        conn.partner2.atom_name = res[atom_id].name
+                        conn.partner2.chain_name = chain.name
+                        conn.partner2.res_id.name = res.name
+                        conn.partner2.res_id.segment = res.segment
+                        conn.partner2.res_id.seqid = res.seqid
+                        coarse_structure.connections.append(conn)
+
+        coarse_structure.setup_entities()
+        coarse_structure.assign_label_seq_id()
         return coarse_structure
 
 

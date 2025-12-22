@@ -55,13 +55,7 @@ async def handle_request_and_render(
     selected_model: str,
 ) -> HTMLResponse:
     job_id = JobManager.create_job_id()
-    try:
-        await run_job_processing(job_id, file_content, file_format, selected_model)
-    except Exception as e:
-        JobManager.cleanup_job(job_id)
-        return messages.render_form_error_message(
-            request, f"Processing error: {str(e)}", 500
-        )
+    await run_job_processing(job_id, file_content, file_format, selected_model)
 
     context = StructureProcessor.build_comparison_context(
         job_id, filename, file_format, selected_model
