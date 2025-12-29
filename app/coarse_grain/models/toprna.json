@@ -17,31 +17,31 @@
     "purine": {
       "residues": ["A", "G"],
       "atoms": {
-        "S1": "P",
-        "S2": "C4'",
-        "S3": "N9"
+        "A1": "P",
+        "A2": "C4'",
+        "A3": "N9"
       },
-      "description": "S1: P atom. S2: Geometric center of ribose (avg of C1',C2',C3',C4',C5',O4'). S3: Geometric center of base ring (N and C atoms)."
+      "description": "A1: P atom. A2: Geometric center of ribose (avg of C1',C2',C3',C4',C5',O4'). A3: Geometric center of base ring (N and C atoms)."
     },
     "pyrimidine": {
       "residues": ["C", "U"],
       "atoms": {
-        "S1": "P",
-        "S2": "C4'",
-        "S3": "N1"
+        "A1": "P",
+        "A2": "C4'",
+        "A3": "N1"
       },
-      "description": "S1: P atom. S2: Geometric center of ribose (avg of C1',C2',C3',C4',C5',O4'). S3: Geometric center of base ring (N and C atoms)."
+      "description": "A1: P atom. A2: Geometric center of ribose (avg of C1',C2',C3',C4',C5',O4'). A3: Geometric center of base ring (N and C atoms)."
     }
   },
   "connectivity": {
     "intra_residue": [
-      ["S1", "S2"],
-      ["S2", "S3"]
+      ["A1", "A2"],
+      ["A2", "A3"]
     ],
     "inter_residue": [
       {
-        "source": "S2",
-        "target": "S1",
+        "source": "A2",
+        "target": "A1",
         "description": "Backbone connection from Sugar Center (i) to Phosphate (i+1)"
       }
     ]

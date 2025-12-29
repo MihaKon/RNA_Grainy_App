@@ -63,72 +63,142 @@ class BaseCoarseGrainModel(ABC):
                 allowed_atoms[res_name] = list(group["atoms"].values())
         return allowed_atoms
 
-    def _get_selection_query(self) -> str:
-        atoms_subset = self.get_atoms_subset_mapping()
-        atoms = ",".join(atoms_subset) if atoms_subset else "*"
-        query = f"//*//{atoms}"
-        return query
-
     def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
-        """Apply coarse-graining to the structure."""
-        # query = self._get_selection_query()
-        # selection = Selection(query)
-        # coarse_structure = selection.copy_structure_selection(original_structure)
-        coarse_structure = original_structure
+        """Apply coarse-graining to the structure and rebuild connections from the map."""
+
+        config = self.read_json_model()
+        mapping_config = config["mapping"]
+
+        res_type_map = {}
+        for g_name, g_data in mapping_config.items():
+            for r_name in g_data["residues"]:
+                res_type_map[r_name] = g_name
+
+        coarse_structure = original_structure.clone()
         coarse_structure.clear_conect()
+
         allowed_atoms = self.get_atoms_subset_mapping()
+
         for model in coarse_structure:
             for chain in model:
                 for res_id in range(len(chain) - 1, -1, -1):
                     res = chain[res_id]
-                    if not res.het_flag == "A":
+                    if res.name not in allowed_atoms:
                         del chain[res_id]
                         continue
 
-                    if res.name in allowed_atoms:
-                        keep_list = allowed_atoms[res.name]
-                        for atom_id in range(len(res) - 1, -1, -1):
-                            if res[atom_id].name not in keep_list:
-                                del res[atom_id]
+                    keep_list = set(allowed_atoms[res.name])
+                    for atom_id in range(len(res) - 1, -1, -1):
+                        if res[atom_id].name not in keep_list:
+                            del res[atom_id]
 
         coarse_structure.remove_empty_chains()
         coarse_structure.assign_serial_numbers(numbered_ter=True)
 
+        # 3. Setup Connectivity Rules
+        intra_rules = config["connectivity"]["intra_residue"]
+
+        # Parse Inter-residue rules from JSON list of dicts
+        # JSON format: [{"source": "A2", "target": "A1", ...}]
+        inter_rules_config = config["connectivity"].get("inter_residue", [])
+
+        # Default fallback if JSON is empty or malformed
+        inter_rule_tail = "A2"
+        inter_rule_head = "A1"
+
+        # If JSON has rules, use the first one (adapting "source"/"target" keys)
+        if inter_rules_config:
+            rule = inter_rules_config[0]
+            # Handle the mismatch if your JSON uses "S2/S1" but map uses "A2/A1"
+            # We assume the JSON values should match the keys in 'atoms' map
+            val_source = rule.get("source")
+            val_target = rule.get("target")
+
+            inter_rule_tail = val_source
+            inter_rule_head = val_target
+
+        # 4. Build Connections
         for model in coarse_structure:
             for chain in model:
-                for i, res in enumerate(chain):
-                    if i > 0:
-                        conn = Connection()
-                        conn.type = ConnectionType.Covale
-                        conn.partner1.atom_name = chain[i - 1][-1].name
-                        conn.partner1.chain_name = chain.name
-                        conn.partner1.res_id.name = chain[i - 1].name
-                        conn.partner1.res_id.segment = chain[i - 1].segment
-                        conn.partner1.res_id.seqid = chain[i - 1].seqid
-                        conn.partner2.atom_name = res[0].name
-                        conn.partner2.chain_name = chain.name
-                        conn.partner2.res_id.name = res.name
-                        conn.partner2.res_id.segment = res.segment
-                        conn.partner2.res_id.seqid = res.seqid
-                        coarse_structure.connections.append(conn)
-                    for atom_id in range(1, len(res) - 1):
-                        conn = Connection()
-                        conn.type = ConnectionType.Covale
-                        conn.partner1.atom_name = res[atom_id - 1].name
-                        conn.partner1.chain_name = chain.name
-                        conn.partner1.res_id.name = res.name
-                        conn.partner1.res_id.segment = res.segment
-                        conn.partner1.res_id.seqid = res.seqid
-                        conn.partner2.atom_name = res[atom_id].name
-                        conn.partner2.chain_name = chain.name
-                        conn.partner2.res_id.name = res.name
-                        conn.partner2.res_id.segment = res.segment
-                        conn.partner2.res_id.seqid = res.seqid
-                        coarse_structure.connections.append(conn)
+                prev_res = None
+
+                for res in chain:
+                    r_type = res_type_map.get(res.name)
+                    if not r_type:
+                        prev_res = None
+                        continue
+
+                    atom_map = mapping_config[r_type]["atoms"]
+                    # Map atom names to objects for O(1) access
+                    current_atoms = {atom.name: atom for atom in res}
+
+                    # A. Intra-Residue
+                    for bead_a, bead_b in intra_rules:
+                        name_a = atom_map.get(bead_a)
+                        name_b = atom_map.get(bead_b)
+
+                        if name_a in current_atoms and name_b in current_atoms:
+                            coarse_structure.connections.append(
+                                self._get_connection(
+                                    res,
+                                    current_atoms[name_a],
+                                    res,
+                                    current_atoms[name_b],
+                                )
+                            )
+
+                    # B. Inter-Residue
+                    if prev_res is not None:
+                        # Find previous residue type
+                        prev_type = res_type_map.get(prev_res.name)
+                        prev_atom_map = mapping_config[prev_type]["atoms"]
+
+                        # Resolve Abstract Names (A2/A1) -> Physical Names (C4'/P)
+                        tail_atom_name = prev_atom_map.get(inter_rule_tail)
+                        head_atom_name = atom_map.get(inter_rule_head)
+
+                        # Look for atoms
+                        # Note: prev_res is a Gemmi Residue, we iterate to find name
+                        tail_atom = next(
+                            (a for a in prev_res if a.name == tail_atom_name), None
+                        )
+                        head_atom = current_atoms.get(head_atom_name)
+
+                        if tail_atom and head_atom:
+                            coarse_structure.connections.append(
+                                self._get_connection(
+                                    prev_res, tail_atom, res, head_atom
+                                )
+                            )
+
+                    prev_res = res
 
         coarse_structure.setup_entities()
         coarse_structure.assign_label_seq_id()
         return coarse_structure
+
+    def _get_connection(self, res1, atom1, res2, atom2):
+        """Helper to create and append a gemmi connection."""
+        conn = Connection()
+        conn.type = ConnectionType.Covale
+
+        conn.partner1.atom_name = atom1.name
+        conn.partner1.chain_name = (
+            res1.chain_name if hasattr(res1, "chain_name") else res1.subchain
+        )
+        conn.partner1.res_id.name = res1.name
+        conn.partner1.res_id.segment = res1.segment
+        conn.partner1.res_id.seqid = res1.seqid
+
+        conn.partner2.atom_name = atom2.name
+        conn.partner2.chain_name = (
+            res2.chain_name if hasattr(res2, "chain_name") else res2.subchain
+        )
+        conn.partner2.res_id.name = res2.name
+        conn.partner2.res_id.segment = res2.segment
+        conn.partner2.res_id.seqid = res2.seqid
+
+        return conn
 
 
 @CoarseGrainModelRegistry.register

@@ -13,34 +13,34 @@
     "nucleotide": {
       "residues": ["A", "G", "C", "U"],
       "atoms": {
-        "S1": "Site_BB",
-        "S2": "Site_Stack_3",
-        "S3": "Site_Stack_5",
-        "S4": "Site_HB",
-        "S5": "Site_Cross"
+        "A1": "Site_BB",
+        "A2": "Site_Stack_3",
+        "A3": "Site_Stack_5",
+        "A4": "Site_HB",
+        "A5": "Site_Cross"
       },
       "description": {
         "General": "Nucleotide represented as a rigid body with 5 interaction sites.",
-        "S1": "Backbone connectivity site",
-        "S2": "3' Stacking interaction site",
-        "S3": "5' Stacking interaction site",
-        "S4": "Hydrogen bonding interaction site",
-        "S5": "Cross-stacking interaction site"
+        "A1": "Backbone connectivity site",
+        "A2": "3' Stacking interaction site",
+        "A3": "5' Stacking interaction site",
+        "A4": "Hydrogen bonding interaction site",
+        "A5": "Cross-stacking interaction site"
       }
     }
   },
   "connectivity": {
     "intra_residue": [
-      ["S1", "S2"],
-      ["S2", "S3"],
-      ["S3", "S4"],
-      ["S4", "S5"],
-      ["S5", "S1"]
+      ["A1", "A2"],
+      ["A2", "A3"],
+      ["A3", "A4"],
+      ["A4", "A5"],
+      ["A5", "A1"]
     ],
     "inter_residue": [
       {
-        "source": "S1",
-        "target": "S1",
+        "source": "A1",
+        "target": "A1",
         "description": "Backbone continuity connection between interaction sites"
       }
     ]

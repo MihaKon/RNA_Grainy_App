@@ -42,8 +42,8 @@
     ],
     "inter_residue": [
       {
-        "source": "S2",
-        "target": "S1",
+        "source": "A2",
+        "target": "A1",
         "description": "Backbone connection from C4' (i) to P (i+1)"
       }
     ]

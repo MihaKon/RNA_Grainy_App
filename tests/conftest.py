@@ -3,6 +3,7 @@ from io import BytesIO
 
 import pytest
 from fastapi.testclient import TestClient
+from gemmi import Structure, cif, make_structure_from_block
 
 from app.main import app
 
@@ -36,3 +37,12 @@ def cif_file() -> BytesIO:
         data = BytesIO(f.read())
     data.name = "1GCT.cif"
     return data
+
+
+@pytest.fixture
+def structure(cif_file: BytesIO) -> Structure:
+    cif_file.seek(0)
+    cif_content = cif_file.getvalue().decode("utf-8")
+    cif_doc = cif.read_string(cif_content)
+    block = cif_doc.sole_block()
+    return make_structure_from_block(block)

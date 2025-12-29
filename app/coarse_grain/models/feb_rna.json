@@ -12,31 +12,31 @@
     "purine": {
       "residues": ["A", "G"],
       "atoms": {
-        "S1": "P",
-        "S2": "C4'",
-        "S3": "N9"
+        "A1": "P",
+        "A2": "C4'",
+        "A3": "N9"
       },
-      "description": "S1: Phosphate (P atom), S2: Ribose (C4' atom), S3: Base (N9 atom)"
+      "description": "A1: Phosphate (P atom), A2: Ribose (C4' atom), A3: Base (N9 atom)"
     },
     "pyrimidine": {
       "residues": ["C", "U"],
       "atoms": {
-        "S1": "P",
-        "S2": "C4'",
-        "S3": "N1"
+        "A1": "P",
+        "A2": "C4'",
+        "A3": "N1"
       },
-      "description": "S1: Phosphate (P atom), S2: Ribose (C4' atom), S3: Base (N1 atom)"
+      "description": "A1: Phosphate (P atom), A2: Ribose (C4' atom), A3: Base (N1 atom)"
     }
   },
   "connectivity": {
     "intra_residue": [
-      ["S1", "S2"],
-      ["S2", "S3"]
+      ["A1", "A2"],
+      ["A2", "A3"]
     ],
     "inter_residue": [
       {
-        "source": "S2",
-        "target": "S1",
+        "source": "A2",
+        "target": "A1",
         "description": "Backbone connection from C4' (i) to P (i+1)"
       }
     ]

@@ -15,49 +15,49 @@
     "purine": {
       "residues": ["A", "G"],
       "atoms": {
-        "S1": "P",
-        "S2": "O5'",
-        "S3": "C5'",
-        "S4": "C4'",
-        "S5": "C1'",
-        "S6": "N1",
-        "S7": "N9"
+        "A1": "P",
+        "A2": "O5'",
+        "A3": "C5'",
+        "A4": "C4'",
+        "A5": "C1'",
+        "A6": "N1",
+        "A7": "N9"
       },
       "description": {
-        "S1-S5": "Backbone atoms: P, O5', C5', C4', C1'",
-        "S6": "Base Bead 1 (CM of six-membered ring)",
-        "S7": "Base Bead 2 (CM of five-membered ring)"
+        "A1-A5": "Backbone atoms: P, O5', C5', C4', C1'",
+        "A6": "Base Bead 1 (CM of six-membered ring)",
+        "A7": "Base Bead 2 (CM of five-membered ring)"
       }
     },
     "pyrimidine": {
       "residues": ["C", "U"],
       "atoms": {
-        "S1": "P",
-        "S2": "O5'",
-        "S3": "C5'",
-        "S4": "C4'",
-        "S5": "C1'",
-        "S6": "N1"
+        "A1": "P",
+        "A2": "O5'",
+        "A3": "C5'",
+        "A4": "C4'",
+        "A5": "C1'",
+        "A6": "N1"
       },
       "description": {
-        "S1-S5": "Backbone atoms: P, O5', C5', C4', C1'",
-        "S6": "Base Bead (CM of the ring)"
+        "A1-A5": "Backbone atoms: P, O5', C5', C4', C1'",
+        "A6": "Base Bead (CM of the ring)"
       }
     }
   },
   "connectivity": {
     "intra_residue": [
-      ["S1", "S2"],
-      ["S2", "S3"],
-      ["S3", "S4"],
-      ["S4", "S5"],
-      ["S5", "S6"],
-      ["S6", "S7"]
+      ["A1", "A2"],
+      ["A2", "A3"],
+      ["A3", "A4"],
+      ["A4", "A5"],
+      ["A5", "A6"],
+      ["A6", "A7"]
     ],
     "inter_residue": [
       {
-        "source": "S4",
-        "target": "S1",
+        "source": "A4",
+        "target": "A1",
         "description": "Backbone connection from C4' (i) to P (i+1) (Note: C3' is implicit)"
       }
     ]

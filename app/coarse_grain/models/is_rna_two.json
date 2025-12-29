@@ -15,49 +15,49 @@
     "purine": {
       "residues": ["A", "G"],
       "atoms": {
-        "S1": "P",
-        "S2": "C4'",
-        "S3": "N9",
-        "S4": "C6",
-        "S5": "C2"
+        "A1": "P",
+        "A2": "C4'",
+        "A3": "N9",
+        "A4": "C6",
+        "A5": "C2"
       },
       "description": {
-        "S1": "Backbone P: P atom",
-        "S2": "Backbone S: C4' atom",
-        "S3": "R1 (Core): Imidazole ring + C5, C4, N3",
-        "S4": "A1/G1 (Hoogsteen edge): A(C6,N6) or G(C6,O6,N1)",
-        "S5": "A2/G2 (Sugar edge): A(C2,N1) or G(C2,N2)"
+        "A1": "Backbone P: P atom",
+        "A2": "Backbone S: C4' atom",
+        "A3": "R1 (Core): Imidazole ring + C5, C4, N3",
+        "A4": "A1/G1 (Hoogsteen edge): A(C6,N6) or G(C6,O6,N1)",
+        "A5": "A2/G2 (Sugar edge): A(C2,N1) or G(C2,N2)"
       }
     },
     "pyrimidine": {
       "residues": ["C", "U"],
       "atoms": {
-        "S1": "P",
-        "S2": "C4'",
-        "S3": "N1",
-        "S4": "C2",
-        "S5": "C4"
+        "A1": "P",
+        "A2": "C4'",
+        "A3": "N1",
+        "A4": "C2",
+        "A5": "C4"
       },
       "description": {
-        "S1": "Backbone P: P atom",
-        "S2": "Backbone S: C4' atom",
-        "S3": "Y1 (Ring part): N1, C5, C6",
-        "S4": "Y2 (Sugar edge): C2, O2",
-        "S5": "C1/U1 (Hoogsteen edge): C(N3,C4,N4) or U(N3,C4,O4)"
+        "A1": "Backbone P: P atom",
+        "A2": "Backbone S: C4' atom",
+        "A3": "Y1 (Ring part): N1, C5, C6",
+        "A4": "Y2 (Sugar edge): C2, O2",
+        "A5": "C1/U1 (Hoogsteen edge): C(N3,C4,N4) or U(N3,C4,O4)"
       }
     }
   },
   "connectivity": {
     "intra_residue": [
-      ["S1", "S2"],
-      ["S2", "S3"],
-      ["S3", "S4"],
-      ["S3", "S5"]
+      ["A1", "A2"],
+      ["A2", "A3"],
+      ["A3", "A4"],
+      ["A3", "A5"]
     ],
     "inter_residue": [
       {
-        "source": "S2",
-        "target": "S1",
+        "source": "A2",
+        "target": "A1",
         "description": "Backbone connection from S (C4') of residue i to P of residue i+1"
       }
     ]
