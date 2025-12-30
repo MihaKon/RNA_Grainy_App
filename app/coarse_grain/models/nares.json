@@ -1,0 +1,34 @@
+{
+  "model_name": "NARES-2P",
+  "beads_per_residue": 3,
+  "mapping": {
+    "purine": {
+      "residues": ["A", "G", "DA", "DG"],
+      "atoms": {
+        "A1": "P",
+        "A2": "S",
+        "A3": "B"
+      }
+    },
+    "pyrimidine": {
+      "residues": ["C", "U", "DC", "DT"],
+      "atoms": {
+        "A1": "P",
+        "A2": "S",
+        "A3": "B"
+      }
+    }
+  },
+  "connectivity": {
+    "intra_residue": [
+      ["A1", "A3"],
+      ["A1", "A2"]
+    ],
+    "inter_residue": [
+      {
+        "source": "A2",
+        "target": "A1"
+      }
+    ]
+  }
+}

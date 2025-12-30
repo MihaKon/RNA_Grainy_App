@@ -95,29 +95,20 @@ class BaseCoarseGrainModel(ABC):
         coarse_structure.remove_empty_chains()
         coarse_structure.assign_serial_numbers(numbered_ter=True)
 
-        # 3. Setup Connectivity Rules
         intra_rules = config["connectivity"]["intra_residue"]
-
-        # Parse Inter-residue rules from JSON list of dicts
-        # JSON format: [{"source": "A2", "target": "A1", ...}]
         inter_rules_config = config["connectivity"].get("inter_residue", [])
 
-        # Default fallback if JSON is empty or malformed
         inter_rule_tail = "A2"
         inter_rule_head = "A1"
 
-        # If JSON has rules, use the first one (adapting "source"/"target" keys)
         if inter_rules_config:
             rule = inter_rules_config[0]
-            # Handle the mismatch if your JSON uses "S2/S1" but map uses "A2/A1"
-            # We assume the JSON values should match the keys in 'atoms' map
             val_source = rule.get("source")
             val_target = rule.get("target")
 
             inter_rule_tail = val_source
             inter_rule_head = val_target
 
-        # 4. Build Connections
         for model in coarse_structure:
             for chain in model:
                 prev_res = None
@@ -129,10 +120,8 @@ class BaseCoarseGrainModel(ABC):
                         continue
 
                     atom_map = mapping_config[r_type]["atoms"]
-                    # Map atom names to objects for O(1) access
                     current_atoms = {atom.name: atom for atom in res}
 
-                    # A. Intra-Residue
                     for bead_a, bead_b in intra_rules:
                         name_a = atom_map.get(bead_a)
                         name_b = atom_map.get(bead_b)
@@ -147,18 +136,13 @@ class BaseCoarseGrainModel(ABC):
                                 )
                             )
 
-                    # B. Inter-Residue
                     if prev_res is not None:
-                        # Find previous residue type
                         prev_type = res_type_map.get(prev_res.name)
                         prev_atom_map = mapping_config[prev_type]["atoms"]
 
-                        # Resolve Abstract Names (A2/A1) -> Physical Names (C4'/P)
                         tail_atom_name = prev_atom_map.get(inter_rule_tail)
                         head_atom_name = atom_map.get(inter_rule_head)
 
-                        # Look for atoms
-                        # Note: prev_res is a Gemmi Residue, we iterate to find name
                         tail_atom = next(
                             (a for a in prev_res if a.name == tail_atom_name), None
                         )
@@ -222,7 +206,7 @@ class YUPModel(BaseCoarseGrainModel):
 @CoarseGrainModelRegistry.register
 class Nares2PModel(BaseCoarseGrainModel):
     name_verbose: str = "Nares-2P"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / ".json"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nares.json"
 
 
 @CoarseGrainModelRegistry.register
@@ -256,9 +240,9 @@ class SPQRModel(BaseCoarseGrainModel):
 
 
 @CoarseGrainModelRegistry.register
-class MRNAModel(BaseCoarseGrainModel):
-    name_verbose: str = "mRNA"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / ".json"
+class RNAJPModel(BaseCoarseGrainModel):
+    name_verbose: str = "RNAJP"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "rnajp.json"
 
 
 @CoarseGrainModelRegistry.register
