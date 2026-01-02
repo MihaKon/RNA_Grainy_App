@@ -1,40 +1,134 @@
 {% from "components/primary_button.html" import primary_button %}
 {% from "components/molstar_viewer.html" import molstar_viewer %}
+
 {% block content %}
-    <div class="flex flex-col gap-4 md:grid md:justify-items-center md:grid-cols-2">
-        <div class="flex flex-col bg-white rounded-2xl shadow-lg border border-gray-200 p-8 self-center w-sm">
-            <h1 class="font-semibold">{{ filename }}</h1>
-            <ul>
-                <li>File format: {{ file_format }}</li>
-                <li>Chains: {{ chains }}</li>
-                <li>Atoms count: {{ atoms }}</li>
-                <li>Models count: {{ models }}</li>
-                <li>Residues count: {{ residues }}</li>
-                <li>Selected model: {{ selected_model }}</li>
-                <li>Reference url: {{ reference_url }}</li>
-                <li>Corase url: {{ coarse_url }}</li>
-            </ul>
-            <div class="flex flex-col gap-4 mt-4">
-                <div class="relative py-2">
-                    <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                        <span class="w-full border-t border-gray-300"></span>
-                    </div>
-                    <div class="relative flex justify-center">
-                        <span class="bg-white px-3 text-sm font-medium text-gray-500">Download as</span>
+<div class="w-full h-full flex flex-col items-center py-6">
+
+    <div class="w-full max-w-7xl px-6 grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 h-[80vh] overflow-y-hidden">
+
+        <aside class="flex flex-col gap-6 h-full overflow-y-auto pr-2 pb-2">
+
+            <section class="bg-white rounded-2xl shadow border border-gray-200 p-6 shrink-0">
+                <h2 class="text-lg font-semibold mb-4">Metadata</h2>
+                <ul class="text-sm space-y-1">
+                    <li><strong>File:</strong> {{ filename }}</li>
+                    <li><strong>Selected model:</strong> {{ selected_model }}</li>
+                    <li><strong>Reference atoms:</strong> {{ atom_counts.original }}</li>
+                    <li><strong>Coarse atoms:</strong> {{ atom_counts.coarse }}</li>
+                    <li>
+                        <strong>Selected models:</strong> 
+                        {{ selected_models | join(', ') }}
+                    </li>
+                    <li>
+                        <strong>Selected chains:</strong> 
+                        {{ selected_chains | join(', ') }}
+                    </li>
+                </ul>
+
+                <div class="mt-6">
+                    <p class="text-sm text-gray-500 mb-2">Download as</p>
+                    <div class="flex gap-3">
+                        {{ primary_button(text='PDB', classes='w-1/2') }}
+                        {{ primary_button(text='mmCIF', classes='w-1/2') }}
                     </div>
                 </div>
-                <div class="flex gap-4 justify-center">
-                    {{ primary_button(text='PDB', classes='w-1/2', attrs='x-on:click.prevent="alert(\'TODO: Implement PDB Download\')"') }}
-                    {{ primary_button(text='mmCIF', classes='w-1/2', attrs='x-on:click.prevent="alert(\'TODO: Implement mmCIF Download\')"') }}
+            </section>
+
+            <section x-data="{open:false}" class="bg-white rounded-2xl shadow border border-gray-200 p-6 shrink-0">
+                <button @click="open = !open" class="w-full flex justify-between items-center group cursor-pointer">
+                    <h2 class="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        Model description
+                    </h2>
+                    <span 
+                        class="text-gray-400 font-bold text-xl transition-transform duration-200"
+                        :class="open ? 'rotate-180' : ''"
+                    >
+                        <span x-text="open ? '-' : '+'"></span>
+                    </span>
+                </button>
+
+                <div x-show="open" x-collapse class="mt-4 text-sm text-gray-700">
+                    {{ model_description | safe }}
+                    <p class="mt-4 text-xs text-gray-500">
+                        {{ model_citation }}
+                    </p>
                 </div>
-            </div>
-        </div>
-        <div id="molstar-viewer-wrapper"
-             class="relative w-full h-full self-center justify-center"
-             x-show
-             x-cloak
-        >
-        {{ molstar_viewer('molstar-container', urls=[reference_url,coarse_url], file_format=file_format) }}
-        </div>
+            </section>
+
+            <section x-data="{ expanded: false }" class="bg-white rounded-2xl shadow border border-gray-200 p-6 shrink-0">
+                
+                <button @click="expanded = !expanded" class="w-full flex justify-between items-center group cursor-pointer">
+                    <h2 class="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        Atom mapping
+                    </h2>
+                    <span 
+                        class="text-gray-400 font-bold text-xl transition-transform duration-200"
+                        :class="expanded ? 'rotate-180' : ''"
+                    >
+                        <span x-text="expanded ? '-' : '+'"></span>
+                    </span>
+                </button>
+
+                <div x-show="expanded" x-collapse class="mt-4">
+                    {% if beads_per_residue %}
+                    <div class="mb-4 flex items-center justify-between bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
+                        <span class="text-xs font-semibold text-blue-800 uppercase tracking-wide">
+                            Beads per residue
+                        </span>
+                        <span class="text-sm font-bold text-blue-700">
+                            {{ beads_per_residue }}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    {% if atom_mapping %}
+                        <div class="flex flex-col gap-4">
+                            {% for residue, mapping in atom_mapping.items() %}
+                            
+                            <div class="border border-gray-100 rounded-xl overflow-hidden">
+                                <div class="bg-gray-50 px-3 py-2 border-b border-gray-100">
+                                    <h4 class="font-bold text-xs text-gray-700 uppercase tracking-wider">
+                                        {{ residue }}
+                                    </h4>
+                                </div>
+                                
+                                <table class="w-full text-sm text-left">
+                                    <tbody class="divide-y divide-gray-100">
+                                        {% for bead, atoms in mapping.items() %}
+                                        <tr class="hover:bg-gray-50 transition-colors">
+                                            <td class="px-3 py-2 font-mono text-blue-600 font-semibold w-1/3 border-r border-gray-50">
+                                                {{ bead }}
+                                            </td>
+                                            <td class="px-3 py-2 text-gray-600 w-2/3 break-words">
+                                                {{ atoms }}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 italic text-sm py-2">No mapping data available.</p>
+                    {% endif %}
+
+                </div>
+            </section>
+            
+            <div class="h-4 shrink-0"></div>
+
+        </aside>
+
+        <section class="bg-white rounded-2xl shadow border border-gray-200 p-2 h-full w-full relative overflow-hidden">
+            {{ molstar_viewer(
+                'molstar-container',
+                urls=[reference_url, coarse_url],
+                file_format=file_format
+            ) }}
+        </section>
+
     </div>
+</div>
 {% endblock %}

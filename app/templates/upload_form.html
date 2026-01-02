@@ -5,7 +5,7 @@
     <div id="upload-container" class="flex w-full items-center justify-center">
         <form hx-post="/upload/file/"
               hx-target="#upload-container"
-              hx-swap="innerHTML"
+              hx-swap="outerHTML"
               hx-encoding="multipart/form-data"
               hx-target-error="#errors"
               x-data="{ modelError: false, fileError: false, open: false, selectedLabel: 'Select model', selectedModel: '', rcsbID: '', fileObject: null, validate() { this.modelError = !this.selectedModel;  const selectedFile = $refs.fileInput.value; const selectedRCSBFile = this.rcsbID.trim() !== '';  this.fileError = !selectedFile && !selectedRCSBFile;  return !this.modelError && !this.fileError; }, toggle() { this.open = !this.open }, close(focusAfter) { if (!this.open) return; this.open = false; focusAfter && focusAfter.focus() } }"
