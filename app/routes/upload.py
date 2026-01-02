@@ -15,7 +15,6 @@ from app.settings import TEMPLATES
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
-
 def process_structure(
     file_content: str,
     file_format: SupportedFormats,

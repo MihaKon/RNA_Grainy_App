@@ -48,7 +48,7 @@ class BaseCoarseGrainModel(ABC):
             if not self.JSON_model_file or not self.JSON_model_file.exists():
                 raise FileNotFoundError(f"Model file not found: {self.JSON_model_file}")
 
-            with open(self.JSON_model_file, "r") as f:
+            with open(self.JSON_model_file, "r", encoding="utf-8") as f:
                 self._cached_model_data = json.load(f)
 
         assert self._cached_model_data is not None
@@ -267,8 +267,3 @@ class FebModel(BaseCoarseGrainModel):
 class VFoldModel(BaseCoarseGrainModel):
     name_verbose: str = "VFold"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "v_fold.json"
-
-@CoarseGrainModelRegistry.register
-class BadModel(BaseCoarseGrainModel):
-    name_verbose: str = "Bad"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "Bad.json"

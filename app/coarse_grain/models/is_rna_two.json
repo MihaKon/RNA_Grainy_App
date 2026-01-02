@@ -10,7 +10,7 @@
     "C4"
   ],
   "model_name": "isRNA2",
-  "beads_per_residue": 5,
+  "beads_per_residue": "5",
   "mapping": {
     "purine": {
       "residues": ["A", "G"],

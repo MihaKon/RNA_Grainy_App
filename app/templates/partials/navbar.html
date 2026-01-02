@@ -1,20 +1,51 @@
 <nav class="relative bg-primary">
   <div class="max-w-7xl px-2 sm:px-6 lg:px-8">
     <div class="relative flex h-16 items-center justify-between">
-      <!-- -->
-      <!-- Here add logic for mobile view-->
-      <!-- -->
-      <div class="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
-        <a href="/" class="flex shrink-0 items-center">
-          <i class="fa-solid fa-dna fa-2xl" style="color: #ffffff;"></i>
-          <h1 class="text-white text-xl font-semibold">RNA Grain</h1>
+      <div class="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start gap-4">
+        
+        <a href="/" class="flex shrink-0 items-center gap-2 group">
+          <i class="fa-solid fa-dna fa-2xl text-white transition-transform duration-500 group-hover:rotate-180"></i>
+          <h1 class="text-white text-xl font-semibold tracking-wide">RNAGrain</h1>
         </a>
+
         <div class="hidden sm:ml-6 sm:block">
           <div class="flex space-x-4">
-            <!-- Here add menu buttons-->
+            
+            <a href="/documentation" class="nav-link rounded-md px-3 py-2 text-sm font-medium transition-all duration-300 ease-in-out">
+              Documentation
+            </a>
+
           </div>
         </div>
       </div>
     </div>
   </div>
 </nav>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const currentPath = window.location.pathname;
+    
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    const activeClasses = ['text-white', 'bg-white/10'];
+    const inactiveClasses = ['text-gray-300', 'hover:text-white', 'hover:bg-white/5']; 
+
+
+    navLinks.forEach(link => {
+      const href = link.getAttribute('href');
+    
+      
+      const isActive = href === currentPath || 
+                       (href !== "/" && currentPath.startsWith(href));
+
+      if (isActive) {
+        link.classList.add(...activeClasses);
+        link.classList.remove(...inactiveClasses); 
+      } else {
+        link.classList.add(...inactiveClasses);
+        link.classList.remove(...activeClasses);
+      }
+    });
+  });
+</script>

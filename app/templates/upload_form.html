@@ -102,7 +102,6 @@
                                 {% for model_id,model_name in coarse_grain_models %}
                                     <li>
                                         <button type="button"
-                                            {# 1. Store the ID in the value variable, Store the NAME in the label variable #}
                                             @click="selectedModel = '{{ model_id }}'; selectedLabel = '{{ model_name }}'; close($refs.button)"
                                             class="flex cursor-pointer items-center w-full px-3 py-1.5 rounded-lg hover:bg-gray-100">
                                             {{ model_name }}

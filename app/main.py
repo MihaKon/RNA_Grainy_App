@@ -8,12 +8,13 @@ from pydantic import ValidationError
 from app.exceptions import app_exception_handler, validation_exception_handler
 from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.models import SupportedFormats
-from app.routes import jobs, upload
+from app.routes import jobs, upload, documentation
 from app.settings import STATIC_DIR, TEMPLATES
 
 app = FastAPI(title="RNA Coarse Grain App", version="0.1.0")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.add_middleware(GZipMiddleware)
+app.include_router(documentation.router)
 app.include_router(upload.router)
 app.include_router(jobs.router)
 app.add_exception_handler(Exception, app_exception_handler)
@@ -32,6 +33,6 @@ async def root(request: Request) -> HTMLResponse:
         },
     )
 
-
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="127.0.0.1", port=5050, reload=True)
+

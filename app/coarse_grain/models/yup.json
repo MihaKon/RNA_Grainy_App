@@ -4,7 +4,7 @@
     "P"
   ],
   "model_name": "YUP",
-  "beads_per_residue": 1,
+  "beads_per_residue": "1",
   "mapping": {
     "nucleotide": {
       "residues": ["A", "G", "C", "U"],

@@ -1,6 +1,6 @@
 {
   "model_name": "NARES-2P",
-  "beads_per_residue": 3,
+  "beads_per_residue": "3",
   "mapping": {
     "purine": {
       "residues": ["A", "G", "DA", "DG"],
