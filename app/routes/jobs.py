@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi.responses import FileResponse
 from app.exceptions import ValidationError
 from app.services.job_service import JobManager

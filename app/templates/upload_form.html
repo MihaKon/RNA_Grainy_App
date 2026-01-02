@@ -5,7 +5,7 @@
     <div id="upload-container" class="flex w-full items-center justify-center">
         <form hx-post="/upload/file/"
               hx-target="#upload-container"
-              hx-swap="outerHTML"
+              hx-swap="innerHTML"
               hx-encoding="multipart/form-data"
               hx-target-error="#errors"
               hx-target-4*="#errors"

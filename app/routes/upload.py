@@ -1,7 +1,7 @@
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
 
-from app.exceptions import FileProcessingError, ValidationError
+from app.exceptions import FileProcessingError
 from app.models import (
     COARSE_FILE_FORMAT,
     FileUploadRequest,
@@ -72,14 +72,11 @@ async def upload_file(
     file: UploadFile = File(...),
     selected_model: str = Form(...),
 ) -> HTMLResponse:
-    try:
-        upload_req = FileUploadRequest(file=file, selected_model=selected_model)  # type: ignore
-    except Exception as e:
-        raise ValidationError(f"Invalid upload request: {e}")
+    upload_req = FileUploadRequest(file=file, selected_model=selected_model)  # type: ignore
 
     try:
         file_content = (await upload_req.file.read()).decode("utf-8")
-    except Exception as e:
+    except UnicodeDecodeError as e:
         raise FileProcessingError(f"Error reading file: {e}")
 
     if file_content == "":
@@ -99,10 +96,7 @@ async def upload_rcsb(
     rcsb_id: str = Form(...),
     selected_model: str = Form(...),
 ) -> HTMLResponse:
-    try:
-        rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model)  # type: ignore
-    except Exception as e:
-        raise ValidationError(f"Invalid RCSB request: {e}")
+    rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model)  # type: ignore
 
     file_content = await fetch_rcsb_file(rcsb_req.rcsb_id)
     if file_content is None:

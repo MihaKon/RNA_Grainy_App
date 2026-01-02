@@ -45,7 +45,7 @@ class JobManager:
         try:
             with open(file_path, "w",  encoding="utf-8") as f:
                 f.write(content)
-        except Exception as e:
+        except OSError as e:
             raise FileProcessingError(f"Error creating file: {e}")
         
         return file_path
