@@ -1,7 +1,7 @@
 import uuid
 import shutil
 from pathlib import Path
-from fastapi import HTTPException
+from app.exceptions import ValidationError, FileProcessingError
 from app.settings import TEMP_DIR
 
 
@@ -9,7 +9,7 @@ class JobManager:
     @staticmethod
     def check_path(job_dir: Path) -> None:
         if not job_dir.resolve().is_relative_to(TEMP_DIR.resolve()): 
-            raise HTTPException(status_code=400, detail="Invalid job ID path.")
+            raise ValidationError("Invalid job directory path.")
 
     @staticmethod
     def create_job_id() -> str:
@@ -20,7 +20,7 @@ class JobManager:
         try:
             uuid.UUID(job_id)
         except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid job ID format")
+            raise ValidationError("Invalid job ID format.")
         
         job_dir = TEMP_DIR / job_id
 
@@ -46,7 +46,7 @@ class JobManager:
             with open(file_path, "w",  encoding="utf-8") as f:
                 f.write(content)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"File storage error, {e}") 
+            raise FileProcessingError(f"Error creating file: {e}")
         
         return file_path
     
@@ -54,7 +54,7 @@ class JobManager:
     def get_file_path(cls, job_id:str, filename:str) -> Path:
         file_path = cls.reconstruct_file_path(job_id, filename)
         if not file_path.exists():
-            raise HTTPException(status_code=404, detail="File not found.")
+            raise FileProcessingError("Requested file does not exist.")
 
         cls.check_path(file_path)
 

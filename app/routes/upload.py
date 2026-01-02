@@ -1,7 +1,6 @@
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
 
-from app import messages
 from app.exceptions import FileProcessingError, ValidationError
 from app.models import (
     COARSE_FILE_FORMAT,
@@ -76,7 +75,7 @@ async def upload_file(
     try:
         upload_req = FileUploadRequest(file=file, selected_model=selected_model)  # type: ignore
     except Exception as e:
-        return messages.render_form_error_message(request, str(e), 400)
+        raise ValidationError(f"Invalid upload request: {e}")
 
     try:
         file_content = (await upload_req.file.read()).decode("utf-8")
@@ -84,7 +83,7 @@ async def upload_file(
         raise FileProcessingError(f"Error reading file: {e}")
 
     if file_content == "":
-        return messages.render_form_error_message(request, "The file is empty.", 400)
+        raise FileProcessingError("Uploaded file is empty.")
 
     file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower())  # type: ignore
     filename: str = upload_req.file.filename.split(".")[0] # type: ignore
@@ -102,14 +101,12 @@ async def upload_rcsb(
 ) -> HTMLResponse:
     try:
         rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model)  # type: ignore
-    except ValidationError as e:
-        return messages.render_form_error_message(request, e.detail, e.status_code)
+    except Exception as e:
+        raise ValidationError(f"Invalid RCSB request: {e}")
 
     file_content = await fetch_rcsb_file(rcsb_req.rcsb_id)
     if file_content is None:
-        raise ValidationError(
-            "Something went wrong during fetching from RCSB database."
-        )
+        raise FileProcessingError(f"Could not fetch file for RCSB ID: {rcsb_req.rcsb_id}")
 
     file_format = SupportedFormats.CIF
     filename: str = rcsb_req.rcsb_id

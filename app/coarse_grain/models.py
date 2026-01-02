@@ -267,3 +267,8 @@ class FebModel(BaseCoarseGrainModel):
 class VFoldModel(BaseCoarseGrainModel):
     name_verbose: str = "VFold"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "v_fold.json"
+
+@CoarseGrainModelRegistry.register
+class BadModel(BaseCoarseGrainModel):
+    name_verbose: str = "Bad"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "Bad.json"

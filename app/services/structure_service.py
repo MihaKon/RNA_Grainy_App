@@ -6,7 +6,7 @@ from gemmi import Structure, cif, make_structure_from_block, read_pdb_string
 from app.coarse_grain.parser import process_structure_with_coarse_grain_model
 from app.models import COARSE_FILE_FORMAT, SupportedFormats
 from app.coarse_grain.models import CoarseGrainModelRegistry
-from app.exceptions import ModelLoadingError
+from app.exceptions import ValidationError
 
 class StructureProcessor:
     @staticmethod
@@ -43,7 +43,7 @@ class StructureProcessor:
         try:
             model_config = model_instance.read_json_model()
         except Exception as e:
-            raise ModelLoadingError(f"Failed to load model configuration: {e}")
+            raise ValidationError(f"Failed to load model configuration: {e}")
             
         model_verbose_name = model_cls.name_verbose
         beads_per_residue = model_config.get("beads_per_residue", "Unknown")
