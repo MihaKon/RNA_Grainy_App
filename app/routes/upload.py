@@ -87,7 +87,7 @@ async def upload_file(
         return messages.render_form_error_message(request, "The file is empty.", 400)
 
     file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower())  # type: ignore
-    filename: str = upload_req.file.filename  # type: ignore
+    filename: str = upload_req.file.filename.split(".")[0] # type: ignore
 
     return await handle_request_and_render(
         request, file_content, filename, file_format, upload_req.selected_model
@@ -112,7 +112,7 @@ async def upload_rcsb(
         )
 
     file_format = SupportedFormats.CIF
-    filename = f"{rcsb_req.rcsb_id}.{file_format}"
+    filename: str = rcsb_req.rcsb_id
 
     return await handle_request_and_render(
         request, file_content, filename, file_format, rcsb_req.selected_model

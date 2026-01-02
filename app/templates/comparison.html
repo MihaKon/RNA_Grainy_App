@@ -1,11 +1,9 @@
 {% from "components/primary_button.html" import primary_button %}
 {% from "components/molstar_viewer.html" import molstar_viewer %}
 {% block content %}
-    <div class="flex flex-col gap-4 md:grid md:justify-items-center"
-         :class="{ 'md:grid-cols-1': !showMolViewer, 'md:grid-cols-2': showMolViewer }"
-         x-data="{ showMolViewer: false }">
+    <div class="flex flex-col gap-4 md:grid md:justify-items-center md:grid-cols-2">
         <div class="flex flex-col bg-white rounded-2xl shadow-lg border border-gray-200 p-8 self-center w-sm">
-            <h1>{{ filename }}</h1>
+            <h1 class="font-semibold">{{ filename }}</h1>
             <ul>
                 <li>File format: {{ file_format }}</li>
                 <li>Chains: {{ chains }}</li>
@@ -17,12 +15,6 @@
                 <li>Corase url: {{ coarse_url }}</li>
             </ul>
             <div class="flex flex-col gap-4 mt-4">
-                <div x-show="!showMolViewer" x-cloak class="flex w-full justify-center">
-                    {{ primary_button(text='Show 3D viewer', classes='w-1/2', attrs='@click="showMolViewer=true" aria-expanded="false" aria-controls="molstar-viewer-wrapper"') }}
-                </div>
-                <div x-show="showMolViewer" x-cloak class="flex w-full justify-center">
-                    {{ primary_button(text='Hide 3D viewer', classes='w-1/2', attrs='@click="showMolViewer=false" aria-expanded="true" aria-controls="molstar-viewer-wrapper"') }}
-                </div>
                 <div class="relative py-2">
                     <div class="absolute inset-0 flex items-center" aria-hidden="true">
                         <span class="w-full border-t border-gray-300"></span>
@@ -39,7 +31,7 @@
         </div>
         <div id="molstar-viewer-wrapper"
              class="relative w-full h-full self-center justify-center"
-             x-show="showMolViewer"
+             x-show
              x-cloak
         >
         {{ molstar_viewer('molstar-container', urls=[reference_url,coarse_url], file_format=file_format) }}

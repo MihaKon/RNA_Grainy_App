@@ -5,6 +5,7 @@ from gemmi import Structure, cif, make_structure_from_block, read_pdb_string
 
 from app.coarse_grain.parser import process_structure_with_coarse_grain_model
 from app.models import COARSE_FILE_FORMAT, SupportedFormats
+from app.coarse_grain.models import CoarseGrainModelRegistry
 
 
 class StructureProcessor:
@@ -41,7 +42,7 @@ class StructureProcessor:
             "coarse_url": f"/api/jobs/{job_id}/coarse?file_format={COARSE_FILE_FORMAT.value}",
             "filename": filename,
             "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
-            "selected_model": str,
+            "selected_model": CoarseGrainModelRegistry.get_model(selected_model).name_verbose,
         }
 
         context: DefaultDict[str, Any] = defaultdict(list, initial_data)
