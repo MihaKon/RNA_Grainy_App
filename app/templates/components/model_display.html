@@ -54,7 +54,7 @@
                      {% if style == 'documentation' %} x-data="{ open: false }" {% endif %}>
                     
                     {% if style == 'documentation' %}
-=                        <button @click="open = !open" class="cursor-pointer w-full px-4 py-3 bg-gray-50 flex justify-between items-center hover:bg-gray-100 transition-colors text-left">
+                        <button @click="open = !open" class="cursor-pointer w-full px-4 py-3 bg-gray-50 flex justify-between items-center hover:bg-gray-100 transition-colors text-left">
                             <span class="font-semibold text-sm text-primary">{{ title }}</span>
                             <i class="fa-solid fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
                                :class="open ? 'rotate-180' : ''"></i>
