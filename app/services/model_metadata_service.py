@@ -67,7 +67,7 @@ class ModelService:
         citations = []
         for key in raw_citations.keys():
             text = raw_citations[key]
-            citations.append(f"{key} {text}")
+            citations.append(f"{key} . {text}")
 
         return citations
     
