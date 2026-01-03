@@ -6,16 +6,27 @@ class ModelService:
     def get_all_models(cls) -> list[dict[str, Any]]: # type: ignore
         models_data = []
         for model_name in CoarseGrainModelRegistry._registry.keys():
-            models_data.append(cls.get_model_data(model_name))
+            models_data.append(cls._build_model_data(model_name))
+            
         models_data.sort(key=lambda x: (x["raw_beads"], x["name"].lower()))
+
+        for model in models_data:
+            model.pop("raw_beads", None)
+
         return models_data
 
     @classmethod
-    def get_model_data(cls, model_name: str) -> dict[str, Any]: # type: ignore
+    def get_model(cls, model_name: str) -> dict[str, Any]: # type: ignore
+        data = cls._build_model_data(model_name)
+        data.pop("raw_beads", None)
+        return data
+
+    @classmethod
+    def _build_model_data(cls, model_name: str) -> dict[str, Any]: # type: ignore
         model_cls, config = cls.load_model_config(model_name)
         raw_beads = config.get("beads_per_residue", [])
 
-        model_info = {
+        model_data = {
             "id": model_name,
             "name": model_cls.name_verbose,
             "description": config.get("description_text", f"Coarse-grained model: {model_cls.name_verbose}"),
@@ -25,8 +36,7 @@ class ModelService:
             "mapping": cls.format_mapping(config),
             "image_url": f"/static/images/models/{model_name.lower()}.png"
         }
-        return model_info
-
+        return model_data
     @classmethod
     def load_model_config(cls, model_name: str) -> Tuple[Any, dict[str, Any]]: # type: ignore
         model_cls = CoarseGrainModelRegistry.get_model(model_name)
