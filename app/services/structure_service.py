@@ -5,7 +5,7 @@ from gemmi import Structure, cif, make_structure_from_block, read_pdb_string
 
 from app.coarse_grain.parser import process_structure_with_coarse_grain_model
 from app.models import COARSE_FILE_FORMAT, SupportedFormats
-from app.utils import get_model_info
+from app.services.model_service import ModelService
 
 class StructureProcessor:
     @staticmethod
@@ -36,7 +36,7 @@ class StructureProcessor:
     ) -> DefaultDict[str, Any]:
         original_format = file_format.normalize_format()
         
-        model_data = get_model_info(selected_model)
+        model_data = ModelService.get_model_data(selected_model)
 
         initial_data = {
             "reference_url": f"/api/jobs/{job_id}/reference?file_format={original_format.value}",

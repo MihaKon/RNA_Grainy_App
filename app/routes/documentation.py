@@ -1,17 +1,13 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
-from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.settings import TEMPLATES
-from app.utils import get_model_info
+from app.services.model_service import ModelService
 
 router = APIRouter(prefix="/documentation", tags=["documentation"])
 
 @router.get("/", response_class=HTMLResponse)
 async def documentation_page(request: Request):
-    models_data = []
-    for model_name in CoarseGrainModelRegistry._registry.keys():
-        model_info = get_model_info(model_name)
-        models_data.append(model_info)
+    models_data = ModelService.get_all_models() 
 
     models_data.sort(key=lambda x: x["beads_per_residue"])
     
