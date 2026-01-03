@@ -3,9 +3,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import ValidationError
 
-from app.exceptions import app_exception_handler, validation_exception_handler
+from pydantic import ValidationError
+from app.exceptions import AppException, app_exception_handler, validation_exception_handler
+
 from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.models import SupportedFormats
 from app.routes import jobs, upload, documentation
@@ -17,7 +18,8 @@ app.add_middleware(GZipMiddleware)
 app.include_router(documentation.router)
 app.include_router(upload.router)
 app.include_router(jobs.router)
-app.add_exception_handler(Exception, app_exception_handler)
+
+app.add_exception_handler(AppException, app_exception_handler)
 app.add_exception_handler(ValidationError, validation_exception_handler)
 
 @app.get("/", response_class=HTMLResponse)

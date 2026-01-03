@@ -2,13 +2,13 @@ from fastapi import Request
 from pydantic import ValidationError
 from app.messages import render_form_error_message
 
-class ValidationError(Exception):
+class AppException(Exception):
     pass
 
-class FileProcessingError(ValidationError):
+class FileProcessingError(AppException):
     pass
 
-class ModelLoadingError(ValidationError):
+class ModelLoadingError(AppException):
     pass
 
 
