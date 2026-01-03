@@ -2,7 +2,7 @@ from typing import Any, Tuple
 from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.settings import MODELS_IMAGES_DIR, STATIC_DIR
 
-class ModelContextBuilder:
+class DocsContextBuilder:
     @classmethod
     def get_all_models(cls) -> list[dict[str, Any]]: # type: ignore
         models_data = []
@@ -30,7 +30,7 @@ class ModelContextBuilder:
         model_data = {
             "id": model_name,
             "name": model_cls.name_verbose,
-            "description": config.get("description_text", f"Coarse-grained model: {model_cls.name_verbose}"),
+            "description": config.get("description", f"Coarse-grained model: {model_cls.name_verbose}"),
             "raw_beads": raw_beads,
             "beads": cls.format_beads(raw_beads),
             "citation": cls.format_citations(config),

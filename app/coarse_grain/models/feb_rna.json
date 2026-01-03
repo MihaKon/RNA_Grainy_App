@@ -8,6 +8,10 @@
   ],
   "model_name": "FebRNA",
   "beads_per_residue": [3],
+  "description": "FebRNA is a coarse-grained model that utilizes fragment assembly based on secondary structure for tertiary structure prediction. The coarse-grained representation describes a nucleotide as three beads corresponding to the positions of heavy atoms—the phosphate atom P, the ribose atom C4', and the nitrogen atom N1 for pyrimidines or N9 for purines. This model does not use an energy function to fold the molecule; instead, it generates a pool of complete structures via fragment assembly and subsequently selects the best one based on the cgRNASP-Feb scoring function. This function consists of a statistical potential (evaluation of non-bonded interactions derived from known RNA structures from the PDB database) and a bonded potential (evaluation of the backbone geometry correctness). FebRNA is utilized in predicting 3D RNA structures with diverse motifs [1]",
+  "citation": {
+    "1": "Li Zhou, Xunxun Wang, Shixiong Yu, Ya-Lan Tan, and Zhi-Jie Tan. Febrna: An automated fragment-ensemble-based model for building rna 3d structures. Biophysical Journal, 121(18):3381-3392, 2022."
+  },
   "mapping": {
     "purine": {
       "residues": ["A", "G"],
