@@ -36,7 +36,7 @@ class StructureProcessor:
     ) -> DefaultDict[str, Any]:
         original_format = file_format.normalize_format()
         
-        model_data = ModelService.get_model_data(selected_model)
+        model_data = ModelService.get_model(selected_model)
 
         initial_data = {
             "reference_url": f"/api/jobs/{job_id}/reference?file_format={original_format.value}",
