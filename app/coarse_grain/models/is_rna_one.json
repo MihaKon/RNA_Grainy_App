@@ -9,7 +9,7 @@
     "N1"
   ],
   "model_name": "isRNA1",
-  "beads_per_residue": "4 or 5",
+  "beads_per_residue": [4,5],
   "mapping": {
     "purine": {
       "residues": ["A", "G"],

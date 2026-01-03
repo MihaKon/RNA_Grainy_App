@@ -12,7 +12,7 @@
     "N1"
   ],
   "model_name": "TOPRNA",
-  "beads_per_residue": "3",
+  "beads_per_residue": [3],
   "mapping": {
     "purine": {
       "residues": ["A", "G"],

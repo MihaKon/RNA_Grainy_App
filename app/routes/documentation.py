@@ -9,11 +9,8 @@ router = APIRouter(prefix="/documentation", tags=["documentation"])
 async def documentation_page(request: Request):
     models_data = ModelService.get_all_models() 
 
-    models_data.sort(key=lambda x: x["beads_per_residue"])
-    
     return TEMPLATES.TemplateResponse(
         request=request,
         name="documentation.html",
-        context={
-            "models": models_data}
+        context={"models": models_data}
     )

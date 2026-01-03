@@ -1,6 +1,5 @@
 from typing import Any, Tuple
 from app.coarse_grain.models import CoarseGrainModelRegistry
-import re
 
 class ModelService:
     @classmethod
@@ -8,35 +7,36 @@ class ModelService:
         models_data = []
         for model_name in CoarseGrainModelRegistry._registry.keys():
             models_data.append(cls.get_model_data(model_name))
-
+        models_data.sort(key=lambda x: (x["raw_beads"], x["name"].lower()))
         return models_data
 
     @classmethod
     def get_model_data(cls, model_name: str) -> dict[str, Any]: # type: ignore
         model_cls, config = cls.load_model_config(model_name)
+        raw_beads = config.get("beads_per_residue", [])
 
         model_info = {
             "id": model_name,
             "name": model_cls.name_verbose,
             "description": config.get("description_text", f"Coarse-grained model: {model_cls.name_verbose}"),
-            "beads_per_residue": config.get("beads_per_residue", "Unknown"),
+            "raw_beads": raw_beads,
+            "beads": cls.format_beads(raw_beads),
             "citation": cls.format_citations(config),
             "mapping": cls.format_mapping(config),
             "image_url": f"/static/images/models/{model_name.lower()}.png"
         }
         return model_info
 
-    @staticmethod
-    def sort_key_func(k: Any) -> int: # type: ignore
-        match = re.search(r'\d+', str(k))
-        return int(match.group()) if match else 0
-    
     @classmethod
     def load_model_config(cls, model_name: str) -> Tuple[Any, dict[str, Any]]: # type: ignore
         model_cls = CoarseGrainModelRegistry.get_model(model_name)
         model_instance = model_cls()
         data = model_instance.read_json_model()
         return model_cls, data
+    
+    @classmethod
+    def format_beads(cls, beads: list[int]) -> str: 
+        return " or ".join(str(bead) for bead in beads)
     
     @classmethod
     def format_mapping(cls, config: dict[str, Any]) -> dict[str, Any]: # type: ignore
@@ -55,11 +55,9 @@ class ModelService:
     def format_citations(cls, config: dict[str, Any]) -> list[str]: # type: ignore
         raw_citations = config.get("citation", {})
         citations = []
-        sorted_keys = sorted(raw_citations.keys(), key=ModelService.sort_key_func)
-        for key in sorted_keys:
+        for key in raw_citations.keys():
             text = raw_citations[key]
-            full_citation = f"{key} {text}"
-            citations.append(full_citation)
+            citations.append(f"{key}. {text}")
 
         return citations
     

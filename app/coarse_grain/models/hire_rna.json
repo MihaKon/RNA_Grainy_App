@@ -10,7 +10,7 @@
     "N9"
   ],
   "model_name": "HiRE-RNA",
-  "beads_per_residue": "6 or 7",
+  "beads_per_residue": [6, 7],
   "mapping": {
     "purine": {
       "residues": ["A", "G"],
