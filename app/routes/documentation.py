@@ -6,7 +6,7 @@ from app.services.model_metadata_service import ModelService
 router = APIRouter(prefix="/documentation", tags=["documentation"])
 
 @router.get("/", response_class=HTMLResponse)
-async def documentation_page(request: Request):
+async def documentation_page(request: Request) -> HTMLResponse:
     models_data = ModelService.get_all_models() 
 
     return TEMPLATES.TemplateResponse(

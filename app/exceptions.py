@@ -1,4 +1,5 @@
 from fastapi import Request
+from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from app.messages import render_form_error_message
 
@@ -18,7 +19,7 @@ class ModelLoadingError(AppException):
     pass
 
 
-async def app_exception_handler(request: Request, exc: Exception):
+async def app_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
     error_message = str(exc)
 
     return render_form_error_message(
@@ -27,7 +28,9 @@ async def app_exception_handler(request: Request, exc: Exception):
         status_code=400
     )
 
-async def validation_exception_handler(request: Request, exc: ValidationError):
+async def validation_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
+
+    assert isinstance(exc, ValidationError)
     error_message = str(exc)
     try:
         first_error = exc.errors()[0]
