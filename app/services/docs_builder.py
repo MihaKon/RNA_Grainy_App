@@ -48,7 +48,7 @@ class DocsContextBuilder:
         
     @classmethod
     def get_image_url(cls, model_name: str) -> str:
-        filename = f"{model_name}.png"
+        filename = f"{model_name.lower()}.png"
         relative_path = MODELS_IMAGES_DIR.relative_to(STATIC_DIR)
         img_path = (relative_path / filename).as_posix()
         return f"/static/{img_path}"
