@@ -5,10 +5,16 @@ from app.messages import render_form_error_message
 class AppException(Exception):
     pass
 
+class InvalidRequestError(AppException):
+    """Exception raised for invalid requests."""
+    pass
+
 class FileProcessingError(AppException):
+    """Exception raised for errors during file processing."""
     pass
 
 class ModelLoadingError(AppException):
+    """Exception raised for errors during model loading."""
     pass
 
 

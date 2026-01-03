@@ -1,7 +1,7 @@
 import uuid
 import shutil
 from pathlib import Path
-from app.exceptions import ValidationError, FileProcessingError
+from app.exceptions import InvalidRequestError, FileProcessingError
 from app.settings import TEMP_DIR
 
 
@@ -9,7 +9,7 @@ class JobManager:
     @staticmethod
     def check_path(job_dir: Path) -> None:
         if not job_dir.resolve().is_relative_to(TEMP_DIR.resolve()): 
-            raise ValidationError("Invalid job directory path.")
+            raise InvalidRequestError("Invalid job directory path.")
 
     @staticmethod
     def create_job_id() -> str:
@@ -20,7 +20,7 @@ class JobManager:
         try:
             uuid.UUID(job_id)
         except ValueError:
-            raise ValidationError("Invalid job ID format.")
+            raise InvalidRequestError("Invalid job ID format.")
         
         job_dir = TEMP_DIR / job_id
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from fastapi.responses import FileResponse
-from app.exceptions import ValidationError
+from app.exceptions import InvalidRequestError
 from app.services.job_service import JobManager
 from app.models import SupportedFormats, COARSE_FILE_FORMAT
 
@@ -15,9 +15,9 @@ async def get_job_file(
     file_format: str
 ) -> FileResponse:
     if file_type not in FILE_TYPES:
-        raise ValidationError("Invalid file type requested.")
+        raise InvalidRequestError("Invalid file type requested.")
     if file_format not in (SupportedFormats.PDB.value, SupportedFormats.MMCIF.value):
-        raise ValidationError("Invalid file format requested.")
+        raise InvalidRequestError("Invalid file format requested.")
     filename = f"{file_type}.{file_format}" if file_type == "reference" else f"coarse.{COARSE_FILE_FORMAT.value}"
     file_path = JobManager.get_file_path(job_id, filename)
 
