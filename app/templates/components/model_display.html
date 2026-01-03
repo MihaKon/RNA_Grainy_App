@@ -26,7 +26,7 @@
 
 
 {# === Mapping Table  === #}
-{% macro _mapping_table_rows(details) %}
+{% macro mapping_table_rows(details) %}
 <table class="w-full text-sm text-left">
     <tbody class="divide-y divide-gray-100">
         {% for bead, atoms in details.items() %}
@@ -68,7 +68,7 @@
                     {% endif %}
 
                     <div {% if style == 'documentation' %} x-show="open" class="border-t border-gray-200" {% endif %}>
-                        {{ _mapping_table_rows(details) }}
+                        {{ mapping_table_rows(details) }}
                     </div>
                 </div>
 
