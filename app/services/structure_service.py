@@ -5,7 +5,7 @@ from gemmi import Structure, cif, make_structure_from_block, read_pdb_string
 
 from app.coarse_grain.parser import process_structure_with_coarse_grain_model
 from app.models import COARSE_FILE_FORMAT, SupportedFormats
-from app.services.model_service import ModelService
+from app.services.model_metadata_service import ModelService
 
 class StructureProcessor:
     @staticmethod

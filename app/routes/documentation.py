@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from app.settings import TEMPLATES
-from app.services.model_service import ModelService
+from app.services.model_metadata_service import ModelService
 
 router = APIRouter(prefix="/documentation", tags=["documentation"])
 
