@@ -27,7 +27,7 @@
                 </ul>
 
                 <div class="mt-6">
-                    <p class="text-sm text-gray-500 mb-2">Download as</p>
+                    <p class="text-sm text-tertiary mb-2">Download as</p>
                     <div class="flex gap-3">
                         {{ primary_button(text='PDB', classes='w-1/2') }}
                         {{ primary_button(text='mmCIF', classes='w-1/2') }}
@@ -40,7 +40,7 @@
                     <h2 class="text-lg font-semibold text-primary group-hover:text-accent transition-colors">
                         Model description
                     </h2>
-                    <span class="text-gray-400 font-bold text-xl transition-transform duration-200" :class="open ? 'rotate-180' : ''">
+                    <span class="text-tertiary font-bold text-xl transition-transform duration-200" :class="open ? 'rotate-180' : ''">
                         <span x-text="open ? '-' : '+'"></span>
                     </span>
                 </button>
@@ -48,16 +48,15 @@
                 <div x-show="open" x-collapse class="mt-4 text-sm text-secondary">
                     
                     <div class="mb-4">
-                        {{ render_model_image(model_image_url) }}
+                        {{ render_model_image(model.image_url) }}
                     </div>
 
                     <div class="text-sm text-secondary text-justify">
-                        {{ model_description | safe }}
+                        {{ model.description | safe }}
                     </div>
                     
-                    <div class="mt-4 text-xs text-gray-500">
-                         <strong>Citation:</strong>
-                         {{ render_citations(model_citation) }}
+                    <div class="mt-4 text-xs text-tertiary">
+                        {{ render_citations(model.citation) }}
                     </div>
                 </div>
             </section>
@@ -68,7 +67,7 @@
                     <h2 class="text-lg font-semibold text-primary group-hover:text-accent transition-colors">
                         Atom mapping
                     </h2>
-                    <span class="text-gray-400 font-bold text-xl transition-transform duration-200" :class="expanded ? 'rotate-180' : ''">
+                    <span class="text-tertiary font-bold text-xl transition-transform duration-200" :class="expanded ? 'rotate-180' : ''">
                         <span x-text="expanded ? '-' : '+'"></span>
                     </span>
                 </button>
@@ -80,12 +79,12 @@
                             Beads per residue
                         </span>
                         <span class="text-sm font-bold text-accent">
-                            {{ beads }}
+                            {{ model.beads }}
                         </span>
                     </div>
                     {% endif %}
 
-                    {{ render_mapping_section(atom_mapping, style='card') }}
+                    {{ render_mapping_section(model.mapping, style='card') }}
 
                 </div>
             </section>

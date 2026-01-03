@@ -44,7 +44,6 @@ class StructureProcessor:
             "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
             "job_id": job_id,
             "filename": filename,
-            "selected_model": model_data["name"], 
             
             "atom_counts": {
                 "original": "TODO: Count atoms",  
@@ -53,11 +52,7 @@ class StructureProcessor:
             "selected_chains": ["TODO"], 
             "selected_models": ["TODO"],
             
-            "model_description": model_data["description"],
-            "model_citation": model_data["citation"],
-            "atom_mapping": model_data["mapping"],
-            "beads_per_residue": model_data["beads_per_residue"],
-            "model_image_url": model_data["image_url"], 
+            "model": model_data,
         }
 
         context: DefaultDict[str, Any] = defaultdict(list, initial_data)

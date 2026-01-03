@@ -5,7 +5,7 @@
          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
     
-    <div class="hidden absolute inset-0 flex-col items-center justify-center text-gray-400 gap-2">
+    <div class="hidden absolute inset-0 flex-col items-center justify-center text-tertiary gap-2">
         <i class="fa-regular fa-image text-4xl opacity-50"></i>
         <span class="text-sm font-medium">No preview</span>
     </div>
@@ -16,10 +16,13 @@
 {# === Citation List === #}
 {% macro render_citations(citation_list) %}
     {% if citation_list %}
-    <ul class="list-none space-y-1 text-sm text-gray-600 mt-1">
-        {% for cite in citation_list %}
-            <li class="mb-1">{{ cite }}</li>
-        {% endfor %}
+    <ul class="list-none space-y-1 text-sm text-tertiary mt-1">
+        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 text-xs text-accent">
+            <strong class="block mb-1 font-bold"><i class="fa-solid fa-quote-right mr-1"></i> Citation:</strong>
+            {% for cite in citation_list %}
+                <li class="mb-1 text-tertiary">{{ cite }}</li>
+            {% endfor %}
+        </div>
     </ul>
     {% endif %}
 {% endmacro %}
@@ -56,7 +59,7 @@
                     {% if style == 'documentation' %}
                         <button @click="open = !open" class="cursor-pointer w-full px-4 py-3 bg-gray-50 flex justify-between items-center hover:bg-gray-100 transition-colors text-left">
                             <span class="font-semibold text-sm text-primary">{{ title }}</span>
-                            <i class="fa-solid fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
+                            <i class="fa-solid fa-chevron-down text-xs text-tertiary transition-transform duration-200"
                                :class="open ? 'rotate-180' : ''"></i>
                         </button>
                     {% else %}

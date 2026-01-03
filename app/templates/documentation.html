@@ -55,22 +55,19 @@
 
                     <div class="flex flex-col gap-4">
                         <h3 class="font-semibold text-primary flex items-center gap-2">
-                            <i class="fa-solid fa-cube text-gray-400"></i> Representation Example
+                            <i class="fa-solid fa-cube text-tertiary"></i> Representation Example
                         </h3>
                         
                         {{ render_model_image(model.image_url) }}
 
                         {% if model.citation %}
-                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 text-xs text-accent">
-                            <strong class="block mb-1 font-bold"><i class="fa-solid fa-quote-right mr-1"></i> Citation:</strong>
                             {{ render_citations(model.citation) }}
-                        </div>
                         {% endif %}
                     </div>
 
                     <div class="flex flex-col gap-4">
                         <h3 class="font-semibold text-primary flex items-center gap-2">
-                            <i class="fa-solid fa-list-ul text-gray-400"></i> Atom Mapping Rules
+                            <i class="fa-solid fa-list-ul text-tertiary"></i> Atom Mapping Rules
                         </h3>
 
                         {{ render_mapping_section(model.mapping, style='documentation') }}
