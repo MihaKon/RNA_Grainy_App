@@ -1,5 +1,6 @@
 from typing import Any, Tuple
 from app.coarse_grain.models import CoarseGrainModelRegistry
+from app.settings import MODELS_IMAGES_DIR, STATIC_DIR
 
 class ModelService:
     @classmethod
@@ -29,20 +30,28 @@ class ModelService:
         model_data = {
             "id": model_name,
             "name": model_cls.name_verbose,
-            "description": config.get("description_text"),
+            "description": config.get("description_text", f"Coarse-grained model: {model_cls.name_verbose}"),
             "raw_beads": raw_beads,
             "beads": cls.format_beads(raw_beads),
             "citation": cls.format_citations(config),
             "mapping": cls.format_mapping(config),
-            "image_url": f"/static/images/models/{model_name.lower()}.png"
+            "image_url": cls.get_image_url(model_name),
         }
         return model_data
+
     @classmethod
     def load_model_config(cls, model_name: str) -> Tuple[Any, dict[str, Any]]: # type: ignore
         model_cls = CoarseGrainModelRegistry.get_model(model_name)
         model_instance = model_cls()
         data = model_instance.read_json_model()
         return model_cls, data
+        
+    @classmethod
+    def get_image_url(cls, model_name: str) -> str:
+        filename = f"{model_name}.png"
+        relative_path = MODELS_IMAGES_DIR.relative_to(STATIC_DIR)
+        img_path = (relative_path / filename).as_posix()
+        return f"/static/{img_path}"
     
     @classmethod
     def format_beads(cls, beads: list[int]) -> str: 

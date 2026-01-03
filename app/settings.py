@@ -8,5 +8,6 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 TEMP_DIR = BASE_DIR.parent / "temp"
 TEMPLATES = Jinja2Templates(directory=TEMPLATES_DIR)
+MODELS_IMAGES_DIR = STATIC_DIR / "images" 
 
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
