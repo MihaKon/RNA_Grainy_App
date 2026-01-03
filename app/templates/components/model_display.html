@@ -46,40 +46,68 @@
 </table>
 {% endmacro %}
 
+# === Collapsible Header for Documentation Mapping Section === #
+{% macro collapse_header_documentation(title) %}
+    <button @click="open = !open" class="cursor-pointer w-full px-4 py-3 bg-gray-50 flex justify-between items-center hover:bg-gray-100 transition-colors text-left">
+        <span class="font-semibold text-sm text-primary">{{ title }}</span>
+        <i class="fa-solid fa-chevron-down text-xs text-tertiary transition-transform duration-200"
+            :class="open ? 'rotate-180' : ''"></i>
+    </button>
+{% endmacro %}
+
+# === Collapsible Header for Comparison Mapping Section === #
+{% macro collapse_header_comparison(title) %}
+    <button @click="open = !open" class="w-full flex justify-between items-center group cursor-pointer">
+        <h2 class="text-lg font-semibold text-primary group-hover:text-accent transition-colors">
+            {{ title }}
+        </h2>
+        <span class="text-tertiary font-bold text-xl transition-transform duration-200">
+            <i class="fa-solid fa-chevron-down text-xs text-tertiary transition-transform duration-200"
+                :class="open ? 'rotate-180' : ''"></i>
+        </span>
+    </button>
+
+{% endmacro %}
 
 {# === Mapping Section === #}
-{% macro render_mapping_section(mapping_data, style='documentation') %}
-    {% if mapping_data %}
+{% macro render_mapping_comparison(mapping_data, style) %}
+{% if mapping_data %}
         <div class="space-y-4">
             {% for title, details in mapping_data.items() %}
-                
-                <div class="border border-gray-200 rounded-lg overflow-hidden" 
-                     {% if style == 'documentation' %} x-data="{ open: false }" {% endif %}>
-                    
-                    {% if style == 'documentation' %}
-                        <button @click="open = !open" class="cursor-pointer w-full px-4 py-3 bg-gray-50 flex justify-between items-center hover:bg-gray-100 transition-colors text-left">
-                            <span class="font-semibold text-sm text-primary">{{ title }}</span>
-                            <i class="fa-solid fa-chevron-down text-xs text-tertiary transition-transform duration-200"
-                               :class="open ? 'rotate-180' : ''"></i>
-                        </button>
-                    {% else %}
-                        <div class="bg-gray-50 px-3 py-2 border-b border-gray-100">
-                            <h4 class="font-bold text-xs text-secondary uppercase tracking-wider">
-                                {{ title }}
-                            </h4>
-                        </div>
-                    {% endif %}
-
-                    <div {% if style == 'documentation' %} x-show="open" class="border-t border-gray-200" {% endif %}>
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="bg-gray-50 px-3 py-2 border-b border-gray-100">
+                        <h4 class="font-bold text-xs text-secondary uppercase tracking-wider">
+                            {{ title }}
+                        </h4>
+                    </div>
+                    <div>
                         {{ mapping_table_rows(details) }}
                     </div>
                 </div>
-
             {% endfor %}
         </div>
-    {% else %}
-        <div class="text-sm text-secondary italic p-4 border border-dashed border-gray-300 rounded-lg text-center">
-            No explicit mapping data defined.
+    {% endif %}
+{% endmacro %}
+
+{% macro render_mapping_documentation(mapping_data) %}
+    {% if mapping_data %}
+        <div class="space-y-4">
+            {% for title, details in mapping_data.items() %}
+                <div class="border border-gray-200 rounded-lg overflow-hidden" x-data="{ open: false }">
+                    
+                    <button @click="open = !open" 
+                            :aria-expanded="open"
+                            class="cursor-pointer w-full px-4 py-3 bg-gray-50 flex justify-between items-center hover:bg-gray-100 transition-colors text-left">
+                        <span class="font-semibold text-sm text-primary">{{ title }}</span>
+                        <i class="fa-solid fa-chevron-down text-xs text-tertiary transition-transform duration-200"
+                           :class="open ? 'rotate-180' : ''"></i>
+                    </button>
+
+                    <div x-show="open" x-collapse class="border-t border-gray-200">
+                        {{ mapping_table_rows(details) }}
+                    </div>
+                </div>
+            {% endfor %}
         </div>
     {% endif %}
 {% endmacro %}

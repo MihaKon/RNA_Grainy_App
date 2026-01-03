@@ -29,7 +29,7 @@ class ModelService:
         model_data = {
             "id": model_name,
             "name": model_cls.name_verbose,
-            "description": config.get("description_text", f"Coarse-grained model: {model_cls.name_verbose}"),
+            "description": config.get("description_text"),
             "raw_beads": raw_beads,
             "beads": cls.format_beads(raw_beads),
             "citation": cls.format_citations(config),

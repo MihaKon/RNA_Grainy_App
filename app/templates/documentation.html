@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "components/model_display.html" import render_model_image, render_citations, render_mapping_section %}
+{% from "components/model_display.html" import render_model_image, render_citations, render_mapping_documentation %}
 
 {% block content %}
 <div class="w-full bg-gray-50 min-h-screen">
@@ -60,9 +60,7 @@
                         
                         {{ render_model_image(model.image_url) }}
 
-                        {% if model.citation %}
-                            {{ render_citations(model.citation) }}
-                        {% endif %}
+                        {{ render_citations(model.citation) }}
                     </div>
 
                     <div class="flex flex-col gap-4">
@@ -70,7 +68,7 @@
                             <i class="fa-solid fa-list-ul text-tertiary"></i> Atom Mapping Rules
                         </h3>
 
-                        {{ render_mapping_section(model.mapping, style='documentation') }}
+                        {{ render_mapping_documentation(model.mapping) }}
                     </div>
 
                 </div>
