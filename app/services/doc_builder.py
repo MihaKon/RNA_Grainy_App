@@ -2,7 +2,7 @@ from typing import Any, Tuple
 from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.settings import MODELS_IMAGES_DIR, STATIC_DIR
 
-class ModelService:
+class ModelContextBuilder:
     @classmethod
     def get_all_models(cls) -> list[dict[str, Any]]: # type: ignore
         models_data = []
