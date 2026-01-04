@@ -32,13 +32,29 @@
 {% macro mapping_table_rows(details) %}
 <table class="w-full text-sm text-left">
     <tbody class="divide-y divide-gray-100">
-        {% for bead, atoms in details.items() %}
+        <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
+            <tr>
+                <th scope="col" class="px-3 py-2 w-1/5 font-semibold">
+                    Bead ID
+                </th>
+                <th scope="col" class="px-3 py-2 w-1/5 font-semibold">
+                    Bead
+                </th>
+                <th scope="col" class="px-3 py-2 w-3/5 font-semibold">
+                    Description
+                </th>
+            </tr>
+        </thead>
+        {% for row in details %}
         <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-3 py-2 font-mono text-accent font-semibold w-1/3 border-r border-gray-50 bg-white">
-                {{ bead }}
+            <td class="px-3 py-2 font-mono text-accent font-semibold w-1/5 border-r border-gray-50 bg-white">
+                {{ row.bead_id }}
             </td>
-            <td class="px-3 py-2 text-secondary w-2/3 break-words bg-white">
-                {{ atoms }}
+            <td class="px-3 py-2 text-secondary w-1/5 break-words bg-white">
+                {{ row.bead }}
+            </td>
+            <td class="px-3 py-2 text-secondary w-3/5 italic leading-relaxed">
+                {{ row.description }}
             </td>
         </tr>
         {% endfor %}

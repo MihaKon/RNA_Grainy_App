@@ -68,8 +68,20 @@ class DocsContextBuilder:
         for group_key, group_data in raw_mapping.items():
             residues = ", ".join(group_data.get("residues", []))
             title = f"{group_key.capitalize()} ({residues})"
-            details = group_data.get("atoms", group_data.get("description", {}))
-            formatted_mapping[title] = details
+            atoms_dict = group_data.get("atoms", {})
+            desc_dict = group_data.get("description", {})
+
+            row_data = []
+            for k in atoms_dict.keys():
+                atom_name = atoms_dict[k]
+                desc_text = desc_dict.get(k, "No description available.")
+                row_data.append({
+                    "bead_id": k,
+                    "bead": atom_name,
+                    "description": desc_text
+                })
+
+            formatted_mapping[title] = row_data
 
         return formatted_mapping
     
