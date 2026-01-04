@@ -5,7 +5,7 @@
   ],
   "model_name": "NAST",
   "beads_per_residue": [1],
-  "description": "NAST [1] is a highly reduced coarse-grained model in which the entire nucleotide is represented as a single bead located on the C3' carbon atom of the sugar-phosphate backbone. Such significant geometric simplification allows for computationally efficient sampling of the conformational space, even for large RNA molecules [1]. This model utilizes an energy function based on statistical potentials, defined for, among others, bond lengths, bond angles, and torsion angles. Due to the lack of representation of nitrogenous bases, the model does not allow for \textit{de novo} folding based on the RNA sequence. It is used for RNA tertiary structure prediction using molecular dynamics simulations, although the model requires input regarding secondary structure and tertiary constraints [2].",
+  "description": "NAST [1] is a highly reduced coarse-grained model in which the entire nucleotide is represented as a single bead located on the C3' carbon atom of the sugar-phosphate backbone. Such significant geometric simplification allows for computationally efficient sampling of the conformational space, even for large RNA molecules [1]. This model utilizes an energy function based on statistical potentials, defined for, among others, bond lengths, bond angles, and torsion angles. Due to the lack of representation of nitrogenous bases, the model does not allow for de novo folding based on the RNA sequence. It is used for RNA tertiary structure prediction using molecular dynamics simulations, although the model requires input regarding secondary structure and tertiary constraints [2].",
   "citations": {
     "1": "jonikas2009coarse",
     "2": "li2021rna"
