@@ -15,7 +15,7 @@
     "xia2010coarse": "Zhen Xia, David Paul Gardner, Robin R Gutell, and Pengyu Ren. Coarse-grained model for simulation of rna three-dimensional structures. The Journal of Physical Chemistry B, 114(42):13497-13506, 2010.",
     "li2023rnajp": "Jun Li and Shi-Jie Chen. Rnajp: enhanced rna 3d structure predictions with non-canonical interactions and global topology sampling. Nucleic acids research, 51(7):3341-3356, 2023.",
     "boniecki2016simrna": "Michal J Boniecki, Grzegorz Lach, Wayne K Dawson, Konrad Tomala, Pawel Lukasz, Tomasz Soltysinski, Kristian M Rother, and Janusz M Bujnicki. Simrna: a coarse-grained method for rna folding simulations and 3d structure prediction. Nucleic acids research, 44(7):e63-e63, 2016",
-    "poblete2018nucleobase": "Simón PobletTane, Sandro Bottaro, and Giovanni Bussi. A nucleobase-centered coarse-grained representation for structure prediction of rna motifs. Nucleic acids research, 46(4):1674-1683, 2018.",
+    "poblete2018nucleobase": "Simón Poblete, Sandro Bottaro, and Giovanni Bussi. A nucleobase-centered coarse-grained representation for structure prediction of rna motifs. Nucleic acids research, 46(4):1674-1683, 2018.",
     "pasquali2010hire": "Samuela Pasquali and Philippe Derreumaux. Hire-rna: a high resolution coarse-grained energy model for rna. The journal of physical chemistry B, 114(37):11957-11966, 2010.",
     "zhou2022febrna": "Li Zhou, Xunxun Wang, Shixiong Yu, Ya-Lan Tan, and Zhi-Jie Tan. Febrna: An automated fragment-ensemble-based model for building rna 3d structures. Biophysical Journal, 121(18):3381-3392, 2022.",
     "cao2010predicting": "Song Cao, David P Giedroc, and Shi-Jie Chen. Predicting loop-helix tertiary structural contacts in rna pseudoknots. Rna, 16(3):538-552, 2010."
