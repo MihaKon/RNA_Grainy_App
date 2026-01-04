@@ -1,8 +1,11 @@
+import json
 from typing import Any, Tuple
 from app.coarse_grain.models import CoarseGrainModelRegistry
-from app.settings import MODELS_IMAGES_DIR, STATIC_DIR
+from app.settings import MODELS_IMAGES_DIR, STATIC_DIR, CITATIONS_DIR
 
 class DocsContextBuilder:
+    _citations_cache: dict[str, str] | None = None
+
     @classmethod
     def get_all_models(cls) -> list[dict[str, Any]]: # type: ignore
         models_data = []
@@ -33,7 +36,7 @@ class DocsContextBuilder:
             "description": config.get("description", f"Coarse-grained model: {model_cls.name_verbose}"),
             "raw_beads": raw_beads,
             "beads": cls.format_beads(raw_beads),
-            "citation": cls.format_citations(config),
+            "citations": cls.format_citations(config),
             "mapping": cls.format_mapping(config),
             "image_url": cls.get_image_url(model_name),
         }
@@ -71,12 +74,20 @@ class DocsContextBuilder:
         return formatted_mapping
     
     @classmethod
+    def load_citations(cls) -> dict[str, str]:
+        if cls._citations_cache is None:
+            with open(CITATIONS_DIR, "r") as f:
+                cls._citations_cache = json.load(f)
+        return cls._citations_cache
+    
+    @classmethod
     def format_citations(cls, config: dict[str, Any]) -> list[str]: # type: ignore
-        raw_citations = config.get("citation", {})
+        citations_keys = config.get("citations", {})
+        citations_values = cls.load_citations()
+
         citations = []
-        for key in raw_citations.keys():
-            text = raw_citations[key]
-            citations.append(f"{key}. {text}")
+        for i, k in enumerate(citations_keys.values(), start=1):
+            citations.append(f"{i}. {citations_values.get(k)}")
 
         return citations
     

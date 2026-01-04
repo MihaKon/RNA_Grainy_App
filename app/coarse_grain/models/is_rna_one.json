@@ -10,6 +10,12 @@
   ],
   "model_name": "isRNA1",
   "beads_per_residue": [4,5],
+  "description": "In the isRNA1 [1] model, each nucleotide is represented by 4 (for pyrimidines) or 5 beads (for purines). The sugar-phosphate backbone is defined by the P bead, located at the phosphorus atom P, and the S bead at the C4' carbon atom of the ribose. The representation of nitrogenous bases is based on beads placed at the centers of mass of specific heavy atom groups. The knowledge-based energy function of the model accounts for bonded and non-bonded interactions. Molecular dynamics simulations are utilized to search the conformational space. The final structure prediction is the result of clustering analysis performed on the set of lowest-energy conformations obtained during the simulation [2]. The model finds application in the de novo folding of small RNA molecules. Furthermore, it is applied in the prediction of larger structures using data on the molecule's secondary structure [2].",
+  "citations": {
+    "1": "zhang2021isrna1",
+    "2": "wang2023rna"
+  },
+  
   "mapping": {
     "purine": {
       "residues": ["A", "G"],

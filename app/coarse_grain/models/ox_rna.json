@@ -9,6 +9,10 @@
   ],
   "model_name": "oxRNA",
   "beads_per_residue": [5],
+  "description": "oxRNA [1] was designed to preserve the structural, mechanical, and thermodynamic properties of RNA. In this model, each nucleotide is represented as a rigid body possessing five interaction sites, which allows for the reproduction of key parameters of ribonucleic acids. The modeled interactions include: sugar-phosphate backbone continuity, hydrogen bonds, cross-stacking, and stacking in the 3' and 5' directions. Such geometry allows for a precise definition of the nucleotide's orientation in space. The model's energy function is physical in nature but utilizes experimental thermodynamic data for parameterization, such as melting temperatures of duplex and hairpin motifs (a top-down approach). This allows the model to be investigated regarding kinetic properties within molecular dynamics simulations or Monte Carlo methods, covering processes such as dissociation or double helix formation. The model also finds application in simulations of folding structures containing pseudoknots, kissing-loop complex formation, hairpin motif unfolding, and the mechanical properties of RNA [1]",
+  "citations": {
+    "1": "vsulc2014nucleotide"
+  },
   "mapping": {
     "nucleotide": {
       "residues": ["A", "G", "C", "U"],

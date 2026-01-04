@@ -10,11 +10,11 @@
   ],
   "model_name": "SimRNA",
   "beads_per_residue": [5],
-  "description": "Model SimRNA również cechuje się pięcioziarnową reprezentacją nukleotydu. Szkielet cukrowo-fosforanowy jest definiowany przez dwa ziarna, umieszczone na atomie fosforu P oraz węgla C4′, natomiast zasady azotowe są opisywane przez trzy ziarna - dla pirymidyn, na atomach N 1, C2 i C4 lub N 9, C2 i C6 dla puryn [1]. Składnikami funkcji energii modelu są oddziaływania wiążące, opisujące geometrię szkieletu oraz oddziaływania niewiążące między resztami nukleotydowymi, oparte na potencjałach statystycznych [2]. SimRNA wykorzystuje metodę próbkowania Monte Carlo do przeszukiwania przestrzeni konformacyjnej. Model wykorzystywany jest w predykcji i symulacji struktur krótkich sekwencji RNA poniżej 50 nukleotydów, a przy dostarczonych informacjach o ograniczeniach drugo- i trzeciorzędowych jest skuteczny także dla dłuższych cząsteczek [3].",
-  "citation": {
-    "1": "Michal J Boniecki, Grzegorz Lach, Wayne K Dawson, Konrad Tomala, Pawel Lukasz, Tomasz Soltysinski, Kristian M Rother, and Janusz M Bujnicki. Simrna: a coarse-grained method for rna folding simulations and 3d structure prediction. Nucleic acids research, 44(7):e63–e63, 2016",
-    "2": "Jun Li and Shi-Jie Chen. Rna 3d structure prediction using coarse-grained models. Frontiers in Molecular Biosciences, 8:720937, 2021",
-    "3": "Xunxun Wang, Shixiong Yu, En Lou, Ya-Lan Tan, and Zhi-Jie Tan. Rna 3d structure prediction: progress and perspective. Molecules, 28(14):5532, 2023"
+  "description": "The SimRNA [1] model features a five-bead representation of the nucleotide. The sugar-phosphate backbone is defined by two beads, located at the phosphorus atom P and the C4' carbon atom, while nitrogenous bases are described by three beads - for pyrimidines, on atoms N1, C2, and C4, or N9, C2, and C6 for purines [1]. The components of the model's energy function include bonded interactions, which describe the backbone geometry, and non-bonded interactions between nucleotide residues, based on statistical potentials [2]. SimRNA utilizes a Monte Carlo sampling method to search the conformational space. The model is used for the prediction and simulation of structures of short RNA sequences (below 50 nucleotides), and - given provided information regarding secondary and tertiary constraints - it is also effective for larger molecules [3].",
+  "citations": {
+    "1": "boniecki2016simrna",
+    "2": "li2021rna",
+    "3": "wang2023rna"
   },
   "mapping": {
     "purine": {

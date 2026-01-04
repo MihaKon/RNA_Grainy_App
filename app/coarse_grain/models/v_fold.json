@@ -8,6 +8,12 @@
   ],
   "model_name": "Vfold",
   "beads_per_residue": [2,3],
+  "description": "Vfold [1] is a model that combines the reduction of degrees of freedom via a coarse-grained approach with a fragment assembly method. The physical basis of the model is the virtual bond model concept. Vectors connecting selected atoms play a key role in describing the backbone geometry, defining the molecule's conformation [1]. Each nucleotide is represented by bonds connecting the phosphorus atom P and the sugar backbone carbon atom C4'. An extended version of this model accounts for an additional bond connecting the C4' atom with the nitrogen atom N1 for pyrimidines or N9 for purines [2], which allows for the definition of the nitrogenous base orientation.The energy function utilizes virtual bond conformation parameters to effectively estimate the conformational entropy of RNA loops and the folding of structural motifs. In this model, the RNA conformational space is sampled using a discrete space (so-called lattice models) [1], which drastically reduces computational complexity by limiting possible molecular conformations to a finite set of states. Vfold3D is an implementation of this approach for 3D RNA structure prediction. It utilizes the RNA secondary structure and relies on assembling the structure from tertiary fragments (also called templates) retrieved from a database that match specific secondary motifs [3].",
+  "citations": {
+    "1": "cao2010predicting",
+    "2": "dawson2016coarse",
+    "3": "wang2023rna"
+  },
   "mapping": {
     "purine": {
       "residues": ["A", "G"],
