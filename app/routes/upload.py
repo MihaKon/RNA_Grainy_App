@@ -56,7 +56,7 @@ async def handle_request_and_render(
     await run_job_processing(job_id, file_content, file_format, selected_model)
 
     context = StructureProcessor.build_comparison_context(
-        job_id, filename, file_format, selected_model
+        request, job_id, filename, file_format, selected_model
     )
     return TEMPLATES.TemplateResponse(
         request=request,

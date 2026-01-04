@@ -1,4 +1,5 @@
 from collections import defaultdict
+from fastapi import Request
 from typing import Any, DefaultDict
 
 from gemmi import Structure, cif, make_structure_from_block, read_pdb_string
@@ -29,6 +30,7 @@ class StructureProcessor:
 
     @staticmethod
     def build_comparison_context(
+        request: Request,
         job_id: str,
         filename: str,
         file_format: SupportedFormats,
@@ -38,9 +40,12 @@ class StructureProcessor:
         
         model_data = DocsContextBuilder.get_model(selected_model)
 
+        reference_url = str(request.url_for("get_job_file", job_id=job_id, file_type="reference").include_query_params(file_format=original_format.value))
+        coarse_url = str(request.url_for("get_job_file", job_id=job_id, file_type="coarse").include_query_params(file_format=COARSE_FILE_FORMAT.value))
+
         initial_data = {
-            "reference_url": f"/api/jobs/{job_id}/reference?file_format={original_format.value}",
-            "coarse_url": f"/api/jobs/{job_id}/coarse?file_format={COARSE_FILE_FORMAT.value}",
+            "reference_url": reference_url,
+            "coarse_url": coarse_url,
             "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
             "job_id": job_id,
             "filename": filename,

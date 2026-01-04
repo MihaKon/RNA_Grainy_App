@@ -49,9 +49,9 @@ class DocsContextBuilder:
     @classmethod
     def get_image_url(cls, model_name: str) -> str:
         filename = f"{model_name.lower()}.png"
-        relative_path = MODELS_IMAGES_DIR.relative_to(STATIC_DIR)
-        img_path = (relative_path / filename).as_posix()
-        return f"/static/{img_path}"
+        relative_path = MODELS_IMAGES_DIR.relative_to(STATIC_DIR) / filename
+        img_path = relative_path.as_posix()
+        return f"/{STATIC_DIR.name}/{img_path}"
     
     @classmethod
     def format_beads(cls, beads: list[int]) -> str: 
