@@ -76,7 +76,7 @@ class DocsContextBuilder:
     @classmethod
     def load_citations(cls) -> dict[str, str]:
         if cls._citations_cache is None:
-            with open(CITATIONS_DIR, "r") as f:
+            with open(CITATIONS_DIR, "r", encoding="utf-8") as f:
                 cls._citations_cache = json.load(f)
         return cls._citations_cache
     
