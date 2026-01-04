@@ -66,8 +66,7 @@ class DocsContextBuilder:
         raw_mapping = config.get("mapping", {})
         
         for group_key, group_data in raw_mapping.items():
-            residues = ", ".join(group_data.get("residues", []))
-            title = f"{group_key.capitalize()} ({residues})"
+            title = f"{group_key.capitalize()}"
             atoms_dict = group_data.get("atoms", {})
             desc_dict = group_data.get("description", {})
 
