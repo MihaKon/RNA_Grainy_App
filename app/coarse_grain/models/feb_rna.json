@@ -13,23 +13,18 @@
     "1": "zhou2022febrna"
   },
   "mapping": {
-    "purine": {
+    "nucleotide": {
       "residues": ["A", "G"],
       "atoms": {
         "A1": "P",
         "A2": "C4'",
         "A3": "N9"
       },
-      "description": "A1: Phosphate (P atom), A2: Ribose (C4' atom), A3: Base (N9 atom)"
-    },
-    "pyrimidine": {
-      "residues": ["C", "U"],
-      "atoms": {
-        "A1": "P",
-        "A2": "C4'",
-        "A3": "N1"
-      },
-      "description": "A1: Phosphate (P atom), A2: Ribose (C4' atom), A3: Base (N1 atom)"
+      "description": {
+        "A1": "Phosphate P atom",
+        "A2": "Ribose C4' atom",
+        "A3": "Base N9 atom"
+      }
     }
   },
   "connectivity": {

@@ -8,20 +8,17 @@
     "3": "dawson2016coarse"
   },
   "mapping": {
-    "purine": {
+    "nucleotide": {
       "residues": ["A", "G", "DA", "DG"],
       "atoms": {
         "A1": "P",
         "A2": "S",
         "A3": "B"
-      }
-    },
-    "pyrimidine": {
-      "residues": ["C", "U", "DC", "DT"],
-      "atoms": {
-        "A1": "P",  
-        "A2": "S",
-        "A3": "B"
+      },
+      "description": {
+        "A1": "Phosphate group geometric center of mass",
+        "A2": "Sugar ring geometric center of mass",
+        "A3": "Base geometric center of mass"
       }
     }
   },

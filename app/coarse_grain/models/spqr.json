@@ -19,15 +19,13 @@
       "residues": ["A", "G", "C", "U"],
       "atoms": {
         "A1": "P",
-        "A2": "Ribose_CM",
-        "A3": "Base_V1",
-        "A4": "Base_V2",
-        "A5": "Base_V3"
+        "A2": "S",
+        "A3": "B"
       },
       "description": {
-        "A1": "Phosphate group (on P atom)",
-        "A2": "Ribose Geometric Center (Virtual bead)",
-        "A3-A5": "Abstract rigid triplet defining base center and orientation (Non-atomic mapping)"
+        "A1": "P bead on phosphate P atom",
+        "A2": "S bead on geometric center of ribose",
+        "A3": "B bead on geometric center of the base"
       }
     }
   },

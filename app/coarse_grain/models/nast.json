@@ -15,6 +15,9 @@
       "residues": ["A", "G", "C", "U"],
       "atoms": {
         "A1": "C3'"
+      },
+      "description": {
+        "A1": "Sugar-phosphate backbone C3' atom"
       }
     }
   },

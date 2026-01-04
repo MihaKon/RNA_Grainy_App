@@ -16,23 +16,18 @@
   },
   "beads_per_residue": [3],
   "mapping": {
-    "purine": {
+    "nucleotide": {
       "residues": ["A", "G"],
       "atoms": {
         "A1": "P",
-        "A2": "C4'",
-        "A3": "N9"
+        "A2": "S",
+        "A3": "B"
       },
-      "description": "A1: Phosphate Group CM, A2: Sugar Ring CM, A3: Base CM"
-    },
-    "pyrimidine": {
-      "residues": ["C", "U"],
-      "atoms": {
-        "A1": "P",
-        "A2": "C4'",
-        "A3": "N1"
-      },
-      "description": "A1: Phosphate Group CM, A2: Sugar Ring CM, A3: Base CM"
+      "description": {
+        "A1": "Phosphate group center of mass",
+        "A2": "Sugar ring center of mass",
+        "A3": "Base center of mass"
+      }
     }
   },
   "connectivity": {

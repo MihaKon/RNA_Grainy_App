@@ -27,11 +27,11 @@
         "A5": "C2"
       },
       "description": {
-        "A1": "P atom",
-        "A2": "S bead (on C4')",
-        "A3": "RC bead (Core CM: Imidazole ring + C5, C4, N3)",
-        "A4": "AC/GO bead (Hoogsteen edge CM: C6/N6 or C6/O6)",
-        "A5": "AN/GN bead (Sugar edge CM: C2/N1 or C2/N2/N1)"
+        "A1": "P bead on phosphate P atom)",
+        "A2": "S bead on sugar C4' atom",
+        "A3": "RC bead (core center of mass: N9, C8, C7, C5, C4, N3)",
+        "A4": "AC/GO bead (Hoogsteen edge center of mass: C6/N6 or C6/O6)",
+        "A5": "AN/GN bead (sugar edge center of mass: C2/N1 or C2/N2/N1)"
       }
     },
     "pyrimidine": {
@@ -43,10 +43,10 @@
         "A4": "C2"
       },
       "description": {
-        "A1": "P atom",
-        "A2": "S bead (on C4')",
-        "A3": "YC bead (Ring part CM: N1, C5, C6)",
-        "A4": "CN/UO bead (Functional group CM: C2, O2, N3, C4, N4/O4)"
+        "A1": "P bead on phosphate P atom)",
+        "A2": "S bead on sugar C4' atom",
+        "A3": "YC bead (center of mass: N1, C5, C6)",
+        "A4": "CN/UO bead (center of mass: C2, O2, N3, C4, N4/O4)"
       }
     }
   },

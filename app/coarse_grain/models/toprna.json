@@ -19,23 +19,18 @@
     "2": "li2021rna"
   },
   "mapping": {
-    "purine": {
+    "nucleotide": {
       "residues": ["A", "G"],
       "atoms": {
         "A1": "P",
-        "A2": "C4'",
-        "A3": "N9"
+        "A2": "S",
+        "A3": "B"
       },
-      "description": "A1: P atom. A2: Geometric center of ribose (avg of C1',C2',C3',C4',C5',O4'). A3: Geometric center of base ring (N and C atoms)."
-    },
-    "pyrimidine": {
-      "residues": ["C", "U"],
-      "atoms": {
-        "A1": "P",
-        "A2": "C4'",
-        "A3": "N1"
-      },
-      "description": "A1: P atom. A2: Geometric center of ribose (avg of C1',C2',C3',C4',C5',O4'). A3: Geometric center of base ring (N and C atoms)."
+      "description": {
+        "A1": "P bead on phosphate P atom",
+        "A2": "S bead on geometric center of ribose",
+        "A3": "B bead on geometric center of the base N and C atoms"
+      }
     }
   },
   "connectivity": {

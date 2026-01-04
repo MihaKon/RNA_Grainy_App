@@ -18,19 +18,12 @@
     "nucleotide": {
       "residues": ["A", "G", "C", "U"],
       "atoms": {
-        "A1": "Site_BB",
-        "A2": "Site_Stack_3",
-        "A3": "Site_Stack_5",
-        "A4": "Site_HB",
-        "A5": "Site_Cross"
+        "A1": "P",
+        "A2": "B"
       },
       "description": {
-        "General": "Nucleotide represented as a rigid body with 5 interaction sites.",
-        "A1": "Backbone connectivity site",
-        "A2": "3' Stacking interaction site",
-        "A3": "5' Stacking interaction site",
-        "A4": "Hydrogen bonding interaction site",
-        "A5": "Cross-stacking interaction site"
+        "A1": "P bead on phosphate P atom",
+        "A2": "Base center of mass"
       }
     }
   },

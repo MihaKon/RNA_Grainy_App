@@ -15,6 +15,9 @@
       "residues": ["A", "G", "C", "U"],
       "atoms": {
         "A1": "P"
+      },
+      "description": {
+        "A1": "Phosphate P atom"
       }
     }
   },
