@@ -1,13 +1,4 @@
 {
-  "residues": [],
-  "atoms": [
-    "P",
-    "C4'",
-    "N9",
-    "C2",
-    "C6",
-    "N1"
-  ],
   "model_name": "SimRNA",
   "beads_per_residue": 5,
   "mapping": {

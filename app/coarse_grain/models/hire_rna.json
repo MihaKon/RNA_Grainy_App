@@ -22,11 +22,6 @@
         "A5": "C1'",
         "A6": "N1",
         "A7": "N9"
-      },
-      "description": {
-        "A1-A5": "Backbone atoms: P, O5', C5', C4', C1'",
-        "A6": "Base Bead 1 (CM of six-membered ring)",
-        "A7": "Base Bead 2 (CM of five-membered ring)"
       }
     },
     "pyrimidine": {
@@ -38,10 +33,6 @@
         "A4": "C4'",
         "A5": "C1'",
         "A6": "N1"
-      },
-      "description": {
-        "A1-A5": "Backbone atoms: P, O5', C5', C4', C1'",
-        "A6": "Base Bead (CM of the ring)"
       }
     }
   },
@@ -57,8 +48,7 @@
     "inter_residue": [
       {
         "source": "A4",
-        "target": "A1",
-        "description": "Backbone connection from C4' (i) to P (i+1) (Note: C3' is implicit)"
+        "target": "A1"
       }
     ]
   }

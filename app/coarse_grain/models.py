@@ -4,7 +4,17 @@ import json
 import pathlib
 from abc import ABC
 
-from gemmi import Connection, ConnectionType, Selection, Structure
+import numpy as np
+from gemmi import (
+    Atom,
+    Chain,
+    Connection,
+    ConnectionType,
+    Element,
+    Position,
+    Residue,
+    Structure,
+)
 
 from app.settings import COARSE_GRAIN_MODELS_DIR
 
@@ -42,127 +52,182 @@ class BaseCoarseGrainModel(ABC):
     name_verbose: str
     JSON_model_file: pathlib.Path
     _cached_model_data: dict | None = None
+    _cached_residue_type_map: dict[str, str] | None = None
+    _cached_allowed_atoms: dict[str, list[str]] | None = None
 
-    def read_json_model(self) -> dict:
+    DEFAULT_INTER_TAIL = "A2"
+    DEFAULT_INTER_HEAD = "A1"
+
+    @property
+    def config(self) -> dict | None:
+        return self.read_json_model()
+
+    @property
+    def mapping_config(self) -> dict:
+        mapping = self.config.get("mapping")
+        if not mapping:
+            raise ValueError("Configuration missing required 'mapping' section")
+        return mapping
+
+    @property
+    def residue_type_map(self) -> dict[str, str]:
+        if self._cached_residue_type_map is None:
+            self._cached_residue_type_map = self._build_residue_type_map()
+        return self._cached_residue_type_map
+
+    @property
+    def connectivity_rules(self) -> tuple[list, dict]:
+        conn = self.config.get("connectivity")
+        if not conn:
+            raise ValueError("Configuration missing required 'connectivity' section")
+
+        intra = conn.get("intra_residue", [])
+        inter_config = conn.get("inter_residue", [])
+
+        inter_rule = {"tail": self.DEFAULT_INTER_TAIL, "head": self.DEFAULT_INTER_HEAD}
+
+        if inter_config:
+            rule_data = inter_config[0]
+            inter_rule["tail"] = rule_data.get("source", self.DEFAULT_INTER_TAIL)
+            inter_rule["head"] = rule_data.get("target", self.DEFAULT_INTER_HEAD)
+
+        return intra, inter_rule
+
+    @property
+    def allowed_atoms_map(self) -> dict[str, list[str]]:
+        if self._cached_allowed_atoms is None:
+            self._cached_allowed_atoms = self._build_allowed_atoms_map()
+        return self._cached_allowed_atoms
+
+    def read_json_model(self) -> dict | None:
         if self._cached_model_data is None:
             if not self.JSON_model_file or not self.JSON_model_file.exists():
                 raise FileNotFoundError(f"Model file not found: {self.JSON_model_file}")
 
-            with open(self.JSON_model_file, "r") as f:
+            with open(self.JSON_model_file, "r", encoding="UTF-8") as f:
                 self._cached_model_data = json.load(f)
 
-        assert self._cached_model_data is not None
         return self._cached_model_data
 
-    def get_atoms_subset_mapping(self) -> dict[str, list]:
-        model_data = self.read_json_model()
-        mapping = model_data.get("mapping", [])
+    def _build_residue_type_map(self) -> dict[str, str]:
+        res_map = {}
+        for group_name, group_data in self.mapping_config.items():
+            for res_name in group_data["residues"]:
+                res_map[res_name] = group_name
+        return res_map
+
+    def _build_allowed_atoms_map(self) -> dict[str, list[str]]:
         allowed_atoms = {}
-        for group in mapping.values():
+        for group in self.mapping_config.values():
             for res_name in group["residues"]:
                 allowed_atoms[res_name] = list(group["atoms"].values())
         return allowed_atoms
 
+    def _get_atom_name_for_bead(self, res_type: str, bead_id: str) -> str:
+        return self.mapping_config[res_type]["atoms"][bead_id]
+
+    def _should_keep_residue(self, residue_name: str) -> bool:
+        return residue_name in self.allowed_atoms_map
+
     def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
-        """Apply coarse-graining to the structure and rebuild connections from the map."""
-
-        config = self.read_json_model()
-        mapping_config = config["mapping"]
-
-        res_type_map = {}
-        for g_name, g_data in mapping_config.items():
-            for r_name in g_data["residues"]:
-                res_type_map[r_name] = g_name
-
         coarse_structure = original_structure.clone()
         coarse_structure.clear_conect()
 
-        allowed_atoms = self.get_atoms_subset_mapping()
-
-        for model in coarse_structure:
-            for chain in model:
-                for res_id in range(len(chain) - 1, -1, -1):
-                    res = chain[res_id]
-                    if res.name not in allowed_atoms:
-                        del chain[res_id]
-                        continue
-
-                    keep_list = set(allowed_atoms[res.name])
-                    for atom_id in range(len(res) - 1, -1, -1):
-                        if res[atom_id].name not in keep_list:
-                            del res[atom_id]
-
-        coarse_structure.remove_empty_chains()
-        coarse_structure.assign_serial_numbers(numbered_ter=True)
-
-        intra_rules = config["connectivity"]["intra_residue"]
-        inter_rules_config = config["connectivity"].get("inter_residue", [])
-
-        inter_rule_tail = "A2"
-        inter_rule_head = "A1"
-
-        if inter_rules_config:
-            rule = inter_rules_config[0]
-            val_source = rule.get("source")
-            val_target = rule.get("target")
-
-            inter_rule_tail = val_source
-            inter_rule_head = val_target
-
-        for model in coarse_structure:
-            for chain in model:
-                prev_res = None
-
-                for res in chain:
-                    r_type = res_type_map.get(res.name)
-                    if not r_type:
-                        prev_res = None
-                        continue
-
-                    atom_map = mapping_config[r_type]["atoms"]
-                    current_atoms = {atom.name: atom for atom in res}
-
-                    for bead_a, bead_b in intra_rules:
-                        name_a = atom_map.get(bead_a)
-                        name_b = atom_map.get(bead_b)
-
-                        if name_a in current_atoms and name_b in current_atoms:
-                            coarse_structure.connections.append(
-                                self._get_connection(
-                                    res,
-                                    current_atoms[name_a],
-                                    res,
-                                    current_atoms[name_b],
-                                )
-                            )
-
-                    if prev_res is not None:
-                        prev_type = res_type_map.get(prev_res.name)
-                        prev_atom_map = mapping_config[prev_type]["atoms"]
-
-                        tail_atom_name = prev_atom_map.get(inter_rule_tail)
-                        head_atom_name = atom_map.get(inter_rule_head)
-
-                        tail_atom = next(
-                            (a for a in prev_res if a.name == tail_atom_name), None
-                        )
-                        head_atom = current_atoms.get(head_atom_name)
-
-                        if tail_atom and head_atom:
-                            coarse_structure.connections.append(
-                                self._get_connection(
-                                    prev_res, tail_atom, res, head_atom
-                                )
-                            )
-
-                    prev_res = res
+        self._filter_atoms(coarse_structure)
+        self._rebuild_connectivity(coarse_structure)
 
         coarse_structure.setup_entities()
         coarse_structure.assign_label_seq_id()
         return coarse_structure
 
-    def _get_connection(self, res1, atom1, res2, atom2):
-        """Helper to create and append a gemmi connection."""
+    def _filter_atoms(self, structure: Structure) -> None:
+        allowed_atoms = self.allowed_atoms_map
+
+        for model in structure:
+            for chain in model:
+                for res_id in range(len(chain) - 1, -1, -1):
+                    res = chain[res_id]
+
+                    if not self._should_keep_residue(res.name):
+                        del chain[res_id]
+                        continue
+
+                    self._filter_residue_atoms(res, allowed_atoms[res.name])
+
+        structure.remove_empty_chains()
+        structure.assign_serial_numbers(numbered_ter=True)
+
+    def _filter_residue_atoms(
+        self, residue: Residue, allowed_atom_names: list[str]
+    ) -> None:
+        keep_set = set(allowed_atom_names)
+        for atom_id in range(len(residue) - 1, -1, -1):
+            if residue[atom_id].name not in keep_set:
+                del residue[atom_id]
+
+    def _rebuild_connectivity(self, structure: Structure) -> None:
+        intra_rules, inter_rule = self.connectivity_rules
+
+        for model in structure:
+            for chain in model:
+                self._connect_chain_residues(structure, chain, intra_rules, inter_rule)
+
+    def _connect_chain_residues(
+        self, structure: Structure, chain: Chain, intra_rules: list, inter_rule: dict
+    ) -> None:
+        prev_res = None
+
+        for res in chain:
+            res_type = self.residue_type_map.get(res.name)
+            if not res_type:
+                prev_res = None
+                continue
+
+            self._add_intra_residue_connections(structure, res, res_type, intra_rules)
+
+            if prev_res is not None:
+                self._add_inter_residue_connection(structure, prev_res, res, inter_rule)
+
+            prev_res = res
+
+    def _add_intra_residue_connections(
+        self, structure: Structure, res: Residue, res_type: str, intra_rules: list
+    ) -> None:
+        current_atoms = {atom.name: atom for atom in res}
+
+        for bead_a, bead_b in intra_rules:
+            atom_a_name = self._get_atom_name_for_bead(res_type, bead_a)
+            atom_b_name = self._get_atom_name_for_bead(res_type, bead_b)
+
+            if atom_a_name in current_atoms and atom_b_name in current_atoms:
+                conn = self._create_connection(
+                    res, current_atoms[atom_a_name], res, current_atoms[atom_b_name]
+                )
+                structure.connections.append(conn)
+
+    def _add_inter_residue_connection(
+        self,
+        structure: Structure,
+        prev_res: Residue,
+        curr_res: Residue,
+        inter_rule: dict,
+    ) -> None:
+        prev_type: str = self.residue_type_map.get(prev_res.name, "")
+        curr_type: str = self.residue_type_map.get(curr_res.name, "")
+
+        tail_atom_name = self._get_atom_name_for_bead(prev_type, inter_rule["tail"])
+        head_atom_name = self._get_atom_name_for_bead(curr_type, inter_rule["head"])
+
+        tail_atom = next((a for a in prev_res if a.name == tail_atom_name), None)
+        head_atom = next((a for a in curr_res if a.name == head_atom_name), None)
+
+        if tail_atom and head_atom:
+            conn = self._create_connection(prev_res, tail_atom, curr_res, head_atom)
+            structure.connections.append(conn)
+
+    def _create_connection(
+        self, res1: Residue, atom1: Atom, res2: Residue, atom2: Atom
+    ) -> Connection:
         conn = Connection()
         conn.type = ConnectionType.Covale
 
@@ -207,6 +272,125 @@ class YUPModel(BaseCoarseGrainModel):
 class Nares2PModel(BaseCoarseGrainModel):
     name_verbose: str = "Nares-2P"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nares.json"
+
+    @property
+    def sugar_atoms(self) -> list[str]:
+        return self.config.get("sugar_atoms", ["C1'", "C2'", "C3'", "C4'", "O4'"])
+
+    @property
+    def base_atoms_map(self) -> dict[str, list[str]]:
+        return self.config.get("base_atoms", {})
+
+    @property
+    def phosphate_atoms(self) -> list[str]:
+        return self.config.get("phosphate_atoms", ["P", "OP1", "OP2", "O5'"])
+
+    def _should_keep_residue(self, residue_name: str) -> bool:
+        return residue_name in ["A", "C", "G", "U"]
+
+    def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
+        coarse_structure = original_structure.clone()
+        self._create_coarse_grain_atoms(coarse_structure)
+        self._remove_empty_chains(coarse_structure)
+        coarse_structure.setup_entities()
+
+        return coarse_structure
+
+    def _create_coarse_grain_atoms(self, structure: Structure) -> None:
+        for model in structure:
+            for chain in model:
+                residues_list = list(chain)
+
+                for i, res in enumerate(residues_list):
+                    if not self._should_keep_residue(res.name):
+                        del chain[res.name]
+                        continue
+
+                    try:
+                        p_pos, s_pos, b_pos = self._calculate_bead_positions(
+                            res,
+                            residues_list[i - 1] if i > 0 else None,
+                            residues_list[i + 1]
+                            if i < len(residues_list) - 1
+                            else None,
+                        )
+                    except ValueError as e:
+                        print(f"Warning: Skipping residue {res.name}{res.seqid}: {e}")
+                        del chain[res.name]
+                        continue
+
+                    for atom in list(res):
+                        res.remove_atom(atom.name)
+
+                    res.add_atom(self._create_atom("P", p_pos, element="P"), pos=-1)
+                    res.add_atom(self._create_atom("S", s_pos, element="C"), pos=-1)
+                    res.add_atom(self._create_atom("B", b_pos, element="N"), pos=-1)
+
+    def _calculate_bead_positions(
+        self,
+        residue: Residue,
+        prev_residue: Residue | None,
+        next_residue: Residue | None,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        s_pos = self._get_geometric_center(residue, self.sugar_atoms)
+        base_atoms = self.base_atoms_map.get(residue.name)
+        if not base_atoms:
+            raise ValueError(f"Unknown base type: {residue.name}")
+        b_pos = self._get_geometric_center(residue, base_atoms)
+
+        if prev_residue and self._should_keep_residue(prev_residue.name):
+            try:
+                prev_s_pos = self._get_geometric_center(prev_residue, self.sugar_atoms)
+                p_pos = (prev_s_pos + s_pos) / 2.0
+            except ValueError:
+                p_pos = self._get_geometric_center(residue, self.phosphate_atoms)
+        else:
+            p_pos = self._get_geometric_center(residue, self.phosphate_atoms)
+
+        return p_pos, s_pos, b_pos
+
+    def _get_geometric_center(
+        self, residue: Residue, atom_names: list[str]
+    ) -> np.ndarray:
+        positions = []
+
+        for atom in residue:
+            if atom.name in atom_names:
+                positions.append([atom.pos.x, atom.pos.y, atom.pos.z])
+
+        if not positions:
+            raise ValueError(
+                f"No atoms found from {atom_names} in residue {residue.name}{residue.seqid}"
+            )
+
+        return np.mean(positions, axis=0)
+
+    def _create_atom(self, name: str, position: np.ndarray, element: str = "C") -> Atom:
+        atom = Atom()
+        atom.name = name
+        atom.element = Element(element)
+        atom.pos = Position(float(position[0]), float(position[1]), float(position[2]))
+        atom.occ = 1.0
+        atom.b_iso = 20.0
+        atom.charge = 0
+
+        return atom
+
+    def _remove_empty_chains(self, structure: Structure) -> None:
+        for model in structure:
+            chains_to_remove = []
+            for chain in model:
+                if len(chain) == 0:
+                    chains_to_remove.append(chain.name)
+
+            for chain_name in chains_to_remove:
+                model.remove_chain(chain_name)
+
+    def _filter_atoms(self, structure: Structure) -> None:
+        pass
+
+    def _rebuild_connectivity(self, structure: Structure) -> None:
+        pass
 
 
 @CoarseGrainModelRegistry.register

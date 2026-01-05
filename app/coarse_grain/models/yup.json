@@ -1,8 +1,4 @@
 {
-  "residues": [],
-  "atoms": [
-    "P"
-  ],
   "model_name": "YUP",
   "beads_per_residue": 1,
   "mapping": {
@@ -18,8 +14,7 @@
     "inter_residue": [
       {
         "source": "A1",
-        "target": "A1",
-        "description": "Virtual bond connection from P (i) to P (i+1)"
+        "target": "A1"
       }
     ]
   }
