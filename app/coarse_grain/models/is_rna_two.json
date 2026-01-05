@@ -29,8 +29,8 @@
         "A1": "P bead on phosphate P atom",
         "A2": "S bead on sugar C4' atom",
         "A3": "R1 (Core): Imidazole ring + C5, C4, N3",
-        "A4": "A1/G1 (Hoogsteen edge): A(C6,N6) or G(C6,O6,N1)",
-        "A5": "A2/G2 (Sugar edge): A(C2,N1) or G(C2,N2)"
+        "A4": "A1/G1 adenine or guanine bead (Hoogsteen edge): A(C6,N6) or G(C6,O6,N1)",
+        "A5": "A2/G2 adenine or guanine bead (sugar edge): A(C2,N1) or G(C2,N2)"
       }
     },
     "pyrimidine": {
@@ -47,7 +47,7 @@
         "A2": "S bead on sugar C4' atom",
         "A3": "Y1 (pyrimidine ring part): N1, C5, C6",
         "A4": "Y2 (sugar edge): C2, O2",
-        "A5": "C1/U1 (Hoogsteen edge): C(N3,C4,N4) or U(N3,C4,O4)"
+        "A5": "C1/U1 cytosine or uracil bead (Hoogsteen edge): C(N3,C4,N4) or U(N3,C4,O4)"
       }
     }
   },
