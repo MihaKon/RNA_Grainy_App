@@ -13,7 +13,7 @@
     "1": "zhou2022febrna"
   },
   "mapping": {
-    "nucleotide": {
+    "purines": {
       "residues": ["A", "G"],
       "atoms": {
         "A1": "P",
@@ -24,6 +24,19 @@
         "A1": "Phosphate P atom",
         "A2": "Ribose C4' atom",
         "A3": "Base N9 atom"
+      }
+    },
+     "pyrimidines": {
+      "residues": ["C", "U"],
+      "atoms": {
+        "A1": "P",
+        "A2": "C4'",
+        "A3": "N1"
+      },
+      "description": {
+        "A1": "Phosphate P atom",
+        "A2": "Ribose C4' atom",
+        "A3": "Base N1 atom"
       }
     }
   },
