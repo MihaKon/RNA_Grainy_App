@@ -25,6 +25,7 @@ class StructureProcessor:
             return coarse_structure.make_pdb_string()
 
         groups = MmcifOutputGroups(False)  
+        groups.conn = True
         groups.cell = True  
         groups.atoms = True  
         cif_doc = coarse_structure.make_mmcif_document(groups=groups)

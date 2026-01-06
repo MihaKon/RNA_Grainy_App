@@ -204,12 +204,12 @@ class BaseCoarseGrainModel(ABC):
         for bead_a, bead_b in intra_rules:
             atom_a_name = self._get_atom_name_for_bead(res_type, bead_a)
             atom_b_name = self._get_atom_name_for_bead(res_type, bead_b)
-
             if atom_a_name in current_atoms and atom_b_name in current_atoms:
                 conn = self._create_connection(
                     res, current_atoms[atom_a_name], res, current_atoms[atom_b_name]
                 )
                 structure.connections.append(conn)
+                
 
     def _add_inter_residue_connection(
         self,
@@ -234,9 +234,9 @@ class BaseCoarseGrainModel(ABC):
     def _create_connection(
         self, res1: Residue, atom1: Atom, res2: Residue, atom2: Atom
     ) -> Connection:
+        
         conn = Connection()
         conn.type = ConnectionType.Covale
-
         conn.partner1.atom_name = atom1.name
         conn.partner1.chain_name = (
             res1.chain_name if hasattr(res1, "chain_name") else res1.subchain
@@ -252,7 +252,7 @@ class BaseCoarseGrainModel(ABC):
         conn.partner2.res_id.name = res2.name
         conn.partner2.res_id.segment = res2.segment
         conn.partner2.res_id.seqid = res2.seqid
-
+    
         return conn
 
 
@@ -349,6 +349,8 @@ class Nares2PModel(BaseCoarseGrainModel):
                 
                 """
 
+        
+        self._rebuild_connectivity(coarse_structure)
         coarse_structure.setup_entities()
 
         # _atom_site.label_seq_id - residue sequence number therefore we know what bead belongs to what residue in original structure
@@ -387,7 +389,6 @@ class Nares2PModel(BaseCoarseGrainModel):
                         cg_chain.add_residue(cg_res)
                 if len(cg_chain) > 0:
                     cg_model.add_chain(cg_chain)
-            self._rebuild_connectivity(coarse_structure)
         return coarse_structure
                     
     def _generate_beads(self, source: Residue, target: Residue):
@@ -487,8 +488,11 @@ class Nares2PModel(BaseCoarseGrainModel):
         pass
 
     def _rebuild_connectivity(self, structure: Structure) -> None:
-        pass
+        intra_rules, inter_rule = self.connectivity_rules
 
+        for model in structure:
+            for chain in model:
+                self._connect_chain_residues(structure, chain, intra_rules, inter_rule)
 
 @CoarseGrainModelRegistry.register
 class IFoldRNAModel(BaseCoarseGrainModel):
