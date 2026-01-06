@@ -299,7 +299,9 @@ class Nares2PModel(BaseCoarseGrainModel):
         self._remove_empty_chains(coarse_structure)
 
         #fixing cif labels to match original structure and to enable displaying in molstar
-        # todo: you can add custom name e.g. 1_rna_{model_name} to distinguish different coarse grain models
+        # TODO 1: you can add custom name e.g. 1_rna_{model_name} to distinguish different coarse grain models
+        # TODO 2: nares P bead need to be placed in halfway between previous and current residue sugar beads
+        # TODO 3: check how you can handle between calculated P and mapped P from original structure
         orig_models = [m for m in original_structure]
         cg_models = [m for m in coarse_structure]
 
