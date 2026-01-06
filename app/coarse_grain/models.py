@@ -299,6 +299,7 @@ class Nares2PModel(BaseCoarseGrainModel):
         self._remove_empty_chains(coarse_structure)
 
         #fixing cif labels to match original structure and to enable displaying in molstar
+        # todo: you can add custom name e.g. 1_rna_{model_name} to distinguish different coarse grain models
         orig_models = [m for m in original_structure]
         cg_models = [m for m in coarse_structure]
 
@@ -351,6 +352,7 @@ class Nares2PModel(BaseCoarseGrainModel):
         coarse_structure.setup_entities()
 
         # _atom_site.label_seq_id - residue sequence number therefore we know what bead belongs to what residue in original structure
+        #but its summarizing and not starting from 1 when new chain starts
         for model in coarse_structure:
             for chain in model:
                 for residue in chain:
