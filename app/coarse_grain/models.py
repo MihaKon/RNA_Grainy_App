@@ -110,7 +110,7 @@ class BaseCoarseGrainModel(ABC):
             if not self.JSON_model_file or not self.JSON_model_file.exists():
                 raise FileNotFoundError(f"Model file not found: {self.JSON_model_file}")
 
-            with open(self.JSON_model_file, "r", encoding="UTF-8") as f:
+            with open(self.JSON_model_file, "r", encoding="utf-8") as f:
                 self._cached_model_data = json.load(f)
 
         return self._cached_model_data

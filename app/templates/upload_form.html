@@ -1,122 +1,243 @@
 {% extends "base.html" %}
 {% from "components/primary_button.html" import primary_button %}
 {% from "components/error_alert.html" import error_alert %}
+
 {% block content %}
-    <div id="upload-container" class="flex w-full items-center justify-center">
-        <form hx-post="/upload/file/"
-              hx-target="#upload-container"
-              hx-swap="innerHTML"
-              hx-encoding="multipart/form-data"
-              hx-target-error="#errors"
-              x-data="{ modelError: false, fileError: false, open: false, selectedLabel: 'Select model', selectedModel: '', rcsbID: '', fileObject: null, validate() { this.modelError = !this.selectedModel;  const selectedFile = $refs.fileInput.value; const selectedRCSBFile = this.rcsbID.trim() !== '';  this.fileError = !selectedFile && !selectedRCSBFile;  return !this.modelError && !this.fileError; }, toggle() { this.open = !this.open }, close(focusAfter) { if (!this.open) return; this.open = false; focusAfter && focusAfter.focus() } }"
-              @htmx:before-request="if (!validate()) { event.preventDefault(); }"
-              @htmx:config-request=" if (rcsbID.trim() !== '') { event.detail.path = '/upload/rcsb/'; } else { event.detail.path = '/upload/file/'; }"
-              class="bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-6 w-md"
-              novalidate>
-            <h2 class="text-2xl font-bold text-secondary text-center">Upload File</h2>
-            <p class="text-sm text-tertiary text-center">
-                Supported formats:
-                {% for file_format in supported_file_formats %}{{ '.'~file_format~', ' }}{% endfor %}
-            </p>
-            <div id="errors"
-                 @htmx:after-swap="$el.classList.toggle('hidden', $el.innerHTML.trim() === '')"
-                 class="hidden">
-                {% if error %}
-                    {% include "components/error_alert.html" %}
-                {% endif %}
+<div id="upload-container" class="flex w-full items-center justify-center min-h-[500px]">
+    <form x-data="uploadForm"
+          hx-post="/upload/file/"
+          hx-target="#upload-container"
+          hx-swap="innerHTML"
+          hx-encoding="multipart/form-data"
+          hx-target-error="#errors"
+          hx-indicator="#loading-spinner"
+          @htmx:config-request="submitForm($event)"
+          class="bg-white rounded-2xl shadow-xl border border-primary/10 p-8 flex flex-col gap-6 w-full max-w-md relative"
+          novalidate>
+
+        <div id="loading-spinner" class="htmx-indicator absolute inset-0 bg-white/80 z-50 flex items-center justify-center rounded-2xl backdrop-blur-sm">
+            <div class="flex flex-col items-center gap-3">
+                <i class="fa-solid fa-circle-notch fa-spin fa-2xl text-accent"></i>
+                <span class="text-sm font-semibold text-primary">Processing...</span>
             </div>
-            <div class="flex flex-col gap-2">
-                <label for="file" class="text-secondary font-medium">Upload your structure file</label>
-                <div class="flex">
-                    <input id="file"
-                           name="file"
-                           type="file"
-                           x-ref="fileInput"
-                           :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
-                           class="block w-full text-sm text-primary outline-none rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium cursor-pointer file:cursor-pointer file:bg-primary file:text-white hover:file:bg-secondary hover:cursor-pointer border shadow-sm focus:ring-2 focus:ring-focus transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                           accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}"
-                           :disabled="rcsbID.trim() !== ''"
-                           :required="rcsbID.trim() === ''"
-                           @change="fileObject = $event.target.files[0]; if (fileObject) { rcsbID = '' }">
-                    <button type="button"
-                            @click="$refs.fileInput.value = null; fileObject = null;"
-                            :class="{ 'hidden': !fileObject, '': fileObject }"
-                            class="ml-2 flex-shrink-0 text-gray-400 hover:text-danger hover:cursor-pointer"
-                            aria-label="Remove file">
+        </div>
+
+        <div class="text-center space-y-1">
+            <h2 class="text-2xl font-bold text-secondary">Upload Structure</h2>
+            <p class="text-xs text-primary/60 uppercase tracking-wide font-medium">
+                Supported: {% for file_format in supported_file_formats %}{{ file_format|upper }}{{ ', ' if not loop.last else '' }}{% endfor %}
+            </p>
+        </div>
+
+        <div id="errors" class="empty:hidden">
+            {% if error %}
+                {% include "components/error_alert.html" %}
+            {% endif %}
+        </div>
+
+        <div class="space-y-4">
+            
+            <div class="relative group">
+                <input type="file" 
+                       id="file" 
+                       name="file" 
+                       x-ref="fileInput"
+                       @change="handleFileSelect"
+                       accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}"
+                       class="hidden">
+                
+                <label x-show="!file" 
+                       for="file" 
+                       class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 bg-gray-50/50 group-hover:bg-accent/5"
+                       :class="errors.file ? 'border-danger bg-danger-light/20' : 'border-primary/20 hover:border-accent'">
+                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-primary/60 group-hover:text-accent transition-colors">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl mb-2"></i>
+                        <p class="text-sm"><span class="font-semibold">Click to upload</span></p>
+                    </div>
+                </label>
+
+                <div x-show="file" x-cloak class="flex items-center justify-between w-full p-3 border rounded-xl bg-accent/5 border-accent/20">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center shrink-0 shadow-sm shadow-accent/20">
+                            <i class="fa-solid fa-file"></i>
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                            <span class="text-sm font-bold text-secondary truncate" x-text="file?.name"></span>
+                            <span class="text-xs text-primary/70" x-text="(file?.size / 1024).toFixed(1) + ' KB'"></span>
+                        </div>
+                    </div>
+                    <button type="button" @click="removeFile" class="p-2 text-primary/40 hover:text-danger transition-colors cursor-pointer">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
-                <div class="relative py-2">
-                    <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                        <span class="w-full border-t border-gray-300"></span>
-                    </div>
-                    <div class="relative flex justify-center">
-                        <span class="bg-white px-3 text-sm font-medium text-gray-500">Or</span>
-                    </div>
-                </div>
-                <div class="flex flex-col gap-2">
-                    <label for="rcsb-file" class="text-secondary font-medium">Search your structure in RCSB PDB database</label>
-                    <input id="rcsb-file"
-                           name="rcsb_id"
-                           type="text"
-                           x-model="rcsbID"
-                           placeholder="Enter structure ID (e.g., 1RNA)"
-                           :class="{ 'border-danger': fileError, 'border-gray-300': !fileError }"
-                           class="block w-full text-sm text-primary rounded-lg border border-gray-300 shadow-sm outline-none focus:ring-2 focus:ring-focus px-4 py-2 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                           :disabled="fileObject !==null"
-                           :required="fileObject === null"
-                           @input="if (rcsbID.trim() !== '') { $refs.fileInput.value = null; fileObject = null }">
-                    <p x-show="fileError" x-cloak class="text-sm font-semibold text-danger">
-                        Please select a file OR enter a structure ID to proceed.
-                    </p>
-                </div>
             </div>
-            <div class="flex flex-col">
-                <div class="flex justify-between gap-2">
-                    <label class="text-secondary font-medium items-center flex">Select CG Model</label>
-                    <div x-on:keydown.escape.prevent.stop="close($refs.button)"
-                         x-on:focusin.window="!$refs.panel.contains($event.target) && close()"
-                         x-id="['dropdown-button']"
-                         class="relative">
-                        <input type="hidden" name="selected_model" x-model="selectedModel">
-                        <button type="button"
-                                x-ref="button"
-                                @click="toggle()"
-                                :aria-expanded="open"
-                                :aria-controls="$id('dropdown-button')"
-                                :class="{ 'border-danger': modelError, 'border-gray-300': !modelError }"
-                                class="relative cursor-pointer flex items-center whitespace-nowrap justify-center min-w-48 gap-2 py-2 rounded-lg shadow-sm px-4 text-primary bg-white border focus:ring-2 focus:ring-focus outline-none">
-                            <span class="text-sm text-primary" x-text="selectedLabel"></span>
-                            <i class="fa-2xs fa-solid fa-chevron-down transition-transform duration-300"
-                               :class="{'fa-rotate-180': open}"></i>
-                        </button>
-                        <div x-ref="panel"
-                             x-show="open"
-                             x-transition
-                             @click.outside="close($refs.button); $refs.button.blur()"
-                             :id="$id('dropdown-button')"
-                             x-cloak
-                             class="absolute left-0 min-w-48 max-h-40 overflow-y-auto rounded-lg shadow-sm mt-2 z-10 origin-top-left bg-white p-1.5 outline-none border border-gray-200">
-                            <ul class="font-medium text-primary">
-                                {% for model_id,model_name in coarse_grain_models %}
-                                    <li>
-                                        <button type="button"
-                                            {# 1. Store the ID in the value variable, Store the NAME in the label variable #}
-                                            @click="selectedModel = '{{ model_id }}'; selectedLabel = '{{ model_name }}'; close($refs.button)"
-                                            class="flex cursor-pointer items-center w-full px-3 py-1.5 rounded-lg hover:bg-gray-100">
-                                            {{ model_name }}
-                                        </button>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
+
+            <div class="relative flex py-2 items-center">
+                <div class="flex-grow border-t border-primary/10"></div>
+                <span class="flex-shrink-0 mx-4 text-primary/40 text-xs font-bold uppercase tracking-wider">OR USE PDB ID</span>
+                <div class="flex-grow border-t border-primary/10"></div>
+            </div>
+
+            <div>
+                <div class="relative text-primary">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-primary/40">
+                        <i class="fa-solid fa-dna"></i>
                     </div>
+                    <input type="text" 
+                           name="rcsb_id" 
+                           x-model="rcsbId"
+                           @input="handleRcsbInput"
+                           placeholder="Enter PDB ID (e.g. 1RNA)" 
+                           class="block w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border bg-white shadow-sm outline-none transition-all placeholder:text-primary/30"
+                           :class="errors.file 
+                               ? 'border-danger focus:border-danger focus:ring-2 focus:ring-danger/20' 
+                               : 'border-primary/20 focus:border-accent focus:ring-2 focus:ring-focus/50'">
                 </div>
-                <p x-show="modelError" x-cloak class="text-sm font-semibold text-danger">
-                    Please select a coarse-grain model to proceed.
+                <p x-show="errors.file" x-transition class="mt-1 text-xs text-danger font-medium ml-1">
+                    Please upload a file or enter a PDB ID.
                 </p>
             </div>
-            {{ primary_button(text='Submit', button_type="submit", classes='w-full') }}
-        </form>
-    </div>
+        </div>
+
+        <div class="space-y-1">
+            <label class="block text-sm font-medium text-primary ml-1">Coarse-Grain Model</label>
+            
+            <div class="relative z-20" 
+                x-ref="dropdownContainer"
+                @click.outside="dropdownOpen = false">
+                
+                <input type="hidden" name="selected_model" x-model="selectedModel">
+                
+                <button type="button" 
+                        x-ref="dropdownButton"
+                        @click="checkPosition(); dropdownOpen = !dropdownOpen"
+                        class="w-full bg-white border rounded-xl py-2.5 px-4 text-left cursor-pointer shadow-sm outline-none flex justify-between items-center transition-all"
+                        :class="errors.model 
+                            ? 'border-danger focus:ring-2 focus:ring-danger/20' 
+                            : 'border-primary/20 focus:border-accent focus:ring-2 focus:ring-focus/50'">
+                    <span class="block truncate text-sm" 
+                        :class="selectedModel ? 'text-secondary font-semibold' : 'text-primary/50'" 
+                        x-text="selectedLabel"></span>
+                    
+                    <i class="fa-solid fa-chevron-down text-xs text-primary/40 transition-transform duration-200" 
+                    :class="{
+                        'rotate-180': dropdownOpen && !openUp, 
+                        'rotate-0': !dropdownOpen,
+                        'rotate-180': dropdownOpen && openUp 
+                    }"></i>
+                </button>
+
+                <div x-show="dropdownOpen" 
+                    x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="transform opacity-0 scale-95"
+                    x-transition:enter-end="transform opacity-100 scale-100"
+                    x-transition:leave="transition ease-in duration-75"
+                    x-transition:leave-start="transform opacity-100 scale-100"
+                    x-transition:leave-end="transform opacity-0 scale-95"
+                    class="absolute z-50 left-0 right-0 w-full bg-white shadow-xl shadow-primary/20 max-h-60 rounded-xl py-1 text-base overflow-auto focus:outline-none sm:text-sm border border-primary/10"
+                    :class="openUp ? 'bottom-full mb-2 origin-bottom' : 'top-full mt-2 origin-top'">
+                    
+                    {% for model_id, model_name in coarse_grain_models %}
+                    <div @click="selectModel('{{ model_id }}', '{{ model_name }}')"
+                        class="cursor-pointer select-none relative py-2.5 pl-3 pr-9 transition-colors hover:bg-accent/5 group border-b border-primary/5 last:border-0">
+                        <span class="block truncate font-medium text-primary group-hover:text-accent"
+                            :class="{ 'text-accent font-bold': selectedModel === '{{ model_id }}' }">
+                            {{ model_name }}
+                        </span>
+                        
+                        <span x-show="selectedModel === '{{ model_id }}'" class="absolute inset-y-0 right-0 flex items-center pr-4 text-accent">
+                            <i class="fa-solid fa-check"></i>
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <p x-show="errors.model" x-transition class="mt-1 text-xs text-danger font-medium ml-1">
+                    Please select a model.
+                </p>
+            </div>
+        </div>
+
+        <div class="pt-2">
+            {{ primary_button(text='Process Structure', button_type="submit", classes='w-full py-3 text-base font-semibold shadow-lg shadow-accent/20 hover:shadow-accent/40 transition-all active:scale-[0.99]') }}
+        </div>
+    </form>
+</div>
+
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('uploadForm', () => ({
+            file: null,
+            rcsbId: '',
+            selectedModel: '',
+            selectedLabel: 'Select model',
+            dropdownOpen: false,
+            errors: { file: false, model: false },
+            isSubmitting: false,
+            openUp: false,
+
+            handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    this.file = file;
+                    this.rcsbId = ''; 
+                    this.errors.file = false;
+                }
+            },
+
+            removeFile() {
+                this.file = null;
+                this.$refs.fileInput.value = '';
+            },
+
+            handleRcsbInput() {
+                if (this.rcsbId.trim() !== '') {
+                    this.removeFile(); 
+                    this.errors.file = false;
+                }
+            },
+
+            selectModel(id, name) {
+                this.selectedModel = id;
+                this.selectedLabel = name;
+                this.errors.model = false;
+                this.dropdownOpen = false;
+            },
+
+            validate() {
+                const hasFile = !!this.file;
+                const hasRcsb = this.rcsbId.trim().length > 0;
+                const hasModel = !!this.selectedModel;
+
+                this.errors.file = !hasFile && !hasRcsb;
+                this.errors.model = !hasModel;
+
+                return !this.errors.file && !this.errors.model;
+            },
+
+            submitForm(event) {
+                if (!this.validate()) {
+                    event.preventDefault();
+                } else {
+                    this.isSubmitting = true;
+                    event.detail.path = this.rcsbId.trim() !== '' 
+                        ? '/upload/rcsb/' 
+                        : '/upload/file/';
+                }
+            },
+
+            checkPosition() {
+            const buttonRect = this.$refs.dropdownButton.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - buttonRect.bottom;
+            
+            if (spaceBelow < 250) {
+                this.openUp = true;
+            } else {
+                this.openUp = false;
+            }
+        },
+        }))
+    });
+</script>
 {% endblock %}

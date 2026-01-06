@@ -1,6 +1,12 @@
 {
   "model_name": "SimRNA",
-  "beads_per_residue": 5,
+  "beads_per_residue": [5],
+  "description": "The SimRNA [1] model features a five-bead representation of the nucleotide. The sugar-phosphate backbone is defined by two beads, located at the phosphorus atom P and the C4' carbon atom, while nitrogenous bases are described by three beads - for pyrimidines, on atoms N1, C2, and C4, or N9, C2, and C6 for purines [1]. The components of the model's energy function include bonded interactions, which describe the backbone geometry, and non-bonded interactions between nucleotide residues, based on statistical potentials [2]. SimRNA utilizes a Monte Carlo sampling method to search the conformational space. The model is used for the prediction and simulation of structures of short RNA sequences (below 50 nucleotides), and - given provided information regarding secondary and tertiary constraints - it is also effective for larger molecules [3].",
+  "citations": {
+    "1": "boniecki2016simrna",
+    "2": "li2021rna",
+    "3": "wang2023rna"
+  },
   "mapping": {
     "purine": {
       "residues": ["A", "G", "DA", "DG"],
@@ -10,6 +16,13 @@
         "A3": "N9",
         "A4": "C2",
         "A5": "C6"
+      },
+      "description": {
+        "A1": "Phosphate P atom",
+        "A2": "Sugar C4' atom",
+        "A3": "Base N9 atom",
+        "A4": "Base C2 atom",
+        "A5": "Base C6 atom"
       }
     },
     "pyrimidine": {
@@ -20,6 +33,13 @@
         "A3": "N1",
         "A4": "C2",
         "A5": "C4"
+      },
+      "description": {
+        "A1": "Phosphate P atom",
+        "A2": "Sugar C4' atom",
+        "A3": "Base N1 atom",
+        "A4": "Base C2 atom",
+        "A5": "Base C4 atom"
       }
     }
   },

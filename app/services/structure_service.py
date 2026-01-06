@@ -1,11 +1,12 @@
 from collections import defaultdict
+from fastapi import Request
 from typing import Any, DefaultDict
 
 from gemmi import Structure, cif, make_structure_from_block, read_pdb_string, MmcifOutputGroups
 
 from app.coarse_grain.parser import process_structure_with_coarse_grain_model
 from app.models import COARSE_FILE_FORMAT, SupportedFormats
-
+from app.services.docs_builder import DocsContextBuilder
 
 class StructureProcessor:
     @staticmethod
@@ -33,28 +34,35 @@ class StructureProcessor:
 
     @staticmethod
     def build_comparison_context(
+        request: Request,
         job_id: str,
         filename: str,
         file_format: SupportedFormats,
         selected_model: str,
     ) -> DefaultDict[str, Any]:
         original_format = file_format.normalize_format()
+        
+        model_data = DocsContextBuilder.get_model(selected_model)
+
+        reference_url = str(request.url_for("get_job_file", job_id=job_id, file_type="reference").include_query_params(file_format=original_format.value))
+        coarse_url = str(request.url_for("get_job_file", job_id=job_id, file_type="coarse").include_query_params(file_format=COARSE_FILE_FORMAT.value))
+
         initial_data = {
-            "job_id": job_id,
-            "reference_url": f"/api/jobs/{job_id}/reference?file_format={original_format.value}",
-            "coarse_url": f"/api/jobs/{job_id}/coarse?file_format={COARSE_FILE_FORMAT.value}",
-            "filename": filename,
+            "reference_url": reference_url,
+            "coarse_url": coarse_url,
             "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
-            "selected_model": str,
+            "job_id": job_id,
+            "filename": filename,
+            
+            "atom_counts": {
+                "original": "TODO: Count atoms",  
+                "coarse": "TODO: Count beads",
+            },
+            "selected_chains": ["TODO"], 
+            "selected_models": ["TODO"],
+            
+            "model": model_data,
         }
 
         context: DefaultDict[str, Any] = defaultdict(list, initial_data)
-
-        # fix: move to calculations in other issue
-        """
-        for structure in [original_structure, coarse_structure]:
-            counts = count_structure_entities(structure)
-            for key, count in counts.items():
-                context[key].append(count)
-        """
         return context

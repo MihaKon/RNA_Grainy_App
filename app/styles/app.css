@@ -5,7 +5,9 @@
 @theme {
     --color-primary: #212D40;
     --color-secondary: #11151C;
+    --color-accent: #155DFC;
     --color-danger: #E02424; 
     --color-danger-light: #FECACA;
     --color-focus: #B182E3; 
+    --color-tertiary: #6A7282;
 }

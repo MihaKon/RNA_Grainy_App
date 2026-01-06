@@ -7,25 +7,37 @@
     "N1"
   ],
   "model_name": "FebRNA",
-  "beads_per_residue": 3,
+  "beads_per_residue": [3],
+  "description": "FebRNA [1] is a coarse-grained model that utilizes secondary structure-based fragment assembly for tertiary structure prediction. The coarse-grained representation describes a nucleotide as three beads corresponding to the positions of heavy atoms - the phosphate atom P, the ribose atom C4', and the nitrogen atom N1 for pyrimidines or N9 for purines [1]. This model does not employ an energy function to fold the molecule; instead, it generates a pool of complete structures via fragment assembly and subsequently selects the best one based on the cgRNASP-Feb scoring function. This function consists of a statistical potential (evaluation of non-bonded interactions derived from known RNA structures from the PDB database) and a bonded potential (evaluation of the backbone geometry correctness) [1]. FebRNA is utilized in predicting 3D RNA structures containing diverse motifs [1].",
+  "citations": {
+    "1": "zhou2022febrna"
+  },
   "mapping": {
-    "purine": {
+    "purines": {
       "residues": ["A", "G"],
       "atoms": {
         "A1": "P",
         "A2": "C4'",
         "A3": "N9"
       },
-      "description": "A1: Phosphate (P atom), A2: Ribose (C4' atom), A3: Base (N9 atom)"
+      "description": {
+        "A1": "Phosphate P atom",
+        "A2": "Ribose C4' atom",
+        "A3": "Base N9 atom"
+      }
     },
-    "pyrimidine": {
+     "pyrimidines": {
       "residues": ["C", "U"],
       "atoms": {
         "A1": "P",
         "A2": "C4'",
         "A3": "N1"
       },
-      "description": "A1: Phosphate (P atom), A2: Ribose (C4' atom), A3: Base (N1 atom)"
+      "description": {
+        "A1": "Phosphate P atom",
+        "A2": "Ribose C4' atom",
+        "A3": "Base N1 atom"
+      }
     }
   },
   "connectivity": {
