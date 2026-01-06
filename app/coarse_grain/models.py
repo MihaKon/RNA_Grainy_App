@@ -372,7 +372,7 @@ class Nares2PModel(BaseCoarseGrainModel):
         
         coarse_structure.clear_conect()
         for model in original_structure:
-            cg_model = coarse_structure[0]
+            cg_model = coarse_structure[0] # TODO 4: check multiple models
             for chain in model:
                 cg_chain = Chain(chain.name)
                 for res in chain:
