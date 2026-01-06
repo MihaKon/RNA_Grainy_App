@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import json
+import logging
 import pathlib
-from abc import ABC
+from abc import ABC, abstractmethod
+from typing import Callable
 
-import numpy as np
 from gemmi import (
     Atom,
     Chain,
@@ -13,16 +14,18 @@ from gemmi import (
     Element,
     Position,
     Residue,
-    Structure
+    Structure,
 )
 
-from app.settings import COARSE_GRAIN_MODELS_DIR
 from app.coarse_grain.geometry import (
+    NUCLEOTIDE_ATOMS,
     calculate_center_of_mass,
     calculate_geometric_center,
     get_base_atoms,
-    NUCLEOTIDE_ATOMS,
 )
+from app.settings import COARSE_GRAIN_MODELS_DIR
+
+logger = logging.getLogger(__name__)
 
 
 class CoarseGrainModelRegistry:
@@ -168,7 +171,7 @@ class BaseCoarseGrainModel(ABC):
     ) -> None:
         keep_set = set(allowed_atom_names)
         for atom_id in range(len(residue) - 1, -1, -1):
-            if residue[atom_id].name not in keep_set: 
+            if residue[atom_id].name not in keep_set:
                 del residue[atom_id]
 
     def _rebuild_connectivity(self, structure: Structure) -> None:
@@ -209,7 +212,6 @@ class BaseCoarseGrainModel(ABC):
                     res, current_atoms[atom_a_name], res, current_atoms[atom_b_name]
                 )
                 structure.connections.append(conn)
-                
 
     def _add_inter_residue_connection(
         self,
@@ -234,7 +236,6 @@ class BaseCoarseGrainModel(ABC):
     def _create_connection(
         self, res1: Residue, atom1: Atom, res2: Residue, atom2: Atom
     ) -> Connection:
-        
         conn = Connection()
         conn.type = ConnectionType.Covale
         conn.partner1.atom_name = atom1.name
@@ -242,7 +243,7 @@ class BaseCoarseGrainModel(ABC):
             res1.chain_name if hasattr(res1, "chain_name") else res1.subchain
         )
         conn.partner1.res_id.name = res1.name
-        conn.partner1.res_id.segment = res1.segment 
+        conn.partner1.res_id.segment = res1.segment
         conn.partner1.res_id.seqid = res1.seqid
 
         conn.partner2.atom_name = atom2.name
@@ -252,8 +253,177 @@ class BaseCoarseGrainModel(ABC):
         conn.partner2.res_id.name = res2.name
         conn.partner2.res_id.segment = res2.segment
         conn.partner2.res_id.seqid = res2.seqid
-    
+
         return conn
+
+
+class CalculatedBeadModel(BaseCoarseGrainModel):
+    """
+    Base class for coarse-grain models that calculate bead positions from atom groups.
+
+    This class handles models where bead positions are computed by aggregating
+    coordinates of multiple atoms (e.g., geometric center or center of mass),
+    rather than directly mapping to existing atom positions.
+
+    Subclasses must implement `center_calculator` to specify the aggregation method.
+
+    CIF Output Format Reference:
+        Column layout for generated ATOM records:
+        1: Record type (ATOM)
+        2: Serial number
+        3: Element symbol
+        4: Atom name (bead type: P, S, B)
+        5: Alt location indicator
+        6: Residue name (label_comp_id) - from original structure
+        7: Chain ID (label_asym_id) - from original structure
+        8: Entity ID
+        9: Residue sequence number (label_seq_id) - from original structure
+        10: Insertion code
+
+        Example output:
+        ATOM 1 C S . U A 1 1 ? 12.266 12.155 24.322 1 20 ? 1 A 1
+    """
+
+    @property
+    @abstractmethod
+    def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
+        """Return the function used to calculate bead center positions."""
+        ...
+
+    def _should_keep_residue(self, residue_name: str) -> bool:
+        return residue_name in ["A", "C", "G", "U"]
+
+    def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
+        coarse_structure: Structure = self._create_coarse_grain_atoms(
+            original_structure
+        )
+        self._remove_empty_chains(coarse_structure)
+        self._rebuild_cg_structure(original_structure, coarse_structure)
+        self._filter_atoms(coarse_structure)
+        self._rebuild_connectivity(coarse_structure)
+        coarse_structure.setup_entities()
+        self._assign_label_seq_ids(coarse_structure)
+        return coarse_structure
+
+    def _rebuild_cg_structure(
+        self, original_structure: Structure, coarse_structure: Structure
+    ) -> None:
+        """Fix CIF labels to match original structure for Molstar compatibility."""
+        orig_models = list(original_structure)
+        cg_models = list(coarse_structure)
+
+        for orig_model, cg_model in zip(orig_models, cg_models):
+            for orig_chain, cg_chain in zip(orig_model, cg_model):
+                orig_res_list = list(orig_chain)
+                cg_res_list = list(cg_chain)
+                limit = min(len(orig_res_list), len(cg_res_list))
+
+                for i in range(limit):
+                    orig_res = orig_res_list[i]
+                    cg_res = cg_res_list[i]
+                    cg_res.name = orig_res.name
+                    cg_res.subchain = orig_chain.name
+
+    def _assign_label_seq_ids(self, structure: Structure) -> None:
+        """Assign label_seq_id so beads map to original residue numbers."""
+        for model in structure:
+            for chain in model:
+                for residue in chain:
+                    residue.label_seq = residue.seqid.num
+
+    def _create_coarse_grain_atoms(self, original_structure: Structure) -> Structure:
+        coarse_structure = original_structure.clone()
+        for model in coarse_structure:
+            for chain in list(model):
+                model.remove_chain(chain.name)
+
+        coarse_structure.clear_conect()
+        for model in original_structure:
+            cg_model = coarse_structure[0]
+            for chain in model:
+                cg_chain = Chain(chain.name)
+                for res in chain:
+                    if not self._should_keep_residue(res.name):
+                        continue
+
+                    cg_res = Residue()
+                    cg_res.name = res.name
+                    cg_res.seqid = res.seqid
+                    cg_res.segment = res.segment
+
+                    self._generate_beads(res, cg_res)
+                    logger.debug(
+                        "Generated %d beads for residue %s%s",
+                        len(cg_res),
+                        res.name,
+                        res.seqid,
+                    )
+
+                    if len(cg_res) > 0:
+                        cg_chain.add_residue(cg_res)
+                if len(cg_chain) > 0:
+                    cg_model.add_chain(cg_chain)
+        return coarse_structure
+
+    def _generate_beads(self, source: Residue, target: Residue) -> None:
+        res_type = self.residue_type_map.get(source.name)
+        if not res_type:
+            logger.warning(
+                "Residue type for %s not found in mapping config", source.name
+            )
+            return
+
+        bead_definitions = self.mapping_config[res_type]["atoms"]
+
+        for bead_id, atom_name in bead_definitions.items():
+            atoms = self._get_atoms_for_bead(bead_id, source)
+            if not atoms:
+                continue
+
+            new_pos = self.center_calculator(source, atoms)
+            if new_pos:
+                new_atom = Atom()
+                new_atom.name = atom_name
+                new_atom.element = Element("C")
+                new_atom.pos = new_pos
+                target.add_atom(new_atom)
+
+    def _get_atoms_for_bead(self, bead_id: str, residue: Residue) -> list[str]:
+        if bead_id == "A1":
+            return NUCLEOTIDE_ATOMS["phosphate"]
+        elif bead_id == "A2":
+            return NUCLEOTIDE_ATOMS["sugar"]
+        elif bead_id == "A3":
+            return get_base_atoms(residue.name)
+        return []
+
+    def _remove_empty_chains(self, structure: Structure) -> None:
+        for model in structure:
+            chains_to_remove = [chain.name for chain in model if len(chain) == 0]
+            for chain_name in chains_to_remove:
+                model.remove_chain(chain_name)
+
+    def _rebuild_connectivity(self, structure: Structure) -> None:
+        intra_rules, inter_rule = self.connectivity_rules
+        for model in structure:
+            for chain in model:
+                self._connect_chain_residues(structure, chain, intra_rules, inter_rule)
+
+
+class GeometricCenterModel(CalculatedBeadModel):
+    """Model that calculates bead positions using geometric center of atoms."""
+
+    @property
+    def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
+        return calculate_geometric_center
+
+
+class MassCenterModel(CalculatedBeadModel):
+    """Model that calculates bead positions using center of mass of atoms."""
+
+    @property
+    def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
+        return calculate_center_of_mass
 
 
 @CoarseGrainModelRegistry.register
@@ -275,226 +445,10 @@ class YUPModel(BaseCoarseGrainModel):
 
 
 @CoarseGrainModelRegistry.register
-class Nares2PModel(BaseCoarseGrainModel):
+class Nares2PModel(GeometricCenterModel):
     name_verbose: str = "Nares-2P"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nares.json"
 
-    @property
-    def sugar_atoms(self) -> list[str]:
-        return self.config.get("sugar_atoms", ["C1'", "C2'", "C3'", "C4'", "O4'"])
-
-    @property
-    def base_atoms_map(self) -> dict[str, list[str]]:
-        return self.config.get("base_atoms", {})
-
-    @property
-    def phosphate_atoms(self) -> list[str]:
-        return self.config.get("phosphate_atoms", ["P", "OP1", "OP2", "O5'"])
-
-    def _should_keep_residue(self, residue_name: str) -> bool:
-        return residue_name in ["A", "C", "G", "U"]
-
-    def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
-        coarse_structure: Structure = self._create_coarse_grain_atoms(original_structure)
-        self._remove_empty_chains(coarse_structure)
-
-        #fixing cif labels to match original structure and to enable displaying in molstar
-        # TODO 1: you can add custom name e.g. 1_rna_{model_name} to distinguish different coarse grain models
-        # TODO 2: nares P bead need to be placed in halfway between previous and current residue sugar beads
-        # TODO 3: check how you can handle between calculated P and mapped P from original structure
-        orig_models = [m for m in original_structure]
-        cg_models = [m for m in coarse_structure]
-
-        for orig_model, cg_model in zip(orig_models, cg_models):
-            for orig_chain, cg_chain in zip(orig_model, cg_model):
-                
-                orig_res_list = list(orig_chain)
-                cg_res_list = list(cg_chain)
-                
-                limit = min(len(orig_res_list), len(cg_res_list))
-                
-                for i in range(limit):
-                    orig_res = orig_res_list[i]
-                    cg_res = cg_res_list[i]
-
-                    # fix label_comp_id - 6 column, residue name
-                    # from everything A to reference a,c,g,u
-                    cg_res.name = orig_res.name
-                    
-                    # fix chain id - 7 column: label_asym_id (from Axp, Bxp to A,B) - necessary to be shown in molstar
-                    cg_res.subchain = orig_chain.name
-
-                """
-                1RNA
-                Results:
-                1    2 3 4 5 6 7 8 9 10
-                ATOM 1 C S . U A 1 1 ? 12.2661111 12.1552222 24.3225556 1 20 ? 1 A 1
-                ATOM 2 C B . U A 1 1 ? 9.53175 9.12 22.716375 1 20 ? 1 A 1
-                ATOM 3 C P . U A 1 2 ? 14.599 13.7873333 21.9356667 1 20 ? 2 A 1
-                ATOM 4 C S . U A 1 2 ? 15.8706667 9.74966667 20.3238889 1 20 ? 2 A 1
-                ATOM 5 C B . U A 1 2 ? 11.747 8.72625 19.48925 1 20 ? 2 A 1
-                ATOM 6 C P . A A 1 3 ? 17.313 11.4233333 17.395 1 20 ? 3 A 1
-                ATOM 7 C S . A A 1 3 ? 16.4103333 7.571 15.044 1 20 ? 3 A 1
-                ATOM 8 C B . A A 1 3 ? 11.7535556 7.607 15.237 1 20 ? 3 A 1
-                ATOM 9 C P . U A 1 4 ? 17.5406667 9.46033333 11.8093333 1 20 ? 4 A 1
-                ATOM 10 C S . U A 1 4 ? 14.1583333 6.93088889 9.87988889 1 20 ? 4 A 1
-                ATOM 11 C B . U A 1 4 ? 11.116875 9.120875 12.110375 1 20 ? 4 A 1
-                ATOM 12 C P . A A 1 5 ? 14.442 8.66933333 6.55766667 1 20 ? 5 A 1
-                ATOM 13 C S . A A 1 5 ? 9.99088889 7.93122222 5.45822222 1 20 ? 5 A 1
-                ATOM 14 C B . A A 1 5 ? 8.22755556 10.6573333 8.76 1 20 ? 5 A 1
-
-                in 9th column we have residue seq number from original structure
-                in 6 column we have residue name from original structure
-                in 7 column we have chain id from original structure
-
-               \
-                
-                """
-
-        
-        self._rebuild_connectivity(coarse_structure)
-        coarse_structure.setup_entities()
-
-        # _atom_site.label_seq_id - residue sequence number therefore we know what bead belongs to what residue in original structure
-        #but its summarizing and not starting from 1 when new chain starts
-        for model in coarse_structure:
-            for chain in model:
-                for residue in chain:
-                    residue.label_seq = residue.seqid.num
-
-        return coarse_structure
-
-    def _create_coarse_grain_atoms(self, original_structure: Structure) -> Structure:
-        coarse_structure = original_structure.clone()
-        for model in coarse_structure:
-            for chain in list(model):
-                model.remove_chain(chain.name)
-        
-        coarse_structure.clear_conect()
-        for model in original_structure:
-            cg_model = coarse_structure[0] # TODO 4: check multiple models
-            for chain in model:
-                cg_chain = Chain(chain.name)
-                for res in chain:
-                    if not self._should_keep_residue(res.name):
-                        continue
-                    
-                    cg_res = Residue()
-                    cg_res.name = res.name
-                    cg_res.seqid = res.seqid
-                    cg_res.segment = res.segment
-
-                    self._generate_beads(res, cg_res)
-                    print(  f"Generated {len(cg_res)} beads for residue {res.name}{res.seqid}" )
-
-                    if len(cg_res) > 0:
-                        cg_chain.add_residue(cg_res)
-                if len(cg_chain) > 0:
-                    cg_model.add_chain(cg_chain)
-        return coarse_structure
-                    
-    def _generate_beads(self, source: Residue, target: Residue):
-        res_type = self.residue_type_map.get(source.name)
-        if not res_type:
-            print( f"Warning: Residue type for {source.name} not found in mapping config." )
-            return
-        
-        bead_definitions = self.mapping_config[res_type]["atoms"]
-
-        for bead_id, atom_name in bead_definitions.items():
-            atoms = self._get_atoms_for_bead(bead_id, source)
-            new_pos = Position(0.0, 0.0, 0.0)
-            element = "C"
-
-            if atoms:
-                new_pos = calculate_geometric_center(source, atoms)
-            
-            if new_pos:
-                new_atom = Atom()
-                new_atom.name = atom_name
-                new_atom.element = Element(element)
-                new_atom.pos = new_pos
-                target.add_atom(new_atom)
-
-            
-    def _get_atoms_for_bead(self, bead_id: str, residue: Residue) -> list[Atom]:
-        if bead_id == "A1":
-            return  NUCLEOTIDE_ATOMS["phosphate"]
-        elif bead_id == "A2":
-            return NUCLEOTIDE_ATOMS["sugar"]
-        elif bead_id == "A3":
-            return get_base_atoms(residue.name)
-        return []
-    
-    def _calculate_bead_positions(
-        self,
-        residue: Residue,
-        prev_residue: Residue | None,
-        next_residue: Residue | None,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        s_pos = self._get_geometric_center(residue, self.sugar_atoms)
-        base_atoms = self.base_atoms_map.get(residue.name)
-        if not base_atoms:
-            raise ValueError(f"Unknown base type: {residue.name}")
-        b_pos = self._get_geometric_center(residue, base_atoms)
-
-        if prev_residue and self._should_keep_residue(prev_residue.name):
-            try:
-                prev_s_pos = self._get_geometric_center(prev_residue, self.sugar_atoms)
-                p_pos = (prev_s_pos + s_pos) / 2.0
-            except ValueError:
-                p_pos = self._get_geometric_center(residue, self.phosphate_atoms)
-        else:
-            p_pos = self._get_geometric_center(residue, self.phosphate_atoms)
-
-        return p_pos, s_pos, b_pos
-
-    def _get_geometric_center(
-        self, residue: Residue, atom_names: list[str]
-    ) -> np.ndarray:
-        positions = []
-
-        for atom in residue:
-            if atom.name in atom_names:
-                positions.append([atom.pos.x, atom.pos.y, atom.pos.z])
-
-        if not positions:
-            raise ValueError(
-                f"No atoms found from {atom_names} in residue {residue.name}{residue.seqid}"
-            )
-
-        return np.mean(positions, axis=0)
-
-    def _create_atom(self, name: str, position: np.ndarray, element: str = "C") -> Atom:
-        atom = Atom()
-        atom.name = name
-        atom.element = Element(element)
-        atom.pos = Position(float(position[0]), float(position[1]), float(position[2]))
-        atom.occ = 1.0
-        atom.b_iso = 20.0
-        atom.charge = 0
-
-        return atom
-
-    def _remove_empty_chains(self, structure: Structure) -> None:
-        for model in structure:
-            chains_to_remove = []
-            for chain in model:
-                if len(chain) == 0:
-                    chains_to_remove.append(chain.name)
-
-            for chain_name in chains_to_remove:
-                model.remove_chain(chain_name)
-
-    def _filter_atoms(self, structure: Structure) -> None:
-        pass
-
-    def _rebuild_connectivity(self, structure: Structure) -> None:
-        intra_rules, inter_rule = self.connectivity_rules
-
-        for model in structure:
-            for chain in model:
-                self._connect_chain_residues(structure, chain, intra_rules, inter_rule)
 
 @CoarseGrainModelRegistry.register
 class IFoldRNAModel(BaseCoarseGrainModel):
@@ -502,10 +456,8 @@ class IFoldRNAModel(BaseCoarseGrainModel):
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "ifoldrna.json"
 
 
-
-
 @CoarseGrainModelRegistry.register
-class TopRNAModel(BaseCoarseGrainModel):
+class TopRNAModel(GeometricCenterModel):
     name_verbose: str = "TopRNA"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "toprna.json"
 
@@ -523,7 +475,7 @@ class IsRNATwoModel(BaseCoarseGrainModel):
 
 
 @CoarseGrainModelRegistry.register
-class SPQRModel(BaseCoarseGrainModel):
+class SPQRModel(GeometricCenterModel):
     name_verbose: str = "SPQR"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "spqr.json"
 
