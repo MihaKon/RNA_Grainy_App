@@ -22,9 +22,9 @@
       "atoms": {
         "A1": "P",
         "A2": "C4'",
-        "A3": "N9",
-        "A4": "C6",
-        "A5": "C2"
+        "A3": "RC",
+        "A4": "AC/GO",
+        "A5": "AN/GN"
       },
       "description": {
         "A1": "P bead on phosphate P atom)",
@@ -38,9 +38,9 @@
       "residues": ["C", "U"],
       "atoms": {
         "A1": "P",
-        "A2": "C4'",
-        "A3": "N1",
-        "A4": "C2"
+        "A2": "S",
+        "A3": "YC",
+        "A4": "CN/UO"
       },
       "description": {
         "A1": "P bead on phosphate P atom)",
