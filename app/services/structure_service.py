@@ -2,7 +2,7 @@ from collections import defaultdict
 from fastapi import Request
 from typing import Any, DefaultDict
 
-from gemmi import Structure, cif, make_structure_from_block, read_pdb_string
+from gemmi import Structure, cif, make_structure_from_block, read_pdb_string, MmcifOutputGroups
 
 from app.coarse_grain.parser import process_structure_with_coarse_grain_model
 from app.models import COARSE_FILE_FORMAT, SupportedFormats
@@ -25,7 +25,11 @@ class StructureProcessor:
         if COARSE_FILE_FORMAT == SupportedFormats.PDB:
             return coarse_structure.make_pdb_string()
 
-        cif_doc = coarse_structure.make_mmcif_document()
+        groups = MmcifOutputGroups(False)  
+        groups.conn = True
+        groups.cell = True  
+        groups.atoms = True  
+        cif_doc = coarse_structure.make_mmcif_document(groups=groups)
         return cif_doc.as_string()
 
     @staticmethod

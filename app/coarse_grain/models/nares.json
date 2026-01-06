@@ -9,7 +9,7 @@
   },
   "mapping": {
     "nucleotide": {
-      "residues": ["A", "G", "DA", "DG"],
+      "residues": ["A", "G", "C", "U"], 
       "atoms": {
         "A1": "P",
         "A2": "S",

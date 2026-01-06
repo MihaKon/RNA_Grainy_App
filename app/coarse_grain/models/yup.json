@@ -1,8 +1,4 @@
 {
-  "residues": [],
-  "atoms": [
-    "P"
-  ],
   "model_name": "YUP",
   "beads_per_residue": [1],
   "description": "YUP [1] reduces the nucleotide representation to a single bead located at the phosphorus atom P. This model relies on an energy function based on statistical potentials. YUP is utilized in Monte Carlo simulations for RNA folding, and - using experimental data regarding the molecule's secondary structure and tertiary constraints - it is employed in tertiary structure prediction [2].",
@@ -26,8 +22,7 @@
     "inter_residue": [
       {
         "source": "A1",
-        "target": "A1",
-        "description": "Virtual bond connection from P (i) to P (i+1)"
+        "target": "A1"
       }
     ]
   }

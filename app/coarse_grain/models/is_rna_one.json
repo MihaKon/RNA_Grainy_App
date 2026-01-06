@@ -22,31 +22,31 @@
       "atoms": {
         "A1": "P",
         "A2": "C4'",
-        "A3": "N9",
-        "A4": "C6",
-        "A5": "C2"
+        "A3": "RC",
+        "A4": "AC/GO",
+        "A5": "AN/GN"
       },
       "description": {
         "A1": "P bead on phosphate P atom)",
         "A2": "S bead on sugar C4' atom",
         "A3": "RC bead (core center of mass: N9, C8, C7, C5, C4, N3)",
-        "A4": "AC/GO (adenine / guanine) bead (Hoogsteen edge center of mass: C6/N6 or C6/O6)",
-        "A5": "AN/GN (adenine / guanine) bead (sugar edge center of mass: C2/N1 or C2/N2/N1)"
+        "A4": "AC/GO adenine or guanine bead (Hoogsteen edge center of mass: C6/N6 or C6/O6)",
+        "A5": "AN/GN adenine or guanine bead (sugar edge center of mass: C2/N1 or C2/N2/N1)"
       }
     },
     "pyrimidine": {
       "residues": ["C", "U"],
       "atoms": {
         "A1": "P",
-        "A2": "C4'",
-        "A3": "N1",
-        "A4": "C2"
+        "A2": "S",
+        "A3": "YC",
+        "A4": "CN/UO"
       },
       "description": {
         "A1": "P bead on phosphate P atom)",
         "A2": "S bead on sugar C4' atom",
         "A3": "YC bead (center of mass: N1, C5, C6)",
-        "A4": "CN/UO (cytosine / uracil) bead (center of mass: C2, O2, N3, C4, N4/O4)"
+        "A4": "CN/UO cytosine or uracil bead (center of mass: C2, O2, N3, C4, N4/O4)"
       }
     }
   },
