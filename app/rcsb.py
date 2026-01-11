@@ -1,8 +1,12 @@
 import httpx
 from httpx import HTTPStatusError
 
+from app.exceptions import FileProcessingError
+from app.settings import MAX_RCSB_UPLOAD_SIE
+
 RCSB_URL = "https://files.rcsb.org/download/"
 client = httpx.AsyncClient()
+
 
 async def fetch_rcsb_file(rcsb_id: str) -> str | None:
     rcsb_id = rcsb_id.strip().upper()
@@ -12,4 +16,8 @@ async def fetch_rcsb_file(rcsb_id: str) -> str | None:
         response.raise_for_status()
     except HTTPStatusError:
         return None
+    if response.num_bytes_downloaded > MAX_RCSB_UPLOAD_SIE:
+        raise FileProcessingError(
+            f"File size exceeds maximum fetching file size of: {MAX_RCSB_UPLOAD_SIE / 1024} KB."
+        )
     return response.text

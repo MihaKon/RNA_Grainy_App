@@ -9,11 +9,12 @@ from app.models import (
     SupportedFormats,
 )
 from app.rcsb import fetch_rcsb_file
-from app.services.job_service import JobManager
-from app.services.structure_service import StructureProcessor
-from app.settings import TEMPLATES
+from app.services.jobs import JobManager
+from app.services.structures import StructureProcessor
+from app.settings import MAX_FILE_UPLOAD_SIZE, TEMPLATES
 
 router = APIRouter(prefix="/upload", tags=["upload"])
+
 
 def process_structure(
     file_content: str,
@@ -72,6 +73,12 @@ async def upload_file(
     selected_model: str = Form(...),
 ) -> HTMLResponse:
     upload_req = FileUploadRequest(file=file, selected_model=selected_model)  # type: ignore
+    if upload_req.file.size is None:
+        raise FileProcessingError("Uploaded file is empty.")
+    elif upload_req.file.size > MAX_FILE_UPLOAD_SIZE:
+        raise FileProcessingError(
+            f"File size exceeds maximum file upload size of: {MAX_FILE_UPLOAD_SIZE / 1024} KB."
+        )
 
     try:
         file_content = (await upload_req.file.read()).decode("utf-8")
@@ -82,7 +89,7 @@ async def upload_file(
         raise FileProcessingError("Uploaded file is empty.")
 
     file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower())  # type: ignore
-    filename: str = upload_req.file.filename.split(".")[0] # type: ignore
+    filename: str = upload_req.file.filename.split(".")[0]  # type: ignore
 
     return await handle_request_and_render(
         request, file_content, filename, file_format, upload_req.selected_model
@@ -99,7 +106,9 @@ async def upload_rcsb(
 
     file_content = await fetch_rcsb_file(rcsb_req.rcsb_id)
     if file_content is None:
-        raise FileProcessingError(f"Could not fetch file for RCSB ID: {rcsb_req.rcsb_id}")
+        raise FileProcessingError(
+            f"Could not fetch file for RCSB ID: {rcsb_req.rcsb_id}"
+        )
 
     file_format = SupportedFormats.CIF
     filename: str = rcsb_req.rcsb_id

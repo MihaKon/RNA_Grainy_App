@@ -426,6 +426,216 @@ class MassCenterModel(CalculatedBeadModel):
         return calculate_center_of_mass
 
 
+class FlexibleBeadModel(BaseCoarseGrainModel):
+    """
+    Model that handles flexible bead definitions from JSON configuration.
+
+    This class supports:
+    - Single atom definitions: bead position is taken directly from the atom
+    - Multi-atom definitions: bead position is calculated as Center of Mass
+
+    JSON format for atoms field:
+    - "A1": "P"                    -> single atom, use P atom position
+    - "A1": ["P", "OP1", "OP2"]    -> multi-atom, calculate COM of these atoms
+    """
+
+    @property
+    def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
+        """Return the function used to calculate bead center positions for multi-atom beads."""
+        return calculate_center_of_mass
+
+    def _should_keep_residue(self, residue_name: str) -> bool:
+        return residue_name in ["A", "C", "G", "U"]
+
+    def _get_residue_type(self, residue_name: str) -> str | None:
+        """Get the residue type (group name) for a given residue name."""
+        return self.residue_type_map.get(residue_name)
+
+    def _get_bead_atom_definition(
+        self, res_type: str, bead_id: str
+    ) -> str | list[str] | None:
+        """
+        Get the atom definition for a bead from the mapping config.
+
+        Returns:
+        - str: single atom name
+        - list[str]: list of atom names for COM calculation
+        - None: if bead_id not found
+        """
+        atoms = self.mapping_config.get(res_type, {}).get("atoms", {})
+        return atoms.get(bead_id)
+
+    def _get_bead_name(self, res_type: str, bead_id: str) -> str:
+        """
+        Get the output bead name for a given bead ID.
+
+        Uses 'bead_names' field if available, otherwise uses the atom definition
+        (for single atoms) or the bead_id itself.
+        """
+        group_config = self.mapping_config.get(res_type, {})
+        bead_names = group_config.get("bead_names", {})
+
+        if bead_id in bead_names:
+            return bead_names[bead_id]
+
+        atom_def = group_config.get("atoms", {}).get(bead_id)
+        if isinstance(atom_def, str):
+            return atom_def
+
+        return bead_id
+
+    def _is_single_atom_bead(self, atom_definition: str | list[str]) -> bool:
+        """Check if the bead definition is a single atom."""
+        return isinstance(atom_definition, str)
+
+    def _get_single_atom_position(
+        self, residue: Residue, atom_name: str
+    ) -> Position | None:
+        """Get the position of a single atom in the residue."""
+        for atom in residue:
+            if atom.name == atom_name:
+                return atom.pos
+        return None
+
+    def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
+        coarse_structure: Structure = self._create_coarse_grain_atoms(
+            original_structure
+        )
+        self._remove_empty_chains(coarse_structure)
+        self._rebuild_cg_structure(original_structure, coarse_structure)
+        self._rebuild_connectivity(coarse_structure)
+        coarse_structure.setup_entities()
+        self._assign_label_seq_ids(coarse_structure)
+        return coarse_structure
+
+    def _rebuild_cg_structure(
+        self, original_structure: Structure, coarse_structure: Structure
+    ) -> None:
+        """Fix CIF labels to match original structure for Molstar compatibility."""
+        orig_models = list(original_structure)
+        cg_models = list(coarse_structure)
+
+        for orig_model, cg_model in zip(orig_models, cg_models):
+            for orig_chain, cg_chain in zip(orig_model, cg_model):
+                orig_res_list = list(orig_chain)
+                cg_res_list = list(cg_chain)
+                limit = min(len(orig_res_list), len(cg_res_list))
+
+                for i in range(limit):
+                    orig_res = orig_res_list[i]
+                    cg_res = cg_res_list[i]
+                    cg_res.name = orig_res.name
+                    cg_res.subchain = orig_chain.name
+
+    def _assign_label_seq_ids(self, structure: Structure) -> None:
+        """Assign label_seq_id so beads map to original residue numbers."""
+        for model in structure:
+            for chain in model:
+                for residue in chain:
+                    residue.label_seq = residue.seqid.num
+
+    def _create_coarse_grain_atoms(self, original_structure: Structure) -> Structure:
+        coarse_structure = original_structure.clone()
+        for model in coarse_structure:
+            for chain in list(model):
+                model.remove_chain(chain.name)
+
+        coarse_structure.clear_conect()
+        for model in original_structure:
+            cg_model = coarse_structure[0]
+            for chain in model:
+                cg_chain = Chain(chain.name)
+                for res in chain:
+                    if not self._should_keep_residue(res.name):
+                        continue
+
+                    cg_res = Residue()
+                    cg_res.name = res.name
+                    cg_res.seqid = res.seqid
+                    cg_res.segment = res.segment
+
+                    self._generate_beads(res, cg_res)
+                    logger.debug(
+                        "Generated %d beads for residue %s%s",
+                        len(cg_res),
+                        res.name,
+                        res.seqid,
+                    )
+
+                    if len(cg_res) > 0:
+                        cg_chain.add_residue(cg_res)
+                if len(cg_chain) > 0:
+                    cg_model.add_chain(cg_chain)
+        return coarse_structure
+
+    def _generate_beads(self, source: Residue, target: Residue) -> None:
+        """Generate coarse-grained beads for a residue based on JSON configuration."""
+        res_type = self._get_residue_type(source.name)
+        if not res_type:
+            logger.warning(
+                "Residue type for %s not found in mapping config", source.name
+            )
+            return
+
+        bead_definitions = self.mapping_config[res_type]["atoms"]
+
+        for bead_id in bead_definitions:
+            atom_def = self._get_bead_atom_definition(res_type, bead_id)
+            if atom_def is None:
+                continue
+
+            bead_name = self._get_bead_name(res_type, bead_id)
+
+            if self._is_single_atom_bead(atom_def):
+                new_pos = self._get_single_atom_position(source, atom_def)
+            else:
+                new_pos = self.center_calculator(source, atom_def)
+
+            if new_pos:
+                new_atom = Atom()
+                new_atom.name = bead_name
+                new_atom.element = Element("C")
+                new_atom.pos = new_pos
+                target.add_atom(new_atom)
+
+    def _remove_empty_chains(self, structure: Structure) -> None:
+        for model in structure:
+            chains_to_remove = [chain.name for chain in model if len(chain) == 0]
+            for chain_name in chains_to_remove:
+                model.remove_chain(chain_name)
+
+    def _rebuild_connectivity(self, structure: Structure) -> None:
+        intra_rules, inter_rule = self.connectivity_rules
+        for model in structure:
+            for chain in model:
+                self._connect_chain_residues(structure, chain, intra_rules, inter_rule)
+
+    def _get_atom_name_for_bead(self, res_type: str, bead_id: str) -> str:
+        """Get the output atom name for a bead (used for connectivity)."""
+        return self._get_bead_name(res_type, bead_id)
+
+    def _build_allowed_atoms_map(self) -> dict[str, list[str]]:
+        """Build map of residue name to list of allowed output atom names."""
+        allowed_atoms = {}
+        for group in self.mapping_config.values():
+            bead_names = group.get("bead_names", {})
+            atoms = group.get("atoms", {})
+
+            output_atoms = []
+            for bead_id in atoms:
+                if bead_id in bead_names:
+                    output_atoms.append(bead_names[bead_id])
+                elif isinstance(atoms[bead_id], str):
+                    output_atoms.append(atoms[bead_id])
+                else:
+                    output_atoms.append(bead_id)
+
+            for res_name in group["residues"]:
+                allowed_atoms[res_name] = output_atoms
+
+        return allowed_atoms
+
+
 @CoarseGrainModelRegistry.register
 class SimModel(BaseCoarseGrainModel):
     name_verbose: str = "SimRNA"
@@ -449,11 +659,63 @@ class Nares2PModel(GeometricCenterModel):
     name_verbose: str = "Nares-2P"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nares.json"
 
+    INTER_P_BEAD_NAME = "PP"
+
+    def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
+        coarse_structure = super().get_coarse_grain_structure(original_structure)
+        self._add_inter_phosphorus_beads(original_structure, coarse_structure)
+        return coarse_structure
+
+    def _add_inter_phosphorus_beads(
+        self, original_structure: Structure, coarse_structure: Structure
+    ) -> None:
+        """Add beads positioned at the midpoint between consecutive P atoms."""
+        for orig_model, cg_model in zip(original_structure, coarse_structure):
+            for orig_chain, cg_chain in zip(orig_model, cg_model):
+                orig_residues = list(orig_chain)
+                cg_residues = list(cg_chain)
+
+                for i in range(len(orig_residues) - 1):
+                    curr_orig_res = orig_residues[i]
+                    next_orig_res = orig_residues[i + 1]
+
+                    if not self._should_keep_residue(
+                        curr_orig_res.name
+                    ) or not self._should_keep_residue(next_orig_res.name):
+                        continue
+
+                    curr_p = self._get_phosphorus_atom(curr_orig_res)
+                    next_p = self._get_phosphorus_atom(next_orig_res)
+
+                    if curr_p is None or next_p is None:
+                        continue
+
+                    midpoint = Position(
+                        (curr_p.pos.x + next_p.pos.x) / 2,
+                        (curr_p.pos.y + next_p.pos.y) / 2,
+                        (curr_p.pos.z + next_p.pos.z) / 2,
+                    )
+
+                    pp_atom = Atom()
+                    pp_atom.name = self.INTER_P_BEAD_NAME
+                    pp_atom.element = Element("P")
+                    pp_atom.pos = midpoint
+
+                    if i < len(cg_residues):
+                        cg_residues[i].add_atom(pp_atom)
+
+    def _get_phosphorus_atom(self, residue: Residue) -> Atom | None:
+        """Get the P atom from a residue."""
+        for atom in residue:
+            if atom.name == "P":
+                return atom
+        return None
+
 
 @CoarseGrainModelRegistry.register
-class IFoldRNAModel(BaseCoarseGrainModel):
+class IFoldRNAModel(FlexibleBeadModel):
     name_verbose: str = "iFoldRNA"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "ifoldrna.json"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "ifoldrna_new.json"
 
 
 @CoarseGrainModelRegistry.register
@@ -463,15 +725,15 @@ class TopRNAModel(GeometricCenterModel):
 
 
 @CoarseGrainModelRegistry.register
-class IsRNAOneModel(BaseCoarseGrainModel):
-    name_verbose: str = "IsRNA1"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "is_rna_one.json"
+class IsRNAOneModel(FlexibleBeadModel):
+    name_verbose: str = "isRNA1"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "is_rna_one_new.json"
 
 
 @CoarseGrainModelRegistry.register
-class IsRNATwoModel(BaseCoarseGrainModel):
-    name_verbose: str = "IsRNA2"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "is_rna_two.json"
+class IsRNATwoModel(FlexibleBeadModel):
+    name_verbose: str = "isRNA2"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "is_rna_two_new.json"
 
 
 @CoarseGrainModelRegistry.register
@@ -487,15 +749,15 @@ class RNAJPModel(BaseCoarseGrainModel):
 
 
 @CoarseGrainModelRegistry.register
-class HireModel(BaseCoarseGrainModel):
-    name_verbose: str = "HireRNA"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "hire_rna.json"
+class HireModel(FlexibleBeadModel):
+    name_verbose: str = "HiRE-RNA"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "hire_rna_new.json"
 
 
 @CoarseGrainModelRegistry.register
-class OxModel(BaseCoarseGrainModel):
+class OxModel(FlexibleBeadModel):
     name_verbose: str = "oxRNA"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "ox_rna.json"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "ox_rna_new.json"
 
 
 @CoarseGrainModelRegistry.register

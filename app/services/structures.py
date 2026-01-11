@@ -1,12 +1,19 @@
 from collections import defaultdict
-from fastapi import Request
 from typing import Any, DefaultDict
 
-from gemmi import Structure, cif, make_structure_from_block, read_pdb_string, MmcifOutputGroups
+from fastapi import Request
+from gemmi import (
+    MmcifOutputGroups,
+    Structure,
+    cif,
+    make_structure_from_block,
+    read_pdb_string,
+)
 
 from app.coarse_grain.parser import process_structure_with_coarse_grain_model
 from app.models import COARSE_FILE_FORMAT, SupportedFormats
-from app.services.docs_builder import DocsContextBuilder
+from app.services.doc import DocsContextBuilder
+
 
 class StructureProcessor:
     @staticmethod
@@ -25,10 +32,10 @@ class StructureProcessor:
         if COARSE_FILE_FORMAT == SupportedFormats.PDB:
             return coarse_structure.make_pdb_string()
 
-        groups = MmcifOutputGroups(False)  
+        groups = MmcifOutputGroups(False)
         groups.conn = True
-        groups.cell = True  
-        groups.atoms = True  
+        groups.cell = True
+        groups.atoms = True
         cif_doc = coarse_structure.make_mmcif_document(groups=groups)
         return cif_doc.as_string()
 
@@ -41,11 +48,19 @@ class StructureProcessor:
         selected_model: str,
     ) -> DefaultDict[str, Any]:
         original_format = file_format.normalize_format()
-        
+
         model_data = DocsContextBuilder.get_model(selected_model)
 
-        reference_url = str(request.url_for("get_job_file", job_id=job_id, file_type="reference").include_query_params(file_format=original_format.value))
-        coarse_url = str(request.url_for("get_job_file", job_id=job_id, file_type="coarse").include_query_params(file_format=COARSE_FILE_FORMAT.value))
+        reference_url = str(
+            request.url_for(
+                "get_job_file", job_id=job_id, file_type="reference"
+            ).include_query_params(file_format=original_format.value)
+        )
+        coarse_url = str(
+            request.url_for(
+                "get_job_file", job_id=job_id, file_type="coarse"
+            ).include_query_params(file_format=COARSE_FILE_FORMAT.value)
+        )
 
         initial_data = {
             "reference_url": reference_url,
@@ -53,14 +68,12 @@ class StructureProcessor:
             "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
             "job_id": job_id,
             "filename": filename,
-            
             "atom_counts": {
-                "original": "TODO: Count atoms",  
+                "original": "TODO: Count atoms",
                 "coarse": "TODO: Count beads",
             },
-            "selected_chains": ["TODO"], 
+            "selected_chains": ["TODO"],
             "selected_models": ["TODO"],
-            
             "model": model_data,
         }
 
