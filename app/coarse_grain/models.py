@@ -36,7 +36,9 @@ class CoarseGrainModelRegistry:
     _registry: dict[str, type[BaseCoarseGrainModel]] = {}
 
     @classmethod
-    def register(cls, model_cls: type[BaseCoarseGrainModel]):
+    def register(
+        cls, model_cls: type[BaseCoarseGrainModel]
+    ) -> type[BaseCoarseGrainModel]:
         cls._registry[model_cls.__name__] = model_cls
         return model_cls
 
@@ -68,8 +70,11 @@ class BaseCoarseGrainModel(ABC):
     DEFAULT_INTER_HEAD = "A1"
 
     @property
-    def config(self) -> dict | None:
-        return self.read_json_model()
+    def config(self) -> dict:
+        config = self.read_json_model()
+        if not config:
+            raise ValueError("Configuration is missing.")
+        return config
 
     @property
     def mapping_config(self) -> dict:
@@ -627,14 +632,14 @@ class MassCenterModel(BaseCoarseGrainModel):
         for bead_id in bead_definitions:
             atom_def = self._get_bead_atom_definition(res_type, bead_id)
             if atom_def is None:
-                continue
+                continue  # type: ignore
 
             bead_name = self._get_bead_name(res_type, bead_id)
 
             if self._is_single_atom_bead(atom_def):
-                new_pos = self._get_single_atom_position(source, atom_def)
+                new_pos = self._get_single_atom_position(source, atom_def)  # type: ignore
             else:
-                new_pos = self.center_calculator(source, atom_def)
+                new_pos = self.center_calculator(source, atom_def)  # type: ignore
 
             if new_pos:
                 new_atom = Atom()
