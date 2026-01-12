@@ -332,6 +332,16 @@ class CalculatedBeadModel(BaseCoarseGrainModel):
                     residue.label_seq = residue.seqid.num
 
     def _create_coarse_grain_atoms(self, original_structure: Structure) -> Structure:
+        """Create a coarse-grain Structure by computing bead positions for residues.
+
+        For each model/chain/residue in `original_structure`, a corresponding `Residue`
+        is created in the coarse-grain structure containing bead `Atom` objects. Beads
+        are computed only for residues where `_should_keep_residue` returns True. The
+        bead positions are determined by the model's `center_calculator` and bead
+        names are taken from the mapping configuration. The returned structure preserves
+        metadata such as `seqid` and `segment` so it can be mapped back to the original
+        structure for CIF output and connectivity reconstruction.
+        """
         coarse_structure = original_structure.clone()
         for model in coarse_structure:
             for chain in list(model):
@@ -366,6 +376,17 @@ class CalculatedBeadModel(BaseCoarseGrainModel):
         return coarse_structure
 
     def _generate_beads(self, source: Residue, target: Residue) -> None:
+        """Generate bead Atoms for a target residue from source residue atoms.
+
+        Looks up beads defined for the residue type and, for each bead ID, gathers the
+        atom names to use via `_get_atoms_for_bead`. The bead position is computed by
+        calling `self.center_calculator` with the source residue and the list of atom
+        names. If a Position is returned an `Atom` is created (element 'C') with the
+        configured output name and appended to `target`.
+
+        Missing residue type mappings or empty atom lists are silently skipped and a
+        warning is logged when the residue type can't be found in the model mapping.
+        """
         res_type = self.residue_type_map.get(source.name)
         if not res_type:
             logger.warning(
@@ -389,6 +410,14 @@ class CalculatedBeadModel(BaseCoarseGrainModel):
                 target.add_atom(new_atom)
 
     def _get_atoms_for_bead(self, bead_id: str, residue: Residue) -> list[str]:
+        """Return a list of atom names used to compute a bead center.
+
+        The mapping is model-specific and uses common nucleotide groups:
+        - 'A1' -> phosphate atoms (e.g., P, OP1, OP2)
+        - 'A2' -> sugar atoms (ribose)
+        - 'A3' -> base atoms (depends on residue identity)
+        Returns an empty list for unknown bead IDs.
+        """
         if bead_id == "A1":
             return NUCLEOTIDE_ATOMS["phosphate"]
         elif bead_id == "A2":
@@ -418,15 +447,7 @@ class GeometricCenterModel(CalculatedBeadModel):
         return calculate_geometric_center
 
 
-class MassCenterModel(CalculatedBeadModel):
-    """Model that calculates bead positions using center of mass of atoms."""
-
-    @property
-    def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
-        return calculate_center_of_mass
-
-
-class FlexibleBeadModel(BaseCoarseGrainModel):
+class MassCenterModel(BaseCoarseGrainModel):
     """
     Model that handles flexible bead definitions from JSON configuration.
 
@@ -485,13 +506,21 @@ class FlexibleBeadModel(BaseCoarseGrainModel):
         return bead_id
 
     def _is_single_atom_bead(self, atom_definition: str | list[str]) -> bool:
-        """Check if the bead definition is a single atom."""
+        """Return True if the bead atom definition is a single atom name.
+
+        A single-atom definition is expressed as a `str`; multi-atom definitions are
+        expressed as lists of atom names and require center calculation.
+        """
         return isinstance(atom_definition, str)
 
     def _get_single_atom_position(
         self, residue: Residue, atom_name: str
     ) -> Position | None:
-        """Get the position of a single atom in the residue."""
+        """Return the Position of `atom_name` in `residue`, or None if not present.
+
+        Used for beads defined by a single atom name in the JSON mapping. The method
+        iterates through residue atoms and returns the first matching position.
+        """
         for atom in residue:
             if atom.name == atom_name:
                 return atom.pos
@@ -535,6 +564,14 @@ class FlexibleBeadModel(BaseCoarseGrainModel):
                     residue.label_seq = residue.seqid.num
 
     def _create_coarse_grain_atoms(self, original_structure: Structure) -> Structure:
+        """Create a coarse-grain Structure using JSON bead definitions.
+
+        This variant supports bead definitions that are either a single atom name or
+        a list of atom names (computed as a center of mass). Behaves similarly to the
+        calculated-bead model: it clones the original structure and builds new chains of
+        coarse-grain residues preserving `seqid` and `segment` information for mapping
+        and output compatibility.
+        """
         coarse_structure = original_structure.clone()
         for model in coarse_structure:
             for chain in list(model):
@@ -569,7 +606,15 @@ class FlexibleBeadModel(BaseCoarseGrainModel):
         return coarse_structure
 
     def _generate_beads(self, source: Residue, target: Residue) -> None:
-        """Generate coarse-grained beads for a residue based on JSON configuration."""
+        """Generate coarse-grained beads for a residue using JSON mapping.
+
+        For each bead ID in the mapping for the residue's group, get the atom
+        definition (either a single atom name or a list). For single-atom beads the
+        bead position is taken from that atom; for multi-atom beads the position is
+        computed via `center_calculator` (center of mass). The output bead name is
+        resolved through `_get_bead_name`. If a position is available, an `Atom` is
+        created and appended to `target`.
+        """
         res_type = self._get_residue_type(source.name)
         if not res_type:
             logger.warning(
@@ -669,15 +714,20 @@ class Nares2PModel(GeometricCenterModel):
     def _add_inter_phosphorus_beads(
         self, original_structure: Structure, coarse_structure: Structure
     ) -> None:
-        """Add beads positioned at the midpoint between consecutive P atoms."""
+        """Insert inter-residue phosphorus beads between consecutive P atoms.
+
+        For each pair of adjacent residues in a chain that both pass `_should_keep_residue`,
+        compute the midpoint of their P atom coordinates and create an `Atom` named
+        `INTER_P_BEAD_NAME` with element 'P'. The new bead is attached to the coarse-grain
+        residue corresponding to the first of the pair (if available).
+        """
         for orig_model, cg_model in zip(original_structure, coarse_structure):
-            for orig_chain, cg_chain in zip(orig_model, cg_model):
-                orig_residues = list(orig_chain)
+            for _, cg_chain in zip(orig_model, cg_model):
                 cg_residues = list(cg_chain)
 
-                for i in range(len(orig_residues) - 1):
-                    curr_orig_res = orig_residues[i]
-                    next_orig_res = orig_residues[i + 1]
+                for i in range(len(cg_residues) - 1):
+                    curr_orig_res = cg_residues[i]
+                    next_orig_res = cg_residues[i + 1]
 
                     if not self._should_keep_residue(
                         curr_orig_res.name
@@ -705,7 +755,11 @@ class Nares2PModel(GeometricCenterModel):
                         cg_residues[i].add_atom(pp_atom)
 
     def _get_phosphorus_atom(self, residue: Residue) -> Atom | None:
-        """Get the P atom from a residue."""
+        """Return the phosphorus `Atom` (name 'P') from `residue`, or None if absent.
+
+        Helper used when computing inter-phosphorus midpoint beads; returns the first
+        atom whose name equals 'P'.
+        """
         for atom in residue:
             if atom.name == "P":
                 return atom
@@ -713,9 +767,9 @@ class Nares2PModel(GeometricCenterModel):
 
 
 @CoarseGrainModelRegistry.register
-class IFoldRNAModel(FlexibleBeadModel):
+class IFoldRNAModel(MassCenterModel):
     name_verbose: str = "iFoldRNA"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "ifoldrna_new.json"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "ifoldrna.json"
 
 
 @CoarseGrainModelRegistry.register
@@ -725,15 +779,15 @@ class TopRNAModel(GeometricCenterModel):
 
 
 @CoarseGrainModelRegistry.register
-class IsRNAOneModel(FlexibleBeadModel):
+class IsRNAOneModel(MassCenterModel):
     name_verbose: str = "isRNA1"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "is_rna_one_new.json"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "is_rna_one.json"
 
 
 @CoarseGrainModelRegistry.register
-class IsRNATwoModel(FlexibleBeadModel):
+class IsRNATwoModel(MassCenterModel):
     name_verbose: str = "isRNA2"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "is_rna_two_new.json"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "is_rna_two.json"
 
 
 @CoarseGrainModelRegistry.register
@@ -749,15 +803,15 @@ class RNAJPModel(BaseCoarseGrainModel):
 
 
 @CoarseGrainModelRegistry.register
-class HireModel(FlexibleBeadModel):
+class HireModel(MassCenterModel):
     name_verbose: str = "HiRE-RNA"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "hire_rna_new.json"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "hire_rna.json"
 
 
 @CoarseGrainModelRegistry.register
-class OxModel(FlexibleBeadModel):
+class OxModel(MassCenterModel):
     name_verbose: str = "oxRNA"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "ox_rna_new.json"
+    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "ox_rna.json"
 
 
 @CoarseGrainModelRegistry.register

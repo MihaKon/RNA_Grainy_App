@@ -1,14 +1,5 @@
 from gemmi import Element, Position, Residue
 
-ATOMIC_MASSES = {
-    "H": 1.008,
-    "C": 12.011,
-    "N": 14.007,
-    "O": 15.999,
-    "P": 30.974,
-    "S": 32.06,
-}
-
 NUCLEOTIDE_ATOMS = {
     "phosphate": ["P", "OP1", "OP2", "O1P", "O2P"],
     "sugar": ["C1'", "C2'", "C3'", "C4'", "C5'", "O2'", "O3'", "O4'", "O5'"],
@@ -23,7 +14,6 @@ def get_atomic_mass(atom_name: str, element_name: str = "") -> float:
         if element_name
         else "".join([c for c in atom_name if c.isalpha()])[-1]
     )
-    # return ATOMIC_MASSES.get(el, ATOMIC_MASSES["C"])
     return Element(el).weight
 
 
