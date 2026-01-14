@@ -92,6 +92,53 @@
                                ? 'border-danger focus:border-danger focus:ring-2 focus:ring-danger/20' 
                                : 'border-primary/20 focus:border-accent focus:ring-2 focus:ring-focus/50'">
                 </div>
+
+                <div class="mt-2 flex items-center justify-end gap-2 text-xs text-primary/40">
+                    <span>Or try example:</span>
+                    
+                    <button type="button"
+                            hx-post="/upload/example/1rna.cif" 
+                            hx-target="#upload-container"
+                            hx-swap="innerHTML"
+                            hx-include="[name='selected_model']"
+                            hx-indicator="#loading-spinner"
+                            @click="if(!selectedModel) { $refs.dropdownButton.focus(); dropdownOpen=true; return; }"
+                            class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
+                        1RNA
+                    </button>
+                    <span class="select-none">•</span>
+
+                    <button type="button"
+                            hx-post="/upload/example/1mnx.cif" 
+                            hx-target="#upload-container"
+                            hx-swap="innerHTML"
+                            hx-include="[name='selected_model']"
+                            hx-indicator="#loading-spinner"
+                            @click="if(!selectedModel) { $refs.dropdownButton.focus(); dropdownOpen=true; return; }"
+                            class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
+                        1MNX
+                    </button>
+                    <span class="select-none">•</span>
+
+                    <button type="button"
+                            hx-post="/upload/example/1ehz.cif" 
+                            hx-target="#upload-container"
+                            hx-swap="innerHTML"
+                            hx-include="[name='selected_model']"
+                            hx-indicator="#loading-spinner"
+                            @click="if(!selectedModel) { $refs.dropdownButton.focus(); dropdownOpen=true; return; }"
+                            class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
+                        1EHZ
+                    </button>
+                </div>
+
+                <p x-show="!selectedModel && isSubmitting" 
+                x-transition 
+                class="text-right text-[10px] text-danger font-bold mt-1">
+                Select model first!
+                </p>
+
+
                 <p x-show="errors.file" x-transition class="mt-1 text-xs text-danger font-medium ml-1">
                     Please upload a file or enter a PDB ID.
                 </p>
