@@ -1,0 +1,69 @@
+{
+  "residues": [],
+  "atoms": [
+    "P",
+    "C4'",
+    "N9",
+    "C6",
+    "C2",
+    "N1",
+    "C4"
+  ],
+  "model_name": "RNAJP",
+  "beads_per_residue": [5],
+  "description": "RNAJP [1] coarse-grains RNA molecules at both the nucleotide and helix levels. Each residue is represented by five beads, two of which are placed at the phosphorus atom P and the ribose carbon atom C4'. Nucleobases are described by three beads, which for pyrimidines correspond to atoms N1, C2, and C4, and for purines - to atoms N9, C2, and C6. Such geometry is characterized by high efficiency, as information regarding backbone conformation, base pairing, and stacking is preserved [1]. A characteristic feature of this model is the treatment of an RNA molecule segment consisting of at least two base pairs (G-C, A-U, or G-U) as a rigid A-form helix. The entire spatial structure of the helix is determined solely by four terminal nucleotides. This approach allows for a reduction in the helix's degrees of freedom and a decrease in computational complexity, as the model does not need to independently simulate the position of every nucleotide within the helix [1]. The energy function relies on bonded and non-bonded interactions, and its parameters were determined using statistical potentials. Additionally, the model accounts for interactions between intertwined helices, strands within junctions, and long-range interactions between loops. RNAJP cannot fold RNA molecules de novo; however, it can effectively predict the tertiary structure of three- and four-way junctions based on the sequence and secondary structure [2]. The model utilizes Monte Carlo and molecular dynamics algorithms for more efficient conformational space sampling [1].",
+  "citationss": [
+    "li2023rnajp",
+    "wang2023rna"
+  ],
+ "mapping": {
+    "purine": {
+      "residues": ["A", "G", "DA", "DG"],
+      "atoms": {
+        "A1": "P",
+        "A2": "C4'",
+        "A3": "N9",
+        "A4": "C2",
+        "A5": "C6"
+      },
+      "description": {
+        "A1": "Phosphate P atom",
+        "A2": "Sugar C4' atom",
+        "A3": "Base N9 atom",
+        "A4": "Base C2 atom",
+        "A5": "Base C6 atom"
+      }
+    },
+    "pyrimidine": {
+      "residues": ["C", "U", "DC", "DT"],
+      "atoms": {
+        "A1": "P",
+        "A2": "C4'",
+        "A3": "N1",
+        "A4": "C2",
+        "A5": "C4"
+      },
+      "description": {
+        "A1": "Phosphate P atom",
+        "A2": "Sugar C4' atom",
+        "A3": "Base N1 atom",
+        "A4": "Base C2 atom",
+        "A5": "Base C4 atom"
+      }
+    }
+  },
+  "connectivity": {
+    "intra_residue": [
+      ["A1", "A2"],
+      ["A2", "A3"],
+      ["A3", "A4"],
+      ["A4", "A5"]
+    ],
+    "inter_residue": [
+      {
+        "source": "A2",
+        "target": "A1"
+      }
+    ]
+  }
+}

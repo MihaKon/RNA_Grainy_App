@@ -1,19 +1,11 @@
 import httpx
 from httpx import HTTPStatusError
 
+from app.exceptions import FileProcessingError
+from app.settings import MAX_RCSB_UPLOAD_SIE
+
 RCSB_URL = "https://files.rcsb.org/download/"
 client = httpx.AsyncClient()
-
-
-class RCSBServiceError(Exception):
-    pass
-
-
-class RCSBNotFoundError(Exception):
-    def __init__(self, rcsb_id: str):
-        self.rcsb_id = rcsb_id
-        self.message = f"Structure with ID '{rcsb_id}' not found."
-        super().__init__(self.message)
 
 
 async def fetch_rcsb_file(rcsb_id: str) -> str | None:
@@ -24,4 +16,8 @@ async def fetch_rcsb_file(rcsb_id: str) -> str | None:
         response.raise_for_status()
     except HTTPStatusError:
         return None
+    if response.num_bytes_downloaded > MAX_RCSB_UPLOAD_SIE:
+        raise FileProcessingError(
+            f"File size exceeds maximum fetching file size of: {MAX_RCSB_UPLOAD_SIE / 1024} KB."
+        )
     return response.text

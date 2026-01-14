@@ -1,48 +1,92 @@
 {% from "components/primary_button.html" import primary_button %}
 {% from "components/molstar_viewer.html" import molstar_viewer %}
+{% from "components/model_display.html" import render_model_image, render_citations, render_mapping_comparison, collapse_header_comparison %}
+
 {% block content %}
-    <div class="flex flex-col gap-4 md:grid md:justify-items-center"
-         :class="{ 'md:grid-cols-1': !showMolViewer, 'md:grid-cols-2': showMolViewer }"
-         x-data="{ showMolViewer: false }">
-        <div class="flex flex-col bg-white rounded-2xl shadow-lg border border-gray-200 p-8 self-center w-sm">
-            <h1>{{ filename }}</h1>
-            <ul>
-                <li>File format: {{ file_format }}</li>
-                <li>Chains: {{ chains }}</li>
-                <li>Atoms count: {{ atoms }}</li>
-                <li>Models count: {{ models }}</li>
-                <li>Residues count: {{ residues }}</li>
-                <li>Selected model: {{ selected_model }}</li>
-                <li>Reference url: {{ reference_url }}</li>
-                <li>Corase url: {{ coarse_url }}</li>
-            </ul>
-            <div class="flex flex-col gap-4 mt-4">
-                <div x-show="!showMolViewer" x-cloak class="flex w-full justify-center">
-                    {{ primary_button(text='Show 3D viewer', classes='w-1/2', attrs='@click="showMolViewer=true" aria-expanded="false" aria-controls="molstar-viewer-wrapper"') }}
-                </div>
-                <div x-show="showMolViewer" x-cloak class="flex w-full justify-center">
-                    {{ primary_button(text='Hide 3D viewer', classes='w-1/2', attrs='@click="showMolViewer=false" aria-expanded="true" aria-controls="molstar-viewer-wrapper"') }}
-                </div>
-                <div class="relative py-2">
-                    <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                        <span class="w-full border-t border-gray-300"></span>
+<div class="w-full h-full flex flex-col items-center py-6">
+
+    <div class="w-full max-w-7xl px-6 grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 h-[80vh] overflow-y-hidden">
+
+        <aside class="flex flex-col gap-6 h-full overflow-y-auto pr-2 pb-2">
+
+            <section class="bg-white rounded-2xl shadow border border-gray-200 p-6 shrink-0">
+                <h2 class="text-lg font-semibold mb-4">Metadata</h2>
+                <ul class="text-sm space-y-1">
+                    <li><strong>File:</strong> {{ filename }}</li>
+                    <li><strong>Selected model:</strong> {{ model.name }}</li>
+                    <li><strong>Reference atoms:</strong> {{ atom_counts.original }}</li>
+                    <li><strong>Coarse atoms:</strong> {{ atom_counts.coarse }}</li>
+                    <li>
+                        <strong>Selected models:</strong> 
+                        {{ selected_models | join(', ') }}
+                    </li>
+                    <li>
+                        <strong>Selected chains:</strong> 
+                        {{ selected_chains | join(', ') }}
+                    </li>
+                </ul>
+
+                <div class="mt-6">
+                    <p class="text-sm text-tertiary mb-2">Download as</p>
+                    <div class="flex gap-3">
+                        {{ primary_button(text='PDB', classes='w-1/2') }}
+                        {{ primary_button(text='mmCIF', classes='w-1/2') }}
                     </div>
-                    <div class="relative flex justify-center">
-                        <span class="bg-white px-3 text-sm font-medium text-gray-500">Download as</span>
+                </div>
+            </section>
+
+            <section x-data="{open:false}" class="bg-white rounded-2xl shadow border border-gray-200 p-6 shrink-0">
+                {{ collapse_header_comparison('Model description') }}
+
+                <div x-show="open" x-collapse class="mt-4 text-sm text-secondary">
+                    
+                    <div class="mb-4">
+                        {{ render_model_image(model.image_url) }}
+                    </div>
+
+                    <div class="text-sm text-secondary text-justify">
+                        {{ model.description | safe }}
+                    </div>
+                    
+                    <div class="mt-4 text-xs text-tertiary">
+                        {{ render_citations(model.citations) }}
                     </div>
                 </div>
-                <div class="flex gap-4 justify-center">
-                    {{ primary_button(text='PDB', classes='w-1/2', attrs='x-on:click.prevent="alert(\'TODO: Implement PDB Download\')"') }}
-                    {{ primary_button(text='mmCIF', classes='w-1/2', attrs='x-on:click.prevent="alert(\'TODO: Implement mmCIF Download\')"') }}
+            </section>
+
+            <section x-data="{ open: false }" class="bg-white rounded-2xl shadow border border-gray-200 p-6 shrink-0">
+                
+                {{ collapse_header_comparison('Atom mapping') }}
+
+                <div x-show="open" x-collapse class="mt-4">
+                    {% if beads %}
+                    <div class="mb-4 flex items-center justify-between bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
+                        <span class="text-xs font-semibold text-accent uppercase tracking-wide">
+                            Beads per residue
+                        </span>
+                        <span class="text-sm font-bold text-accent">
+                            {{ model.beads }}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    {{ render_mapping_comparison(model.mapping, style='card') }}
+
                 </div>
-            </div>
-        </div>
-        <div id="molstar-viewer-wrapper"
-             class="relative w-full h-full self-center justify-center"
-             x-show="showMolViewer"
-             x-cloak
-        >
-        {{ molstar_viewer('molstar-container', urls=[reference_url,coarse_url], file_format=file_format) }}
-        </div>
+            </section>
+            
+            <div class="h-4 shrink-0"></div>
+
+        </aside>
+
+        <section class="bg-white rounded-2xl z-60 shadow border border-gray-200 p-2 h-full w-full relative overflow-hidden">
+            {{ molstar_viewer(
+                'molstar-container',
+                urls=[reference_url, coarse_url],
+                file_format=file_format
+            ) }}
+        </section>
+
     </div>
+</div>
 {% endblock %}

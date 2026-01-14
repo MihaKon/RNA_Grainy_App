@@ -4,8 +4,6 @@ import pytest
 from fastapi.testclient import TestClient
 from pytest_httpx import HTTPXMock
 
-from app.coarse_grain.parser import CoarseGrainModels
-
 
 class TestRCSBUpload:
     def test_fetch_rcsb_server_error_returns_400(
@@ -19,7 +17,7 @@ class TestRCSBUpload:
 
         response = client.post(
             "/upload/rcsb",
-            data={"rcsb_id": "9XYZ", "selected_model": CoarseGrainModels.DUMMY.name},
+            data={"rcsb_id": "9XYZ", "selected_model": "SimModel"},
         )
 
         assert response.status_code == 400
@@ -43,7 +41,7 @@ class TestRCSBUpload:
 
         response = client.post(
             "/upload/rcsb",
-            data={"rcsb_id": rcsb_id, "selected_model": CoarseGrainModels.DUMMY.name},
+            data={"rcsb_id": rcsb_id, "selected_model": "SimModel"},
         )
 
         assert response.status_code == 200
@@ -59,7 +57,7 @@ class TestRCSBUpload:
 
         response = client.post(
             "/upload/rcsb",
-            data={"rcsb_id": "9XYZ", "selected_model": CoarseGrainModels.DUMMY.name},
+            data={"rcsb_id": "9XYZ", "selected_model": "SimModel"},
         )
 
         assert response.status_code == 400
@@ -67,7 +65,7 @@ class TestRCSBUpload:
     def test_fetch_rcsb_without_id_returns_422(self, client: TestClient) -> None:
         response = client.post(
             "/upload/rcsb",
-            data={"selected_model": CoarseGrainModels.DUMMY.name},
+            data={"selected_model": "SimModel"},
         )
 
         assert response.status_code == 422
@@ -88,16 +86,16 @@ class TestFileUpload:
         response = client.post(
             "/upload/file/",
             files={"file": (empty_file.name, empty_file, "text/plain")},
-            data={"selected_model": CoarseGrainModels.DUMMY.name},
+            data={"selected_model": "SimModel"},
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_file_upload_without_file_returns_code_422(
         self, client: TestClient
     ) -> None:
         response = client.post(
             "/upload/file/",
-            data={"selected_model": CoarseGrainModels.DUMMY.name},
+            data={"selected_model": "SimModel"},
         )
         assert response.status_code == 422
 
@@ -108,10 +106,10 @@ class TestFileUpload:
         response = client.post(
             "/upload/file/",
             files={"file": ("empty.txt", empty_file, "text/plain")},
-            data={"selected_model": CoarseGrainModels.DUMMY.name},
+            data={"selected_model": "SimModel"},
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_correct_pdb_file_upload_returns_200(
         self, client: TestClient, pdb_file: io.BytesIO
@@ -119,7 +117,7 @@ class TestFileUpload:
         response = client.post(
             "/upload/file/",
             files={"file": (pdb_file.name, pdb_file, "text/plain")},
-            data={"selected_model": CoarseGrainModels.DUMMY.name},
+            data={"selected_model": "SimModel"},
         )
         assert response.status_code == 200
 
@@ -129,9 +127,9 @@ class TestFileUpload:
         response = client.post(
             "/upload/file/",
             files={"file": (cif_file.name, cif_file, "text/plain")},
-            data={"selected_model": CoarseGrainModels.DUMMY.name},
+            data={"selected_model": "SimModel"},
         )
-        
+
         assert response.status_code == 200
 
     def test_file_upload_without_model_selection_returns_422(

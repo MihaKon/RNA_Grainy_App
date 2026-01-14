@@ -1,5 +1,5 @@
 {% macro molstar_viewer(container_id, urls=[], file_format= '', classes='') %}
-<div id="{{ container_id }}" class="w-1/2 {{ classes }}"></div>
+<div id="{{ container_id }}" class="h-full w-full {{ classes }}"></div>
 
 <script type="text/javascript">
     molstar.Viewer.create('{{container_id}}', {
@@ -7,7 +7,6 @@
         layoutShowControls: false,
         layoutShowRemoteState: false,
         layoutShowSequence: true,
-        layoutShowLog: true,
         layoutShowLeftPanel: true,
 
         viewportShowExpand: true,
@@ -29,7 +28,6 @@
                 return viewer.loadStructureFromUrl(url, format);
             });
         });
-
         loadPromise.then(() => {
             viewer.autoView();
         });
