@@ -97,6 +97,7 @@
                     Please upload a file or enter a PDB ID.
                 </p>
             </div>
+            
         </div>
 
         <div class="space-y-1">
@@ -156,6 +157,34 @@
                     Please select a model.
                 </p>
             </div>
+
+            <div class="space-y-1 pt-2">
+            <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-primary ml-1">Optional Selection</label>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label for="chain_ids" class="text-xs font-semibold text-primary/60 ml-1 uppercase">Chains</label>
+                    <input type="text" 
+                           id="chain_ids"
+                           name="chain_ids"
+                           placeholder="e.g. A, B" 
+                           class="block w-full px-4 py-2 text-sm rounded-xl border border-primary/20 bg-white shadow-sm outline-none transition-all placeholder:text-primary/30 focus:border-accent focus:ring-2 focus:ring-focus/50 hover:border-primary/40">
+                    <p class="text-xs text-primary/40 ml-1">Leave empty for all chains</p>
+                </div>
+
+                <div class="space-y-1">
+                    <label for="model_ids" class="text-xs font-semibold text-primary/60 ml-1 uppercase">Models</label>
+                    <input type="text" 
+                           id="model_ids"
+                           name="model_ids"
+                           placeholder="e.g. 1, 2" 
+                           class="block w-full px-4 py-2 text-sm rounded-xl border border-primary/20 bg-white shadow-sm outline-none transition-all placeholder:text-primary/30 focus:border-accent focus:ring-2 focus:ring-focus/50 hover:border-primary/40">
+                    <p class="text-xs text-primary/40 ml-1">Empty: 1st model, -1: all</p>
+                </div>
+            </div>
+        </div>
         </div>
 
         <div class="pt-2">
