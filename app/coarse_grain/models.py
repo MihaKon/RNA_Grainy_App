@@ -10,6 +10,7 @@ from gemmi import (
     Atom,
     Chain,
     Connection,
+    ConnectionList,
     ConnectionType,
     Element,
     Position,
@@ -145,13 +146,14 @@ class BaseCoarseGrainModel(ABC):
 
     def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
         coarse_structure = original_structure.clone()
-        coarse_structure.clear_conect()
+        coarse_structure.connections = ConnectionList()
 
         self._filter_atoms(coarse_structure)
         self._rebuild_connectivity(coarse_structure)
 
         coarse_structure.setup_entities()
         coarse_structure.assign_label_seq_id()
+
         return coarse_structure
 
     def _filter_atoms(self, structure: Structure) -> None:
@@ -352,7 +354,7 @@ class CalculatedBeadModel(BaseCoarseGrainModel):
             for chain in list(model):
                 model.remove_chain(chain.name)
 
-        coarse_structure.clear_conect()
+        coarse_structure.connections = ConnectionList()
         for model in original_structure:
             cg_model = coarse_structure[0]
             for chain in model:
@@ -423,12 +425,16 @@ class CalculatedBeadModel(BaseCoarseGrainModel):
         - 'A3' -> base atoms (depends on residue identity)
         Returns an empty list for unknown bead IDs.
         """
+        atoms = self.config.get("geometric_center_atoms", {})
         if bead_id == "A1":
-            return NUCLEOTIDE_ATOMS["phosphate"]
+            return atoms["phosphate"]
         elif bead_id == "A2":
-            return NUCLEOTIDE_ATOMS["sugar"]
+            return atoms["sugar"]
         elif bead_id == "A3":
-            return get_base_atoms(residue.name)
+            if residue.name in ["A", "G"]:
+                return atoms["purine"]
+            elif residue.name in ["C", "U"]:
+                return atoms["pyrimidine"]
         return []
 
     def _remove_empty_chains(self, structure: Structure) -> None:
@@ -582,7 +588,7 @@ class MassCenterModel(BaseCoarseGrainModel):
             for chain in list(model):
                 model.remove_chain(chain.name)
 
-        coarse_structure.clear_conect()
+        coarse_structure.connections = ConnectionList()
         for model in original_structure:
             cg_model = coarse_structure[0]
             for chain in model:
@@ -713,7 +719,6 @@ class Nares2PModel(GeometricCenterModel):
 
     def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
         coarse_structure = super().get_coarse_grain_structure(original_structure)
-        self._add_inter_phosphorus_beads(original_structure, coarse_structure)
         return coarse_structure
 
     def _add_inter_phosphorus_beads(
@@ -788,17 +793,34 @@ class IsRNAOneModel(MassCenterModel):
     name_verbose: str = "isRNA1"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "is_rna_one.json"
 
+    def get_intra_rules(self, residue_name: str) -> list[str]:
+        if residue_name in ["A", "G"]:
+            return self.config["connectivity"]["intra_residue"]["purine"]
+        return self.config["connectivity"]["intra_residue"]["pyrimidine"]
+
+    def _add_intra_residue_connections(
+        self,
+        structure: Structure,
+        res: Residue,
+        res_type: str,
+        intra_rules: list[str],
+    ) -> None:
+        current_atoms = {atom.name: atom for atom in res}
+
+        for bead_a, bead_b in self.get_intra_rules(res.name):
+            atom_a_name = self._get_atom_name_for_bead(res_type, bead_a)
+            atom_b_name = self._get_atom_name_for_bead(res_type, bead_b)
+            if atom_a_name in current_atoms and atom_b_name in current_atoms:
+                conn = self._create_connection(
+                    res, current_atoms[atom_a_name], res, current_atoms[atom_b_name]
+                )
+                structure.connections.append(conn)
+
 
 @CoarseGrainModelRegistry.register
 class IsRNATwoModel(MassCenterModel):
     name_verbose: str = "isRNA2"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "is_rna_two.json"
-
-
-@CoarseGrainModelRegistry.register
-class SPQRModel(GeometricCenterModel):
-    name_verbose: str = "SPQR"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "spqr.json"
 
 
 @CoarseGrainModelRegistry.register
@@ -811,12 +833,6 @@ class RNAJPModel(BaseCoarseGrainModel):
 class HireModel(MassCenterModel):
     name_verbose: str = "HiRE-RNA"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "hire_rna.json"
-
-
-@CoarseGrainModelRegistry.register
-class OxModel(MassCenterModel):
-    name_verbose: str = "oxRNA"
-    JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "ox_rna.json"
 
 
 @CoarseGrainModelRegistry.register

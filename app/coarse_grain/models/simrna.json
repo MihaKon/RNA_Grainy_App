@@ -9,7 +9,7 @@
   },
   "mapping": {
     "purine": {
-      "residues": ["A", "G", "DA", "DG"],
+      "residues": ["A", "G"],
       "atoms": {
         "A1": "P",
         "A2": "C4'",
@@ -26,7 +26,7 @@
       }
     },
     "pyrimidine": {
-      "residues": ["C", "U", "DC", "DT"],
+      "residues": ["C", "U"],
       "atoms": {
         "A1": "P",
         "A2": "C4'",

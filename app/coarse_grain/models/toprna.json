@@ -1,6 +1,8 @@
 {
   "model_name": "TOPRNA",
-  "beads_per_residue": [3],
+  "beads_per_residue": [
+    3
+  ],
   "description": "TOPRNA [1] is a three-bead coarse-grained model. Each nucleotide is represented by three interaction centers: a phosphate bead - placed on the phosphorus atom P, and a nucleobase bead - defined as the geometric center of the nitrogen N and carbon C atoms located within the base ring. The sugar bead is placed at the geometric center of the ribose, calculated as the arithmetic mean of the positions of the carbon atoms C1', C2', C3', C4', C5' and the oxygen atom O4' [1]. The knowledge-based energy function utilizes bond lengths, bond angles, and torsion angles, as well as Van der Waals interactions, with its parameters fitted to statistical potentials from databases of similar structures. The model employs molecular dynamics methods to search the conformational space [2].",
   "citations": {
     "1": "mustoe2014coarse",
@@ -8,7 +10,12 @@
   },
   "mapping": {
     "nucleotide": {
-      "residues": ["A", "G", "C", "U"],
+      "residues": [
+        "A",
+        "G",
+        "C",
+        "U"
+      ],
       "atoms": {
         "A1": "P",
         "A2": "S",
@@ -23,14 +30,56 @@
   },
   "connectivity": {
     "intra_residue": [
-      ["A1", "A2"],
-      ["A2", "A3"]
+      [
+        "A1",
+        "A2"
+      ],
+      [
+        "A2",
+        "A3"
+      ]
     ],
     "inter_residue": [
       {
         "source": "A2",
         "target": "A1"
       }
+    ]
+  },
+  "geometric_center_atoms": {
+    "phosphate": [
+      "P"
+    ],
+    "sugar": [
+      "C1'",
+      "C2'",
+      "C3'",
+      "C4'",
+      "C5'",
+      "O2'",
+      "O3'",
+      "O4'",
+      "O5'"
+    ],
+    "purine": [
+      "N1",
+      "C2",
+      "N3",
+      "C4",
+      "C5",
+      "C6",
+      "N7",
+      "C8",
+      "N9"
+    ],
+    "pyrimidine": [
+      "N1",
+      "C2",
+      "N3",
+      "C4",
+      "N4",
+      "C5",
+      "C6"
     ]
   }
 }
