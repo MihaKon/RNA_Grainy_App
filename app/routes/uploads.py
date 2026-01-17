@@ -6,12 +6,13 @@ from app.models import (
     COARSE_FILE_FORMAT,
     FileUploadRequest,
     RCSBRequest,
+    ExampleRequest,
     SupportedFormats,
 )
 from app.rcsb import fetch_rcsb_file
 from app.services.jobs import JobManager
 from app.services.structures import StructureProcessor
-from app.settings import MAX_FILE_UPLOAD_SIZE, TEMPLATES
+from app.settings import MAX_FILE_UPLOAD_SIZE, TEMPLATES, EXAMPLES_DIR
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
@@ -37,6 +38,7 @@ async def run_job_processing(
 ) -> None:
     JobManager.setup_job_dir(job_id)
 
+    
     original_format = file_format.normalize_format()
     original_filename: str = f"reference.{original_format.value}"
     coarse_filename: str = f"coarse.{COARSE_FILE_FORMAT.value}"
@@ -115,4 +117,25 @@ async def upload_rcsb(
 
     return await handle_request_and_render(
         request, file_content, filename, file_format, rcsb_req.selected_model
+    )
+
+
+@router.post("/example/{example_id}", response_class=HTMLResponse)
+async def upload_example(
+    request: Request,
+    example_id: str,
+    selected_model: str = Form(...),
+) -> HTMLResponse: 
+    example_req = ExampleRequest(example_id=example_id, selected_model=selected_model)  # type: ignore
+    example_path = EXAMPLES_DIR / f"{example_req.example_id}"
+    try:
+        file_content = example_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as e:
+        raise FileProcessingError(f"Error reading example file: {e}")
+    
+    file_format = SupportedFormats.CIF
+    filename: str = example_req.example_id
+
+    return await handle_request_and_render(
+        request, file_content, filename, file_format, example_req.selected_model
     )

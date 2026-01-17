@@ -97,38 +97,41 @@
                     <span>Or try example:</span>
                     
                     <button type="button"
-                            hx-post="/upload/example/1rna.cif" 
+                            x-ref="example_1ehz"
+                            hx-post="/upload/example/1ehz.cif" 
                             hx-target="#upload-container"
                             hx-swap="innerHTML"
                             hx-include="[name='selected_model']"
                             hx-indicator="#loading-spinner"
-                            @click="if(!selectedModel) { $refs.dropdownButton.focus(); dropdownOpen=true; return; }"
+                            @click="$event.stopPropagation(); if(!selectedModel) {pendingExample = 'example_1ehz'; dropdownOpen=true; return; }"
                             class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
-                        1RNA
+                        1EHZ
                     </button>
                     <span class="select-none">•</span>
 
                     <button type="button"
+                            x-ref="example_1mnx"
                             hx-post="/upload/example/1mnx.cif" 
                             hx-target="#upload-container"
                             hx-swap="innerHTML"
                             hx-include="[name='selected_model']"
                             hx-indicator="#loading-spinner"
-                            @click="if(!selectedModel) { $refs.dropdownButton.focus(); dropdownOpen=true; return; }"
+                            @click="$event.stopPropagation(); if(!selectedModel) { pendingExample = 'example_1mnx'; dropdownOpen=true; return; }"
                             class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
                         1MNX
                     </button>
                     <span class="select-none">•</span>
 
                     <button type="button"
-                            hx-post="/upload/example/1ehz.cif" 
+                            x-ref="example_2f8s"
+                            hx-post="/upload/example/2f8s.cif" 
                             hx-target="#upload-container"
                             hx-swap="innerHTML"
                             hx-include="[name='selected_model']"
                             hx-indicator="#loading-spinner"
-                            @click="if(!selectedModel) { $refs.dropdownButton.focus(); dropdownOpen=true; return; }"
+                            @click="$event.stopPropagation(); if(!selectedModel) { pendingExample = 'example_2f8s'; dropdownOpen=true; return; }"
                             class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
-                        1EHZ
+                        2F8S
                     </button>
                 </div>
 
@@ -137,8 +140,6 @@
                 class="text-right text-[10px] text-danger font-bold mt-1">
                 Select model first!
                 </p>
-
-
                 <p x-show="errors.file" x-transition class="mt-1 text-xs text-danger font-medium ml-1">
                     Please upload a file or enter a PDB ID.
                 </p>
@@ -243,6 +244,7 @@
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('uploadForm', () => ({
+            pendingExample: null,
             file: null,
             rcsbId: '',
             selectedModel: '',
@@ -278,8 +280,18 @@
                 this.selectedLabel = name;
                 this.errors.model = false;
                 this.dropdownOpen = false;
-            },
 
+                if (this.pendingExample) {
+                    this.$nextTick(() => {
+                        const btn = this.$refs[this.pendingExample];
+                        if (btn) {
+                            btn.click();
+                        }
+                        this.pendingExample = null;
+                    });
+                }
+            },
+            
             validate() {
                 const hasFile = !!this.file;
                 const hasRcsb = this.rcsbId.trim().length > 0;
@@ -292,6 +304,21 @@
             },
 
             submitForm(event) {
+                const path = event.detail.path || '';
+                const isExample = path.includes('/example/');
+                if (isExample) {
+                    const hasModel = !!this.selectedModel;
+                    this.errors.model = !hasModel;
+                    this.errors.file = false;
+
+                    if (!hasModel) {
+                        event.preventDefault();
+                        this.isSubmitting = false;
+                    } else {
+                        this.isSubmitting = true;
+                    }
+                    return;
+                }
                 if (!this.validate()) {
                     event.preventDefault();
                 } else {
@@ -303,15 +330,15 @@
             },
 
             checkPosition() {
-            const buttonRect = this.$refs.dropdownButton.getBoundingClientRect();
-            const spaceBelow = window.innerHeight - buttonRect.bottom;
-            
-            if (spaceBelow < 250) {
-                this.openUp = true;
-            } else {
-                this.openUp = false;
-            }
-        },
+                const buttonRect = this.$refs.dropdownButton.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - buttonRect.bottom;
+                
+                if (spaceBelow < 250) {
+                    this.openUp = true;
+                } else {
+                    this.openUp = false;
+                }
+            },
         }))
     });
 </script>

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 
 from fastapi import UploadFile
@@ -9,7 +11,7 @@ class SupportedFormats(str, Enum):
     CIF = "cif"
     MMCIF = "mmcif"
 
-    def normalize_format(self) -> "SupportedFormats":
+    def normalize_format(self) -> SupportedFormats:
         if self == SupportedFormats.CIF:
             return SupportedFormats.MMCIF
         return self
@@ -44,4 +46,12 @@ class RCSBRequest(UploadBase):
     @field_validator("rcsb_id")
     def validate_rcsb_id(cls, v: str) -> str:
         v = v.strip().upper()
+        return v
+
+class ExampleRequest(UploadBase):
+    example_id: str
+
+    @field_validator("example_id")
+    def validate_example_id(cls, v: str) -> str:
+        v = v.strip()
         return v
