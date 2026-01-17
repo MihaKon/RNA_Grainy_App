@@ -71,6 +71,7 @@ class StructureProcessor:
             "atom_counts": {
                 "original": "TODO: Count atoms",
                 "coarse": "TODO: Count beads",
+                "reduction": "TODO: Compute reduction",
             },
             "selected_chains": ["TODO"],
             "selected_models": ["TODO"],
