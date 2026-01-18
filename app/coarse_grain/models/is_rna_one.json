@@ -1,202 +1,133 @@
 {
   "model_name": "isRNA1",
+  "beads_per_residue": [4, 5],
   "description": "In the isRNA1 [1] model, each nucleotide is represented by 4 (for pyrimidines) or 5 beads (for purines). The sugar-phosphate backbone is defined by the P bead, located at the phosphorus atom P, and the S bead at the C4' carbon atom of the ribose. The representation of nitrogenous bases is based on beads placed at the centers of mass of specific heavy atom groups. The knowledge-based energy function of the model accounts for bonded and non-bonded interactions. Molecular dynamics simulations are utilized to search the conformational space. The final structure prediction is the result of clustering analysis performed on the set of lowest-energy conformations obtained during the simulation [2]. The model finds application in the de novo folding of small RNA molecules. Furthermore, it is applied in the prediction of larger structures using data on the molecule's secondary structure [2].",
   "citations": {
     "1": "zhang2021isrna1",
     "2": "wang2023rna"
   },
-  "beads_per_residue": [
-    4,
-    5
-  ],
-  "mapping": {
-    "adenine": {
-      "residues": [
-        "A"
-      ],
-      "atoms": {
-        "A1": "P",
-        "A2": "C4'",
-        "A3": [
-          "N9",
-          "C8",
-          "N7",
-          "C5",
-          "C4",
-          "N3"
-        ],
-        "A4": [
-          "C6",
-          "N6"
-        ],
-        "A5": [
-          "C2",
-          "N1"
-        ]
-      },
+  "default_mapping": {
+    "residues": ["A", "G", "C", "U"],
+    "config": {
       "bead_names": {
         "A1": "P",
-        "A2": "S",
-        "A3": "R_C",
-        "A4": "A_C",
-        "A5": "A_N"
+        "A2": "S"
+      },
+      "atom_centers": {
+        "A1": ["P"],
+        "A2": ["C4'"]
       },
       "description": {
         "A1": "P bead on phosphate P atom",
-        "A2": "S bead on sugar C4' atom",
-        "A3": "R_C bead (core center of mass: N9, C8, N7, C5, C4, N3)",
-        "A4": "A_C bead (Adenine Hoogsteen edge center of mass: C6, N6)",
-        "A5": "A_N bead (Adenine Sugar edge center of mass: C2, N1)"
-      }
-    },
-    "guanine": {
-      "residues": [
-        "G"
-      ],
-      "atoms": {
-        "A1": "P",
-        "A2": "C4'",
-        "A3": [
-          "N9",
-          "C8",
-          "N7",
-          "C5",
-          "C4",
-          "N3"
-        ],
-        "A4": [
-          "C6",
-          "O6"
-        ],
-        "A5": [
-          "C2",
-          "N2",
-          "N1"
-        ]
-      },
-      "bead_names": {
-        "A1": "P",
-        "A2": "S",
-        "A3": "R_C",
-        "A4": "G_O",
-        "A5": "G_N"
-      },
-      "description": {
-        "A1": "P bead on phosphate P atom",
-        "A2": "S bead on sugar C4' atom",
-        "A3": "R_C bead (core center of mass: N9, C8, N7, C5, C4, N3)",
-        "A4": "G_O bead (Guanine Hoogsteen edge center of mass: C6, O6)",
-        "A5": "G_N bead (Guanine Sugar edge center of mass: C2, N2, N1)"
-      }
-    },
-    "cytosine": {
-      "residues": [
-        "C"
-      ],
-      "atoms": {
-        "A1": "P",
-        "A2": "C4'",
-        "A3": [
-          "N1",
-          "C5",
-          "C6"
-        ],
-        "A4": [
-          "C2",
-          "O2",
-          "N3",
-          "C4",
-          "N4"
-        ]
-      },
-      "bead_names": {
-        "A1": "P",
-        "A2": "S",
-        "A3": "Y_C",
-        "A4": "C_N"
-      },
-      "description": {
-        "A1": "P bead on phosphate P atom",
-        "A2": "S bead on sugar C4' atom",
-        "A3": "Y_C bead (pyrimidine ring center of mass: N1, C5, C6)",
-        "A4": "C_N bead (Cytosine center of mass: C2, O2, N3, C4, N4)"
-      }
-    },
-    "uracil": {
-      "residues": [
-        "U"
-      ],
-      "atoms": {
-        "A1": "P",
-        "A2": "C4'",
-        "A3": [
-          "N1",
-          "C5",
-          "C6"
-        ],
-        "A4": [
-          "C2",
-          "O2",
-          "N3",
-          "C4",
-          "O4"
-        ]
-      },
-      "bead_names": {
-        "A1": "P",
-        "A2": "S",
-        "A3": "Y_C",
-        "A4": "U_O"
-      },
-      "description": {
-        "A1": "P bead on phosphate P atom",
-        "A2": "S bead on sugar C4' atom",
-        "A3": "Y_C bead (pyrimidine ring center of mass: N1, C5, C6)",
-        "A4": "U_O bead (Uracil center of mass: C2, O2, N3, C4, O4)"
+        "A2": "S bead on sugar C4' atom"
       }
     }
   },
+  "mapping": [
+    {
+      "residues": ["A", "G"],
+      "config": {
+        "bead_names": {
+          "A3": "R_C"
+        },
+        "atom_centers": {
+          "A3": ["N9", "C8", "N7", "C5", "C4", "N3"]
+        },
+        "description": {
+          "A3": "R_C bead (core center of mass: N9, C8, N7, C5, C4, N3)"
+        }
+      }
+    },
+    {
+      "residues": ["C", "U"],
+      "config": {
+        "bead_names": {
+          "A3": "Y_C"
+        },
+        "atom_centers": {
+          "A3": ["N1", "C5", "C6"]
+        },
+        "description": {
+          "A3": "Y_C bead (pyrimidine ring center of mass: N1, C5, C6)"
+        }
+      }
+    },
+    {
+      "residues": ["A"],
+      "config": {
+        "bead_names": {
+          "A4": "A_C",
+          "A5": "A_N"
+        },
+        "atom_centers": {
+          "A4": ["C6", "N6"],
+          "A5": ["C2", "N1"]
+        },
+        "description": {
+          "A4": "A_C bead (Adenine Hoogsteen edge center of mass: C6, N6)",
+          "A5": "A_N bead (Adenine Sugar edge center of mass: C2, N1)"
+        }
+      }
+    },
+    {
+      "residues": ["G"],
+      "config": {
+        "bead_names": {
+          "A4": "G_O",
+          "A5": "G_N"
+        },
+        "atom_centers": {
+          "A4": ["C6", "O6"],
+          "A5": ["C2", "N2", "N1"]
+        },
+        "description": {
+          "A4": "G_O bead (Guanine Hoogsteen edge center of mass: C6, O6)",
+          "A5": "G_N bead (Guanine Sugar edge center of mass: C2, N2, N1)"
+        }
+      }
+    },
+    {
+      "residues": ["C"],
+      "config": {
+        "bead_names": {
+          "A4": "C_N"
+        },
+        "atom_centers": {
+          "A4": ["C2", "O2", "N3", "C4", "N4"]
+        },
+        "description": {
+          "A4": "C_N bead (Cytosine center of mass: C2, O2, N3, C4, N4)"
+        }
+      }
+    },
+    {
+      "residues": ["U"],
+      "config": {
+        "bead_names": {
+          "A4": "U_O"
+        },
+        "atom_centers": {
+          "A4": ["C2", "O2", "N3", "C4", "O4"]
+        },
+        "description": {
+          "A4": "U_O bead (Uracil center of mass: C2, O2, N3, C4, O4)"
+        }
+      }
+    }
+  ],
   "connectivity": {
     "intra_residue": {
       "purine": [
-        [
-          "A1",
-          "A2"
-        ],
-        [
-          "A2",
-          "A3"
-        ],
-        [
-          "A3",
-          "A4"
-        ],
-        [
-          "A3",
-          "A5"
-        ],
-        [
-          "A4",
-          "A5"
-        ]
+        ["A1", "A2"],
+        ["A2", "A3"],
+        ["A3", "A4"],
+        ["A3", "A5"],
+        ["A4", "A5"]
       ],
       "pyrimidine": [
-        [
-          "A1",
-          "A2"
-        ],
-        [
-          "A2",
-          "A3"
-        ],
-        [
-          "A3",
-          "A4"
-        ],
-        [
-          "A4",
-          "A5"
-        ]
+        ["A1", "A2"],
+        ["A2", "A3"],
+        ["A3", "A4"]
       ]
     },
     "inter_residue": [
