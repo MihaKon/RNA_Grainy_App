@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from typing import Callable
 
 from gemmi import (
+    Asu,
     Atom,
     Chain,
     Connection,
@@ -208,11 +209,7 @@ class BaseCoarseGrainModel(ABC):
             prev_res = res
 
     def _add_intra_residue_connections(
-        self,
-        structure: Structure,
-        res: Residue,
-        intra_rules: list,
-        chain_name: str | None = None,
+        self, structure: Structure, res: Residue, intra_rules: list, chain_name: str
     ) -> None:
         current_atoms = {atom.name: atom for atom in res}
 
@@ -226,9 +223,10 @@ class BaseCoarseGrainModel(ABC):
                     res,
                     current_atoms[atom_b_name],
                     chain_name,
-                    chain_name,
+                    True,
                 )
                 structure.connections.append(conn)
+                continue
 
     def _add_inter_residue_connection(
         self,
@@ -236,7 +234,7 @@ class BaseCoarseGrainModel(ABC):
         prev_res: Residue,
         curr_res: Residue,
         inter_rule: dict[str, str],
-        chain_name: str | None = None,
+        chain_name: str,
     ) -> None:
         tail_atom_name = self._get_bead_name_for_bead_id(
             prev_res.name, inter_rule["tail"]
@@ -250,7 +248,7 @@ class BaseCoarseGrainModel(ABC):
 
         if tail_atom and head_atom:
             conn = self._create_connection(
-                prev_res, tail_atom, curr_res, head_atom, chain_name, chain_name
+                prev_res, tail_atom, curr_res, head_atom, chain_name
             )
             structure.connections.append(conn)
 
@@ -260,22 +258,25 @@ class BaseCoarseGrainModel(ABC):
         atom1: Atom,
         res2: Residue,
         atom2: Atom,
-        from_chain_name: str | None = None,
-        to_chain_name: str | None = None,
+        chain_name: str,
+        is_intra: bool = False,
     ) -> Connection:
         conn = Connection()
         conn.type = ConnectionType.Covale
         conn.partner1.atom_name = atom1.name
-        conn.partner1.chain_name = from_chain_name if from_chain_name else res1.subchain
+        conn.partner1.chain_name = chain_name
         conn.partner1.res_id.name = res1.name
         conn.partner1.res_id.segment = res1.segment
         conn.partner1.res_id.seqid = res1.seqid
 
         conn.partner2.atom_name = atom2.name
-        conn.partner2.chain_name = to_chain_name if to_chain_name else res1.subchain
+        conn.partner2.chain_name = chain_name
         conn.partner2.res_id.name = res2.name
         conn.partner2.res_id.segment = res2.segment
         conn.partner2.res_id.seqid = res2.seqid
+
+        if is_intra:
+            conn.asu = Asu.Same
 
         return conn
 
@@ -321,7 +322,7 @@ class CalculateBeadModel(BaseCoarseGrainModel):
                 new_atom = Atom()
                 new_atom.pos = new_pos
                 new_atom.name = atom_name
-                new_atom.element = Element("X")
+                new_atom.element = Element("C")
                 res.add_atom(new_atom)
         return res_clone
 
@@ -386,14 +387,59 @@ class Nares2PModel(GeometricCenterModel):
 
     INTER_P_BEAD_NAME = "PP"
 
-    def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
-        coarse_structure = original_structure.clone()
-        coarse_structure.connections = ConnectionList()
+    def _calculate_inter_p_bead_position(
+        self, curr_res: Residue, prev_res: Residue
+    ) -> None:
+        atom_id_to_alter = None
+        curr_res_sugar_id = None
+        prev_res_sugar_id = None
+        for atom_id in range(len(curr_res)):
+            if curr_res[atom_id].name == "P":
+                atom_id_to_alter = atom_id
+            elif curr_res[atom_id].name == "S":
+                curr_res_sugar_id = atom_id
 
-        self._filter_atoms(coarse_structure)
-        self._rebuild_connectivity(coarse_structure)
+        for atom_id in range(len(prev_res)):
+            if prev_res[atom_id].name == "S":
+                prev_res_sugar_id = atom_id
 
-        return coarse_structure
+        if (
+            atom_id_to_alter is None
+            or curr_res_sugar_id is None
+            or prev_res_sugar_id is None
+        ):
+            return
+
+        curr_res[atom_id_to_alter].pos = calculate_geometric_center(
+            [curr_res[curr_res_sugar_id], prev_res[prev_res_sugar_id]],
+            [curr_res[curr_res_sugar_id].name, prev_res[prev_res_sugar_id].name],
+        )  # type: ignore
+
+    def _add_inter_residue_connection(
+        self,
+        structure: Structure,
+        prev_res: Residue,
+        curr_res: Residue,
+        inter_rule: dict[str, str],
+        chain_name: str,
+    ) -> None:
+        self._calculate_inter_p_bead_position(curr_res, prev_res)
+
+        tail_atom_name = self._get_bead_name_for_bead_id(
+            prev_res.name, inter_rule["tail"]
+        )
+        head_atom_name = self._get_bead_name_for_bead_id(
+            curr_res.name, inter_rule["head"]
+        )
+
+        tail_atom = next((a for a in prev_res if a.name == tail_atom_name), None)
+        head_atom = next((a for a in curr_res if a.name == head_atom_name), None)
+
+        if tail_atom and head_atom:
+            conn = self._create_connection(
+                prev_res, tail_atom, curr_res, head_atom, chain_name
+            )
+            structure.connections.append(conn)
 
 
 @CoarseGrainModelRegistry.register
@@ -423,7 +469,7 @@ class IsRNAOneModel(MassCenterModel):
         structure: Structure,
         res: Residue,
         intra_rules: list[str],
-        chain_name: str | None = None,
+        chain_name: str,
     ) -> None:
         current_atoms = {atom.name: atom for atom in res}
 
@@ -437,7 +483,7 @@ class IsRNAOneModel(MassCenterModel):
                     res,
                     current_atoms[atom_b_name],
                     chain_name,
-                    chain_name,
+                    True,
                 )
                 structure.connections.append(conn)
 
@@ -463,7 +509,7 @@ class HireModel(MassCenterModel):
         structure: Structure,
         res: Residue,
         intra_rules: list[str],
-        chain_name: str | None = None,
+        chain_name: str,
     ) -> None:
         current_atoms = {atom.name: atom for atom in res}
 
@@ -477,6 +523,6 @@ class HireModel(MassCenterModel):
                     res,
                     current_atoms[atom_b_name],
                     chain_name,
-                    chain_name,
+                    True,
                 )
                 structure.connections.append(conn)

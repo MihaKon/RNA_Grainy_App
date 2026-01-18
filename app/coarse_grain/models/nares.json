@@ -56,7 +56,7 @@
   ],
   "connectivity": {
     "intra_residue": [
-      ["A1", "A3"],
+      ["A2", "A3"],
       ["A1", "A2"]
     ],
     "inter_residue": [
