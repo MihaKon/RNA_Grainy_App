@@ -173,6 +173,7 @@ class BaseCoarseGrainModel(ABC):
                 and residue[atom_id].altloc != PRIMARY_ATOM_ALTLOC
             ):
                 del residue[atom_id]
+                continue
             residue[atom_id].altloc = EMPTY_ALTLOC
 
     def _filter_residue_atoms(
