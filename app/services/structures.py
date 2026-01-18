@@ -49,7 +49,7 @@ class StructureProcessor:
     ) -> DefaultDict[str, Any]:
         original_format = file_format.normalize_format()
 
-        model_data = DocsContextBuilder.get_model(selected_model)
+        # model_data = DocsContextBuilder.get_model(selected_model)
 
         reference_url = str(
             request.url_for(
@@ -62,6 +62,22 @@ class StructureProcessor:
             ).include_query_params(file_format=COARSE_FILE_FORMAT.value)
         )
 
+        # initial_data = {
+        #     "reference_url": reference_url,
+        #     "coarse_url": coarse_url,
+        #     "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
+        #     "job_id": job_id,
+        #     "filename": filename,
+        #     "atom_counts": {
+        #         "original": "TODO: Count atoms",
+        #         "coarse": "TODO: Count beads",
+        #     },
+        #     "selected_chains": ["TODO"],
+        #     "selected_models": ["TODO"],
+        #     "model": model_data,
+        # }
+
+        # REMOVE
         initial_data = {
             "reference_url": reference_url,
             "coarse_url": coarse_url,
@@ -74,7 +90,7 @@ class StructureProcessor:
             },
             "selected_chains": ["TODO"],
             "selected_models": ["TODO"],
-            "model": model_data,
+            "model": {},
         }
 
         context: DefaultDict[str, Any] = defaultdict(list, initial_data)

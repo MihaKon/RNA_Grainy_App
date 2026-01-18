@@ -1,20 +1,4 @@
-from gemmi import Element, Position, Residue
-
-NUCLEOTIDE_ATOMS = {
-    "phosphate": ["P", "OP1", "OP2", "O1P", "O2P"],
-    "sugar": ["C1'", "C2'", "C3'", "C4'", "C5'", "O2'", "O3'", "O4'", "O5'"],
-    "purine": ["N1", "C2", "N3", "C4", "C5", "C6", "N7", "C8", "N9"],
-    "pyrimidine": ["N1", "C2", "O2", "N3", "C4", "N4", "O4", "C5", "C6"],
-}
-
-
-def get_atomic_mass(atom_name: str, element_name: str = "") -> float:
-    el = (
-        element_name
-        if element_name
-        else "".join([c for c in atom_name if c.isalpha()])[-1]
-    )
-    return Element(el).weight
+from gemmi import Position, Residue
 
 
 def calculate_center_of_mass(
@@ -25,7 +9,7 @@ def calculate_center_of_mass(
 
     for atom in residue:
         if atom.name in atom_names:
-            mass = get_atomic_mass(atom.name, atom.element.name)
+            mass = atom.element.weight
             x += atom.pos.x * mass
             y += atom.pos.y * mass
             z += atom.pos.z * mass
@@ -54,13 +38,3 @@ def calculate_geometric_center(
         return None
 
     return Position(x / count, y / count, z / count)
-
-
-def get_base_atoms(res_name: str) -> list[str]:
-    name = res_name.upper().strip()
-    if name in ["A", "G"]:
-        return NUCLEOTIDE_ATOMS["purine"]
-    elif name in ["C", "U"]:
-        return NUCLEOTIDE_ATOMS["pyrimidine"]
-    else:
-        return []
