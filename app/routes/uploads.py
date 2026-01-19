@@ -119,18 +119,25 @@ async def upload_rcsb(
     )
 
 
-@router.post("/example/{example_id}", response_class=HTMLResponse)
+@router.post("/example/", response_class=HTMLResponse)
 async def upload_example(
     request: Request,
-    example_id: str,
+    example_id: str = Form(...),
     selected_model: str = Form(...),
 ) -> HTMLResponse: 
     example_req = ExampleRequest(example_id=example_id, selected_model=selected_model)  # type: ignore
     example_path = EXAMPLES_DIR / f"{example_req.example_id}.{SupportedFormats.CIF.value}"
+
+    if not example_path.exists():
+        raise FileProcessingError(f"Example file not found for ID: {example_req.example_id}")
+    
     try:
         file_content = example_path.read_text(encoding="utf-8")
     except UnicodeDecodeError as e:
         raise FileProcessingError(f"Error reading example file: {e}")
+    
+    if file_content == "":
+        raise FileProcessingError("Example file is empty.")
     
     file_format = SupportedFormats.CIF
     filename: str = example_req.example_id

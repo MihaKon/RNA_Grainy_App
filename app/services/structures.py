@@ -4,6 +4,7 @@ from typing import Any, DefaultDict
 from fastapi import Request
 from gemmi import (
     MmcifOutputGroups,
+    PdbWriteOptions,
     Structure,
     cif,
     make_structure_from_block,
@@ -32,6 +33,7 @@ class StructureProcessor:
     @staticmethod
     def structure_to_pdb_string(structure: Structure) -> str:
         write_options = PdbWriteOptions(preserve_serial=True, conect_records=True)
+        write_options.link_records = False
         return structure.make_pdb_string(options=write_options)
 
     @staticmethod
@@ -42,6 +44,7 @@ class StructureProcessor:
         groups.conn = True
         groups.cell = True
         groups.atoms = True
+        groups.assembly = True
         cif_doc = structure.make_mmcif_document(groups=groups)
         return cif_doc.as_string()
 
