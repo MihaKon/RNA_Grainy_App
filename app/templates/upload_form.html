@@ -47,9 +47,9 @@
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('uploadForm', () => ({
-            pendingExample: null,
             file: null,
             rcsbId: '',
+            exampleId: '',
             selectedModel: '',
             selectedLabel: 'Select model',
             dropdownOpen: false,
@@ -74,7 +74,24 @@
             handleRcsbInput() {
                 if (this.rcsbId.trim() !== '') {
                     this.removeFile();
+                    this.exampleId = '';
                     this.errors.file = false;
+                }
+            },
+
+            setExample(id){
+                this.exampleId = id;
+                this.rcsbId = '';
+                this.removeFile();
+                this.errors.file = false;
+
+                if (!this.selectedModel){
+                    event.stopPropagation();
+                    this.dropdownOpen = true;
+                } else {
+                    this.$nextTick(() => {
+                        this.$root.requestSubmit();
+                    });                
                 }
             },
 
@@ -84,13 +101,9 @@
                 this.errors.model = false;
                 this.dropdownOpen = false;
 
-                if (this.pendingExample) {
+                if (this.exampleId){
                     this.$nextTick(() => {
-                        const btn = this.$refs[this.pendingExample];
-                        if (btn) {
-                            btn.click();
-                        }
-                        this.pendingExample = null;
+                        this.$root.requestSubmit();
                     });
                 }
             },
@@ -98,38 +111,29 @@
             validate() {
                 const hasFile = !!this.file;
                 const hasRcsb = this.rcsbId.trim().length > 0;
+                const hasExample = this.exampleId != '';
                 const hasModel = !!this.selectedModel;
 
-                this.errors.file = !hasFile && !hasRcsb;
+                this.errors.file = !hasFile && !hasRcsb && !hasExample;
                 this.errors.model = !hasModel;
 
                 return !this.errors.file && !this.errors.model;
             },
 
             submitForm(event) {
-                const path = event.detail.path || '';
-                const isExample = path.includes('/example/');
-                if (isExample) {
-                    const hasModel = !!this.selectedModel;
-                    this.errors.model = !hasModel;
-                    this.errors.file = false;
-
-                    if (!hasModel) {
-                        event.preventDefault();
-                        this.isSubmitting = false;
-                    } else {
-                        this.isSubmitting = true;
-                    }
-                    return;
-                }
                 if (!this.validate()) {
                     event.preventDefault();
+                    return;
+                } 
+                this.isSubmitting = true;
+
+                if (this.rcsbId.trim() !== '') {
+                    event.detail.path = '/upload/rcsb/';
+                } else if (this.exampleId !== '') {
+                    event.detail.path = '/upload/example/';
                 } else {
-                    this.isSubmitting = true;
-                    event.detail.path = this.rcsbId.trim() !== ''
-                        ? '/upload/rcsb/'
-                        : '/upload/file/';
-                }
+                    event.detail.path = '/upload/file/';
+                }   
             },
 
             checkPosition() {

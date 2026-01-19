@@ -54,28 +54,24 @@
                                : 'border-primary/20 focus:border-accent focus:ring-2 focus:ring-focus/50'" />
         </div>
 
+        <input type="hidden" name="example_id" :value="exampleId" />
+
         <div class="mt-2 flex items-center justify-end gap-2 text-xs text-primary/40">
             <span>Or try example:</span>
 
-            <button type="button" x-ref="example_1ehz" hx-post="/upload/example/1ehz" hx-target="#upload-container"
-                hx-swap="innerHTML" hx-include="[name='selected_model']" hx-indicator="#loading-spinner"
-                @click="$event.stopPropagation(); if(!selectedModel) {pendingExample = 'example_1ehz'; dropdownOpen=true; return; }"
+            <button type="button" @click="setExample('1EHZ')"
                 class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
                 1EHZ
             </button>
             <span class="select-none">•</span>
 
-            <button type="button" x-ref="example_1mnx" hx-post="/upload/example/1mnx" hx-target="#upload-container"
-                hx-swap="innerHTML" hx-include="[name='selected_model']" hx-indicator="#loading-spinner"
-                @click="$event.stopPropagation(); if(!selectedModel) { pendingExample = 'example_1mnx'; dropdownOpen=true; return; }"
+            <button type="button" @click="setExample('1MNX')"
                 class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
                 1MNX
             </button>
             <span class="select-none">•</span>
 
-            <button type="button" x-ref="example_2f8s" hx-post="/upload/example/2f8s" hx-target="#upload-container"
-                hx-swap="innerHTML" hx-include="[name='selected_model']" hx-indicator="#loading-spinner"
-                @click="$event.stopPropagation(); if(!selectedModel) { pendingExample = 'example_2f8s'; dropdownOpen=true; return; }"
+            <button type="button" @click="setExample('2F8S')"
                 class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
                 2F8S
             </button>

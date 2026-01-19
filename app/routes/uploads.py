@@ -119,10 +119,10 @@ async def upload_rcsb(
     )
 
 
-@router.post("/example/{example_id}", response_class=HTMLResponse)
+@router.post("/example/", response_class=HTMLResponse)
 async def upload_example(
     request: Request,
-    example_id: str,
+    example_id: str = Form(...),
     selected_model: str = Form(...),
 ) -> HTMLResponse: 
     example_req = ExampleRequest(example_id=example_id, selected_model=selected_model)  # type: ignore
