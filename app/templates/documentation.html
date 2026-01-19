@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "components/model_display.html" import render_model_image, render_citations, render_mapping_documentation, tooltip %}
+{% from "components/docs/model_display.html" import render_model_image, render_citations, render_mapping_documentation, tooltip %}
 
 {% block content %}
 <div class="w-full bg-gray-50 min-h-screen">
@@ -58,7 +58,6 @@
                             <h3 class="font-semibold text-primary flex items-center gap-2">
                                 <i class="fa-solid fa-cube text-tertiary"></i> Representation Example
                             </h3>
-                            {{ tooltip() }}
                         </div>
 
                         {{ render_model_image(model.image_url) }}

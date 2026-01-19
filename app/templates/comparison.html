@@ -1,6 +1,6 @@
 {% from "components/primary_button.html" import primary_button %}
 {% from "components/molstar_viewer.html" import molstar_viewer %}
-{% from "components/model_display.html" import render_model_image, render_citations, render_mapping_comparison, collapse_header_comparison %}
+{% from "components/docs/model_display.html" import render_model_image, render_citations, render_mapping_comparison, collapse_header %}
 
 {% block content %}
 <div class="w-full h-full flex flex-col items-center py-6">
@@ -37,7 +37,7 @@
             </section>
 
             <section x-data="{open:false}" class="bg-white rounded-2xl shadow border border-gray-200 p-6 shrink-0">
-                {{ collapse_header_comparison('Model description') }}
+                {{ collapse_header('Model description', variant='comparison') }}
 
                 <div x-show="open" x-collapse class="mt-4 text-sm text-secondary">
                     
@@ -57,7 +57,7 @@
 
             <section x-data="{ open: false }" class="bg-white rounded-2xl shadow border border-gray-200 p-6 shrink-0">
                 
-                {{ collapse_header_comparison('Atom mapping') }}
+                {{ collapse_header('Atom mapping', variant='comparison') }}
 
                 <div x-show="open" x-collapse class="mt-4">
                     {% if beads %}
@@ -71,7 +71,7 @@
                     </div>
                     {% endif %}
 
-                    {{ render_mapping_comparison(model.mapping, style='card') }}
+                    {{ render_mapping_comparison(model.mapping) }}
 
                 </div>
             </section>
