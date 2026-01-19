@@ -1,12 +1,12 @@
 .vscode
 __pycache__
 node_modules
-app/static
+app/static/*
 app/temp
 temp
 .ruff_cache
 .pytest_cache
 .mypy_cache
 
-!app/static/images/
-!app/static/examples/
+!app/static/images
+!app/static/examples
