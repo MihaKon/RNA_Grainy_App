@@ -29,11 +29,12 @@ class StructureProcessor:
     @staticmethod
     def apply_coarse_graining(structure: Structure, model: str) -> str:
         return process_structure_with_coarse_grain_model(structure, model)
-    
+
     @staticmethod
     def structure_to_pdb_string(structure: Structure) -> str:
-        options = PdbWriteOptions()
-        return structure.make_pdb_string(options=options)
+        write_options = PdbWriteOptions(preserve_serial=True, conect_records=True)
+        return structure.make_pdb_string(options=write_options)
+
     @staticmethod
     def structure_to_cif_string(structure: Structure) -> str:
         groups = MmcifOutputGroups(False)
@@ -44,7 +45,6 @@ class StructureProcessor:
         groups.atoms = True
         cif_doc = structure.make_mmcif_document(groups=groups)
         return cif_doc.as_string()
-    
 
     @staticmethod
     def build_comparison_context(

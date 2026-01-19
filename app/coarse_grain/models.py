@@ -140,6 +140,7 @@ class BaseCoarseGrainModel(ABC):
         self._filter_atoms(coarse_structure)
         self._rebuild_connectivity(coarse_structure)
 
+        coarse_structure.setup_entities()
         return coarse_structure
 
     def _get_bead_name_for_bead_id(self, res_name: str, bead_id: str) -> str:
@@ -227,6 +228,11 @@ class BaseCoarseGrainModel(ABC):
                     True,
                 )
                 structure.connections.append(conn)
+                structure.add_conect(
+                    current_atoms[atom_a_name].serial,
+                    current_atoms[atom_b_name].serial,
+                    order=1,
+                )
                 continue
 
     def _add_inter_residue_connection(
@@ -252,6 +258,7 @@ class BaseCoarseGrainModel(ABC):
                 prev_res, tail_atom, curr_res, head_atom, chain_name
             )
             structure.connections.append(conn)
+            structure.add_conect(tail_atom.serial, head_atom.serial, order=1)
 
     def _create_connection(
         self,
@@ -437,6 +444,7 @@ class Nares2PModel(GeometricCenterModel):
         head_atom = next((a for a in curr_res if a.name == head_atom_name), None)
 
         if tail_atom and head_atom:
+            structure.add_conect(tail_atom.serial, head_atom.serial, order=1)
             conn = self._create_connection(
                 prev_res, tail_atom, curr_res, head_atom, chain_name
             )
@@ -487,6 +495,11 @@ class IsRNAOneModel(MassCenterModel):
                     True,
                 )
                 structure.connections.append(conn)
+                structure.add_conect(
+                    current_atoms[atom_a_name].serial,
+                    current_atoms[atom_b_name].serial,
+                    order=1,
+                )
 
 
 @CoarseGrainModelRegistry.register
@@ -527,3 +540,8 @@ class HireModel(MassCenterModel):
                     True,
                 )
                 structure.connections.append(conn)
+                structure.add_conect(
+                    current_atoms[atom_a_name].serial,
+                    current_atoms[atom_b_name].serial,
+                    order=1,
+                )
