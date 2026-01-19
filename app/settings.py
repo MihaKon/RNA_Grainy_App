@@ -10,8 +10,9 @@ TEMP_DIR = BASE_DIR.parent / "temp"
 TEMPLATES = Jinja2Templates(directory=TEMPLATES_DIR)
 
 MODELS_IMAGES_DIR = STATIC_DIR / "images"
+EXAMPLES_DIR = STATIC_DIR / "examples"
 CITATIONS_DIR = BASE_DIR / "coarse_grain" / "metadata" / "citations.json"
 
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
 MAX_FILE_UPLOAD_SIZE = 25 * 1024 * 1024
-MAX_RCSB_UPLOAD_SIE = 8 * 1024 * 1024
+MAX_RCSB_UPLOAD_SIE = 25 * 1024 * 1024

@@ -1,0 +1,52 @@
+<div class="space-y-1">
+    <label class="block text-sm font-medium text-primary ml-1">Coarse-Grain Model</label>
+
+    <div class="relative z-20" x-ref="dropdownContainer" @click.outside="dropdownOpen = false">
+
+        <input type="hidden" name="selected_model" x-model="selectedModel">
+
+        <button type="button" x-ref="dropdownButton" @click="checkPosition(); dropdownOpen = !dropdownOpen"
+            class="w-full bg-white border rounded-xl py-2.5 px-4 text-left cursor-pointer shadow-sm outline-none flex justify-between items-center transition-all"
+            :class="errors.model 
+                            ? 'border-danger focus:ring-2 focus:ring-danger/20' 
+                            : 'border-primary/20 focus:border-accent focus:ring-2 focus:ring-focus/50'">
+            <span class="block truncate text-sm"
+                :class="selectedModel ? 'text-secondary font-semibold' : 'text-primary/50'"
+                x-text="selectedLabel"></span>
+
+            <i class="fa-solid fa-chevron-down text-xs text-primary/40 transition-transform duration-200" :class="{
+                        'rotate-180': dropdownOpen && !openUp, 
+                        'rotate-0': !dropdownOpen,
+                        'rotate-180': dropdownOpen && openUp 
+                    }"></i>
+        </button>
+
+        <div x-show="dropdownOpen" x-transition:enter="transition ease-out duration-100"
+            x-transition:enter-start="transform opacity-0 scale-95"
+            x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75"
+            x-transition:leave-start="transform opacity-100 scale-100"
+            x-transition:leave-end="transform opacity-0 scale-95"
+            class="absolute z-50 left-0 right-0 w-full bg-white shadow-xl shadow-primary/20 max-h-60 rounded-xl py-1 text-base overflow-auto focus:outline-none sm:text-sm border border-primary/10"
+            :class="openUp ? 'bottom-full mb-2 origin-bottom' : 'top-full mt-2 origin-top'">
+
+            {% for model_id, model_name in coarse_grain_models %}
+            <div @click="selectModel('{{ model_id }}', '{{ model_name }}')"
+                class="cursor-pointer select-none relative py-2.5 pl-3 pr-9 transition-colors hover:bg-accent/5 group border-b border-primary/5 last:border-0">
+                <span class="block truncate font-medium text-primary group-hover:text-accent"
+                    :class="{ 'text-accent font-bold': selectedModel === '{{ model_id }}' }">
+                    {{ model_name }}
+                </span>
+
+                <span x-show="selectedModel === '{{ model_id }}'"
+                    class="absolute inset-y-0 right-0 flex items-center pr-4 text-accent">
+                    <i class="fa-solid fa-check"></i>
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <p x-show="errors.model" x-transition class="mt-1 text-xs text-danger font-medium ml-1">
+            Please select a model.
+        </p>
+    </div>
+</div>

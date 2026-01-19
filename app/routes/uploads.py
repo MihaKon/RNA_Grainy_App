@@ -1,17 +1,19 @@
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
+from gemmi import Structure
 
 from app.exceptions import FileProcessingError
 from app.models import (
     COARSE_FILE_FORMAT,
     FileUploadRequest,
     RCSBRequest,
+    ExampleRequest,
     SupportedFormats,
 )
 from app.rcsb import fetch_rcsb_file
 from app.services.jobs import JobManager
 from app.services.structures import StructureProcessor
-from app.settings import MAX_FILE_UPLOAD_SIZE, TEMPLATES
+from app.settings import MAX_FILE_UPLOAD_SIZE, TEMPLATES, EXAMPLES_DIR
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
@@ -20,14 +22,11 @@ def process_structure(
     file_content: str,
     file_format: SupportedFormats,
     selected_model: str,
-) -> str:
+) -> Structure:
     original_structure = StructureProcessor.parse_structure(file_content, file_format)
-    coarse_content = StructureProcessor.apply_coarse_graining(
+    return StructureProcessor.apply_coarse_graining(
         original_structure, selected_model
     )
-
-    return coarse_content
-
 
 async def run_job_processing(
     job_id: str,
@@ -38,12 +37,14 @@ async def run_job_processing(
     JobManager.setup_job_dir(job_id)
 
     original_format = file_format.normalize_format()
-    original_filename: str = f"reference.{original_format.value}"
-    coarse_filename: str = f"coarse.{COARSE_FILE_FORMAT.value}"
-    coarse_content = process_structure(file_content, file_format, selected_model)
+    coarse_structure = process_structure(file_content, file_format, selected_model)
 
-    await JobManager.create_file(job_id, file_content, original_filename)
-    await JobManager.create_file(job_id, coarse_content, coarse_filename)
+    cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
+    pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
+
+    await JobManager.create_file(job_id, file_content, f"reference.{original_format.value}")
+    await JobManager.create_file(job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}")
+    await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
 
 
 async def handle_request_and_render(
@@ -115,4 +116,32 @@ async def upload_rcsb(
 
     return await handle_request_and_render(
         request, file_content, filename, file_format, rcsb_req.selected_model
+    )
+
+
+@router.post("/example/", response_class=HTMLResponse)
+async def upload_example(
+    request: Request,
+    example_id: str = Form(...),
+    selected_model: str = Form(...),
+) -> HTMLResponse: 
+    example_req = ExampleRequest(example_id=example_id, selected_model=selected_model)  # type: ignore
+    example_path = EXAMPLES_DIR / f"{example_req.example_id}.{SupportedFormats.CIF.value}"
+
+    if not example_path.exists():
+        raise FileProcessingError(f"Example file not found for ID: {example_req.example_id}")
+    
+    try:
+        file_content = example_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as e:
+        raise FileProcessingError(f"Error reading example file: {e}")
+    
+    if file_content == "":
+        raise FileProcessingError("Example file is empty.")
+    
+    file_format = SupportedFormats.CIF
+    filename: str = example_req.example_id
+
+    return await handle_request_and_render(
+        request, file_content, filename, file_format, example_req.selected_model
     )
