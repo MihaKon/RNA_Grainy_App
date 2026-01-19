@@ -6,10 +6,10 @@
     "1": "jonikas2009coarse",
     "2": "li2021rna"
   },
-  "mapping": {
-    "nucleotide": {
-      "residues": ["A", "G", "C", "U"],
-      "atoms": {
+  "default_mapping": {
+    "residues": ["A", "G", "C", "U"],
+    "config": {
+      "bead_names": {
         "A1": "C3'"
       },
       "description": {

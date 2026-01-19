@@ -19,7 +19,7 @@ from app.services.doc import DocsContextBuilder
 class StructureProcessor:
     @staticmethod
     def parse_structure(content: str, file_format: SupportedFormats) -> Structure:
-        if file_format == SupportedFormats.CIF:
+        if file_format == SupportedFormats.CIF or file_format == SupportedFormats.MMCIF:
             dcif = cif.read_string(content)
             structure = make_structure_from_block(dcif.sole_block())
         else:

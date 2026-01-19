@@ -6,10 +6,10 @@
     "1": "tan2006yup",
     "2": "li2021rna"
   },
-  "mapping": {
-    "nucleotide": {
-      "residues": ["A", "G", "C", "U"],
-      "atoms": {
+  "default_mapping": {
+    "residues": ["A", "G", "C", "U"],
+    "config": {
+      "bead_names": {
         "A1": "P"
       },
       "description": {

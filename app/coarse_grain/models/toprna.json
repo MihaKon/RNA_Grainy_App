@@ -6,13 +6,17 @@
     "1": "mustoe2014coarse",
     "2": "li2021rna"
   },
-  "mapping": {
-    "nucleotide": {
-      "residues": ["A", "G", "C", "U"],
-      "atoms": {
+  "default_mapping": {
+    "residues": ["A", "G", "C", "U"],
+    "config": {
+      "bead_names": {
         "A1": "P",
         "A2": "S",
         "A3": "B"
+      },
+      "atom_centers": {
+        "A1": ["P"],
+        "A2": ["C1'", "C2'", "C3'", "C4'", "C5'", "O2'", "O3'", "O4'", "O5'"]
       },
       "description": {
         "A1": "P bead on phosphate P atom",
@@ -21,6 +25,24 @@
       }
     }
   },
+  "mapping": [
+    {
+      "residues": ["A", "G"],
+      "config": {
+        "atom_centers": {
+          "A3": ["N1", "C2", "N3", "C4", "C5", "C6", "N7", "C8", "N9"]
+        }
+      }
+    },
+    {
+      "residues": ["C", "U"],
+      "config": {
+        "atom_centers": {
+          "A3": ["N1", "C2", "N3", "C4", "N4", "C5", "C6"]
+        }
+      }
+    }
+  ],
   "connectivity": {
     "intra_residue": [
       ["A1", "A2"],

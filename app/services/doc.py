@@ -1,8 +1,15 @@
 import json
 from typing import Any, Tuple
 
-from app.coarse_grain.models import CoarseGrainModelRegistry
+from app.coarse_grain.models import BaseCoarseGrainModel, CoarseGrainModelRegistry
 from app.settings import CITATIONS_DIR, MODELS_IMAGES_DIR, STATIC_DIR
+
+RESIDUE_TYPE = {
+    "A": "Purine",
+    "G": "Purine",
+    "C": "Pyrimidine",
+    "U": "Pyrimidine",
+}
 
 
 class DocsContextBuilder:
@@ -41,7 +48,7 @@ class DocsContextBuilder:
             "raw_beads": raw_beads,
             "beads": cls.format_beads(raw_beads),
             "citations": cls.format_citations(config),
-            "mapping": cls.format_mapping(config),
+            "mapping": cls.format_mapping(model_cls),
             "image_url": cls.get_image_url(model_name),
         }
         return model_data
@@ -65,24 +72,25 @@ class DocsContextBuilder:
         return " or ".join(str(bead) for bead in beads)
 
     @classmethod
-    def format_mapping(cls, config: dict[str, Any]) -> dict[str, Any]:  # type: ignore
+    def format_mapping(cls, model_cls: BaseCoarseGrainModel) -> dict[str, Any]:  # type: ignore
         formatted_mapping = {}
-        raw_mapping = config.get("mapping", {})
+        raw_mapping = model_cls().nucleotides_config
 
-        for group_key, group_data in raw_mapping.items():
-            title = f"{group_key.capitalize()}"
-            atoms_dict = group_data.get("atoms", {})
-            desc_dict = group_data.get("description", {})
-
+        for res in raw_mapping.keys():
             row_data = []
-            for k in atoms_dict.keys():
-                atom_name = atoms_dict[k]
-                desc_text = desc_dict.get(k, "No description available.")
+            for bead_id in raw_mapping[res]["bead_names"].keys():
                 row_data.append(
-                    {"bead_id": k, "bead": atom_name, "description": desc_text}
+                    {
+                        "bead_id": bead_id,
+                        "bead": raw_mapping[res]["bead_names"][bead_id],
+                        "description": raw_mapping[res]["description"][bead_id],
+                    }
                 )
-
-            formatted_mapping[title] = row_data
+            residue_type = RESIDUE_TYPE[res]
+            if formatted_mapping.get(residue_type) is not None:
+                formatted_mapping[residue_type].append(row_data)
+            else:
+                formatted_mapping[residue_type] = row_data
 
         return formatted_mapping
 

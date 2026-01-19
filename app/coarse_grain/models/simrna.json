@@ -7,42 +7,49 @@
     "2": "li2021rna",
     "3": "wang2023rna"
   },
-  "mapping": {
-    "purine": {
-      "residues": ["A", "G", "DA", "DG"],
-      "atoms": {
+  "default_mapping": {
+    "residues": ["A", "G", "C", "U"],
+    "config": {
+      "bead_names": {
         "A1": "P",
         "A2": "C4'",
-        "A3": "N9",
-        "A4": "C2",
-        "A5": "C6"
+        "A4": "C2"
       },
       "description": {
         "A1": "Phosphate P atom",
         "A2": "Sugar C4' atom",
-        "A3": "Base N9 atom",
-        "A4": "Base C2 atom",
-        "A5": "Base C6 atom"
-      }
-    },
-    "pyrimidine": {
-      "residues": ["C", "U", "DC", "DT"],
-      "atoms": {
-        "A1": "P",
-        "A2": "C4'",
-        "A3": "N1",
-        "A4": "C2",
-        "A5": "C4"
-      },
-      "description": {
-        "A1": "Phosphate P atom",
-        "A2": "Sugar C4' atom",
-        "A3": "Base N1 atom",
-        "A4": "Base C2 atom",
-        "A5": "Base C4 atom"
+        "A4": "Base C2 atom"
       }
     }
   },
+  "mapping": [
+    {
+      "residues": ["A", "G"],
+      "config": {
+        "bead_names": {
+          "A3": "N9",
+          "A5": "C6"
+        },
+        "description": {
+          "A3": "Base N9 atom",
+          "A5": "Base C6 atom"
+        }
+      }
+    },
+    {
+      "residues": ["C", "U"],
+      "config": {
+        "bead_names": {
+          "A3": "N1",
+          "A5": "C4"
+        },
+        "description": {
+          "A3": "Base N1 atom",
+          "A5": "Base C4 atom"
+        }
+      }
+    }
+  ],
   "connectivity": {
     "intra_residue": [
       ["A1", "A2"],
