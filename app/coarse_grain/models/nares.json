@@ -7,24 +7,56 @@
     "2": "cragnolini2015ab",
     "3": "dawson2016coarse"
   },
-  "mapping": {
-    "nucleotide": {
-      "residues": ["A", "G", "C", "U"], 
-      "atoms": {
+  "default_mapping": {
+    "residues": ["A", "G", "C", "U"],
+    "config": {
+      "bead_names": {
         "A1": "P",
-        "A2": "S",
-        "A3": "B"
+        "A2": "S"
+      },
+      "atom_centers": {
+        "A1": ["P", "OP1", "OP2", "O1P", "O2P"],
+        "A2": ["C1'", "C2'", "C3'", "C4'", "C5'", "O2'", "O3'", "O4'", "O5'"]
       },
       "description": {
         "A1": "Phosphate group geometric center of mass",
-        "A2": "Sugar ring geometric center of mass",
-        "A3": "Base geometric center of mass"
+        "A2": "Sugar ring geometric center of mass"
       }
     }
   },
+  "mapping": [
+    {
+      "residues": ["A", "G"],
+      "config": {
+        "bead_names": {
+          "A3": "B"
+        },
+        "atom_centers": {
+          "A3": ["N1", "C2", "N3", "C4", "C5", "C6", "N7", "C8", "N9"]
+        },
+        "description": {
+          "A3": "Base geometric center of mass (Purine)"
+        }
+      }
+    },
+    {
+      "residues": ["C", "U"],
+      "config": {
+        "bead_names": {
+          "A3": "B"
+        },
+        "atom_centers": {
+          "A3": ["N1", "C2", "O2", "N3", "C4", "N4", "O4", "C5", "C6"]
+        },
+        "description": {
+          "A3": "Base geometric center of mass (Pyrimidine)"
+        }
+      }
+    }
+  ],
   "connectivity": {
     "intra_residue": [
-      ["A1", "A3"],
+      ["A2", "A3"],
       ["A1", "A2"]
     ],
     "inter_residue": [

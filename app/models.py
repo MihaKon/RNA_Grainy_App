@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 
 from fastapi import UploadFile
@@ -9,7 +11,7 @@ class SupportedFormats(str, Enum):
     CIF = "cif"
     MMCIF = "mmcif"
 
-    def normalize_format(self) -> "SupportedFormats":
+    def normalize_format(self) -> SupportedFormats:
         if self == SupportedFormats.CIF:
             return SupportedFormats.MMCIF
         return self
