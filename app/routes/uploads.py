@@ -1,5 +1,6 @@
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
+from gemmi import Structure
 
 from app.exceptions import FileProcessingError
 from app.models import (
@@ -21,14 +22,11 @@ def process_structure(
     file_content: str,
     file_format: SupportedFormats,
     selected_model: str,
-) -> str:
+) -> Structure:
     original_structure = StructureProcessor.parse_structure(file_content, file_format)
-    coarse_content = StructureProcessor.apply_coarse_graining(
+    return StructureProcessor.apply_coarse_graining(
         original_structure, selected_model
     )
-
-    return coarse_content
-
 
 async def run_job_processing(
     job_id: str,
@@ -38,14 +36,15 @@ async def run_job_processing(
 ) -> None:
     JobManager.setup_job_dir(job_id)
 
-    
     original_format = file_format.normalize_format()
-    original_filename: str = f"reference.{original_format.value}"
-    coarse_filename: str = f"coarse.{COARSE_FILE_FORMAT.value}"
-    coarse_content = process_structure(file_content, file_format, selected_model)
+    coarse_structure = process_structure(file_content, file_format, selected_model)
 
-    await JobManager.create_file(job_id, file_content, original_filename)
-    await JobManager.create_file(job_id, coarse_content, coarse_filename)
+    cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
+    pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
+
+    await JobManager.create_file(job_id, file_content, f"reference.{original_format.value}")
+    await JobManager.create_file(job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}")
+    await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
 
 
 async def handle_request_and_render(
@@ -127,7 +126,7 @@ async def upload_example(
     selected_model: str = Form(...),
 ) -> HTMLResponse: 
     example_req = ExampleRequest(example_id=example_id, selected_model=selected_model)  # type: ignore
-    example_path = EXAMPLES_DIR / f"{example_req.example_id}"
+    example_path = EXAMPLES_DIR / f"{example_req.example_id}.{SupportedFormats.CIF.value}"
     try:
         file_content = example_path.read_text(encoding="utf-8")
     except UnicodeDecodeError as e:

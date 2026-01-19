@@ -1,4 +1,3 @@
-
 <div class="space-y-2">
     <div class="relative group">
         <input type="file" id="file" name="file" x-ref="fileInput" @change="handleFileSelect"
@@ -58,7 +57,7 @@
         <div class="mt-2 flex items-center justify-end gap-2 text-xs text-primary/40">
             <span>Or try example:</span>
 
-            <button type="button" x-ref="example_1ehz" hx-post="/upload/example/1ehz.cif" hx-target="#upload-container"
+            <button type="button" x-ref="example_1ehz" hx-post="/upload/example/1ehz" hx-target="#upload-container"
                 hx-swap="innerHTML" hx-include="[name='selected_model']" hx-indicator="#loading-spinner"
                 @click="$event.stopPropagation(); if(!selectedModel) {pendingExample = 'example_1ehz'; dropdownOpen=true; return; }"
                 class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
@@ -66,7 +65,7 @@
             </button>
             <span class="select-none">•</span>
 
-            <button type="button" x-ref="example_1mnx" hx-post="/upload/example/1mnx.cif" hx-target="#upload-container"
+            <button type="button" x-ref="example_1mnx" hx-post="/upload/example/1mnx" hx-target="#upload-container"
                 hx-swap="innerHTML" hx-include="[name='selected_model']" hx-indicator="#loading-spinner"
                 @click="$event.stopPropagation(); if(!selectedModel) { pendingExample = 'example_1mnx'; dropdownOpen=true; return; }"
                 class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
@@ -74,7 +73,7 @@
             </button>
             <span class="select-none">•</span>
 
-            <button type="button" x-ref="example_2f8s" hx-post="/upload/example/2f8s.cif" hx-target="#upload-container"
+            <button type="button" x-ref="example_2f8s" hx-post="/upload/example/2f8s" hx-target="#upload-container"
                 hx-swap="innerHTML" hx-include="[name='selected_model']" hx-indicator="#loading-spinner"
                 @click="$event.stopPropagation(); if(!selectedModel) { pendingExample = 'example_2f8s'; dropdownOpen=true; return; }"
                 class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
