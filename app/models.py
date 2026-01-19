@@ -47,3 +47,11 @@ class RCSBRequest(UploadBase):
     def validate_rcsb_id(cls, v: str) -> str:
         v = v.strip().upper()
         return v
+
+class ExampleRequest(UploadBase):
+    example_id: str
+
+    @field_validator("example_id")
+    def validate_example_id(cls, v: str) -> str:
+        v = v.strip()
+        return v

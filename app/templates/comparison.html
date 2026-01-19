@@ -1,6 +1,6 @@
 {% from "components/primary_button.html" import primary_button %}
 {% from "components/molstar_viewer.html" import molstar_viewer %}
-{% from "components/model_display.html" import render_model_image, render_citations, render_mapping_comparison, collapse_header_comparison %}
+{% from "components/docs/model_display.html" import render_model_image, render_citations, render_mapping_comparison, collapse_header %}
 
 {% block content %}
 <div class="w-full h-full flex flex-col items-center py-6">
@@ -16,6 +16,7 @@
                     <li><strong>Selected model:</strong> {{ model.name }}</li>
                     <li><strong>Reference atoms:</strong> {{ atom_counts.original }}</li>
                     <li><strong>Coarse atoms:</strong> {{ atom_counts.coarse }}</li>
+                    <li><strong>Atom reduction:</strong> {{ atom_counts.reduction }}</li>
                     <li>
                         <strong>Selected models:</strong> 
                         {{ selected_models | join(', ') }}
@@ -29,14 +30,14 @@
                 <div class="mt-6">
                     <p class="text-sm text-tertiary mb-2">Download as</p>
                     <div class="flex gap-3">
-                        {{ primary_button(text='PDB', classes='w-1/2') }}
-                        {{ primary_button(text='mmCIF', classes='w-1/2') }}
+                        {{ primary_button(text='PDB', classes='w-1/2', href=coarse_pdb_url, download=filename ~ '_' ~ model.name ~ '.pdb') }}
+                        {{ primary_button(text='CIF', classes='w-1/2', href=coarse_mmcif_url, download=filename ~ '_' ~ model.name ~ '.cif') }}
                     </div>
                 </div>
             </section>
 
             <section x-data="{open:false}" class="bg-white rounded-2xl shadow border border-gray-200 p-6 shrink-0">
-                {{ collapse_header_comparison('Model description') }}
+                {{ collapse_header('Model description', variant='comparison') }}
 
                 <div x-show="open" x-collapse class="mt-4 text-sm text-secondary">
                     
@@ -56,7 +57,7 @@
 
             <section x-data="{ open: false }" class="bg-white rounded-2xl shadow border border-gray-200 p-6 shrink-0">
                 
-                {{ collapse_header_comparison('Atom mapping') }}
+                {{ collapse_header('Atom mapping', variant='comparison') }}
 
                 <div x-show="open" x-collapse class="mt-4">
                     {% if beads %}
@@ -70,7 +71,7 @@
                     </div>
                     {% endif %}
 
-                    {{ render_mapping_comparison(model.mapping, style='card') }}
+                    {{ render_mapping_comparison(model.mapping) }}
 
                 </div>
             </section>
@@ -82,7 +83,7 @@
         <section class="bg-white rounded-2xl z-60 shadow border border-gray-200 p-2 h-full w-full relative overflow-hidden">
             {{ molstar_viewer(
                 'molstar-container',
-                urls=[reference_url, coarse_url],
+                urls=[reference_url, coarse_mmcif_url],
                 file_format=file_format
             ) }}
         </section>

@@ -1,12 +1,15 @@
 {% extends "base.html" %}
-{% from "components/model_display.html" import render_model_image, render_citations, render_mapping_documentation, tooltip %}
+{% from "components/docs/model_display.html" import render_model_image, render_citations, render_mapping_documentation, tooltip %}
+
 {% block content %}
-    <div class="w-full bg-gray-50 min-h-screen">
-        <div class="bg-white border-b border-gray-200 py-8">
-            <div class="max-w-7xl mx-auto px-6">
-                <h1 class="text-3xl font-bold text-primary">Model Documentation</h1>
-                <p class="mt-2 text-secondary">Detailed specification of coarse-grained models, atom mappings, and representations.</p>
-            </div>
+<div class="w-full bg-gray-50 min-h-screen">
+    
+    <div class="bg-white border-b border-gray-200 py-8">
+        <div class="max-w-7xl mx-auto px-6">
+            <h1 class="text-3xl font-bold text-primary">Model Documentation</h1>
+            <p class="mt-2 text-secondary">
+                Detailed specification of coarse-grained models, atom mappings and representations.
+            </p>
         </div>
         <div class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
             <aside class="hidden lg:block h-fit sticky top-24">
@@ -45,7 +48,6 @@
                                     <h3 class="font-semibold text-primary flex items-center gap-2">
                                         <i class="fa-solid fa-cube text-tertiary"></i> Representation Example
                                     </h3>
-                                    {{ tooltip() }}
                                 </div>
                                 {{ render_model_image(model.image_url) }}
                                 {{ render_citations(model.citations) }}

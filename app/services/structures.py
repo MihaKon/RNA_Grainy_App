@@ -27,16 +27,22 @@ class StructureProcessor:
 
     @staticmethod
     def apply_coarse_graining(structure: Structure, model: str) -> str:
-        coarse_structure = process_structure_with_coarse_grain_model(structure, model)
+        return process_structure_with_coarse_grain_model(structure, model)
 
-        if COARSE_FILE_FORMAT == SupportedFormats.PDB:
-            return coarse_structure.make_pdb_string()
+    @staticmethod
+    def structure_to_pdb_string(structure: Structure) -> str:
+        write_options = PdbWriteOptions(preserve_serial=True, conect_records=True)
+        return structure.make_pdb_string(options=write_options)
 
+    @staticmethod
+    def structure_to_cif_string(structure: Structure) -> str:
         groups = MmcifOutputGroups(False)
+        groups.entry = True
+        groups.title_keywords = True
         groups.conn = True
         groups.cell = True
         groups.atoms = True
-        cif_doc = coarse_structure.make_mmcif_document(groups=groups)
+        cif_doc = structure.make_mmcif_document(groups=groups)
         return cif_doc.as_string()
 
     @staticmethod
@@ -56,21 +62,29 @@ class StructureProcessor:
                 "get_job_file", job_id=job_id, file_type="reference"
             ).include_query_params(file_format=original_format.value)
         )
-        coarse_url = str(
+        coarse_mmcif_url = str(
             request.url_for(
                 "get_job_file", job_id=job_id, file_type="coarse"
             ).include_query_params(file_format=COARSE_FILE_FORMAT.value)
         )
 
+        coarse_pdb_url = str(
+            request.url_for(
+                "get_job_file", job_id=job_id, file_type="coarse"
+            ).include_query_params(file_format=SupportedFormats.PDB.value)
+        )
+
         initial_data = {
             "reference_url": reference_url,
-            "coarse_url": coarse_url,
+            "coarse_mmcif_url": coarse_mmcif_url,
+            "coarse_pdb_url": coarse_pdb_url,
             "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
             "job_id": job_id,
             "filename": filename,
             "atom_counts": {
                 "original": "TODO: Count atoms",
                 "coarse": "TODO: Count beads",
+                "reduction": "TODO: Compute reduction",
             },
             "selected_chains": ["TODO"],
             "selected_models": ["TODO"],
