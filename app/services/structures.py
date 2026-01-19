@@ -4,7 +4,6 @@ from typing import Any, DefaultDict
 from fastapi import Request
 from gemmi import (
     MmcifOutputGroups,
-    PdbWriteOptions,
     Structure,
     cif,
     make_structure_from_block,
