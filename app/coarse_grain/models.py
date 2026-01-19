@@ -99,7 +99,7 @@ class BaseCoarseGrainModel(ABC):
                 )
         return self._cached_nucleotide_config
 
-    def _build_nucleotide_config(self):
+    def _build_nucleotide_config(self) -> dict:
         nucleotides_map = {}
         for res in self.config["default_mapping"]["residues"]:
             nucleotides_map[res] = copy.deepcopy(
@@ -460,7 +460,7 @@ class IsRNAOneModel(MassCenterModel):
     name_verbose: str = "isRNA1"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "is_rna_one.json"
 
-    def get_intra_rules(self, residue_name: str) -> list[str]:
+    def get_intra_rules(self, residue_name: str) -> list[list[str]]:
         if residue_name in ["A", "G"]:
             return self.config["connectivity"]["intra_residue"]["purine"]
         return self.config["connectivity"]["intra_residue"]["pyrimidine"]
@@ -500,7 +500,7 @@ class HireModel(MassCenterModel):
     name_verbose: str = "HiRE-RNA"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "hire_rna.json"
 
-    def get_intra_rules(self, residue_name: str) -> list[str]:
+    def get_intra_rules(self, residue_name: str) -> list[list[str]]:
         if residue_name in ["A", "G"]:
             return self.config["connectivity"]["intra_residue"]["purine"]
         return self.config["connectivity"]["intra_residue"]["pyrimidine"]

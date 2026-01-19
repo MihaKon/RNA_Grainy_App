@@ -72,8 +72,8 @@ class DocsContextBuilder:
         return " or ".join(str(bead) for bead in beads)
 
     @classmethod
-    def format_mapping(cls, model_cls: BaseCoarseGrainModel) -> dict[str, Any]:  # type: ignore
-        formatted_mapping = {}
+    def format_mapping(cls, model_cls: type[BaseCoarseGrainModel]) -> dict[str, Any]:  # type: ignore
+        formatted_mapping: dict = {}
         raw_mapping = model_cls().nucleotides_config
 
         for res in raw_mapping.keys():
