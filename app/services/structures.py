@@ -27,7 +27,7 @@ class StructureProcessor:
         return structure
 
     @staticmethod
-    def apply_coarse_graining(structure: Structure, model: str) -> str:
+    def apply_coarse_graining(structure: Structure, model: str) -> Structure:
         return process_structure_with_coarse_grain_model(structure, model)
 
     @staticmethod
