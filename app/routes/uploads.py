@@ -1,7 +1,9 @@
+import json
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from gemmi import Structure
 
+from app.coarse_grain.parser import process_structure_with_coarse_grain_model
 from app.exceptions import FileProcessingError
 from app.models import (
     COARSE_FILE_FORMAT,
@@ -22,10 +24,11 @@ def process_structure(
     file_content: str,
     file_format: SupportedFormats,
     selected_model: str,
+    custom_model_data: dict | None = None, 
 ) -> Structure:
     original_structure = StructureProcessor.parse_structure(file_content, file_format)
     return StructureProcessor.apply_coarse_graining(
-        original_structure, selected_model
+        original_structure, selected_model, custom_model_data
     )
 
 async def run_job_processing(
@@ -33,11 +36,15 @@ async def run_job_processing(
     file_content: str,
     file_format: SupportedFormats,
     selected_model: str,
+    custom_model_data: dict | None = None, 
 ) -> None:
     JobManager.setup_job_dir(job_id)
 
     original_format = file_format.normalize_format()
-    coarse_structure = process_structure(file_content, file_format, selected_model)
+    
+    coarse_structure = process_structure(
+        file_content, file_format, selected_model, custom_model_data
+    )
 
     cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
     pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
@@ -46,19 +53,28 @@ async def run_job_processing(
     await JobManager.create_file(job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}")
     await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
 
-
 async def handle_request_and_render(
     request: Request,
     file_content: str,
     filename: str,
     file_format: SupportedFormats,
     selected_model: str,
+    custom_model_data_str: str | None = None, 
 ) -> HTMLResponse:
+    
+    custom_model_data = None
+    if selected_model == "custom" and custom_model_data_str:
+        try:
+            custom_model_data = json.loads(custom_model_data_str)
+        except json.JSONDecodeError:
+            raise FileProcessingError("Invalid Custom Model JSON format.")
+
     job_id = JobManager.create_job_id()
-    await run_job_processing(job_id, file_content, file_format, selected_model)
+    
+    await run_job_processing(job_id, file_content, file_format, selected_model, custom_model_data)
 
     context = StructureProcessor.build_comparison_context(
-        request, job_id, filename, file_format, selected_model
+        request, job_id, filename, file_format, selected_model, custom_model_data
     )
     return TEMPLATES.TemplateResponse(
         request=request,
@@ -66,14 +82,14 @@ async def handle_request_and_render(
         context=context,
     )
 
-
 @router.post("/file/", response_class=HTMLResponse)
 async def upload_file(
     request: Request,
     file: UploadFile = File(...),
     selected_model: str = Form(...),
+    custom_model_data: str = Form(None),
 ) -> HTMLResponse:
-    upload_req = FileUploadRequest(file=file, selected_model=selected_model)  # type: ignore
+    upload_req = FileUploadRequest(file=file, selected_model=selected_model) 
     if upload_req.file.size is None:
         raise FileProcessingError("Uploaded file is empty.")
     elif upload_req.file.size > MAX_FILE_UPLOAD_SIZE:
@@ -93,7 +109,7 @@ async def upload_file(
     filename: str = upload_req.file.filename.split(".")[0]  # type: ignore
 
     return await handle_request_and_render(
-        request, file_content, filename, file_format, upload_req.selected_model
+        request, file_content, filename, file_format, upload_req.selected_model, custom_model_data_str=custom_model_data
     )
 
 
@@ -102,6 +118,7 @@ async def upload_rcsb(
     request: Request,
     rcsb_id: str = Form(...),
     selected_model: str = Form(...),
+    custom_model_data: str = Form(None),
 ) -> HTMLResponse:
     rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model)  # type: ignore
 
@@ -115,7 +132,7 @@ async def upload_rcsb(
     filename: str = rcsb_req.rcsb_id
 
     return await handle_request_and_render(
-        request, file_content, filename, file_format, rcsb_req.selected_model
+        request, file_content, filename, file_format, rcsb_req.selected_model, custom_model_data_str=custom_model_data
     )
 
 
@@ -124,6 +141,7 @@ async def upload_example(
     request: Request,
     example_id: str = Form(...),
     selected_model: str = Form(...),
+    custom_model_data: str = Form(None),
 ) -> HTMLResponse: 
     example_req = ExampleRequest(example_id=example_id, selected_model=selected_model)  # type: ignore
     example_path = EXAMPLES_DIR / f"{example_req.example_id}.{SupportedFormats.CIF.value}"
@@ -142,6 +160,7 @@ async def upload_example(
     file_format = SupportedFormats.CIF
     filename: str = example_req.example_id
 
+            
     return await handle_request_and_render(
-        request, file_content, filename, file_format, example_req.selected_model
+        request, file_content, filename, file_format, example_req.selected_model, custom_model_data_str=custom_model_data
     )

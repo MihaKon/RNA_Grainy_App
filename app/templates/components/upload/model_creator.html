@@ -1,0 +1,111 @@
+<div x-data="modelCreator()" 
+     @open-creator.window="showCreator = true"
+     class="fixed inset-0 z-50 flex flex-col h-screen bg-gray-50" 
+     x-show="showCreator" 
+     style="display: none;"
+     x-transition>
+    
+    <div class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
+        <h2 class="text-xl font-bold text-secondary">Custom Model Creator</h2>
+        <div class="flex gap-2">
+             <button type="button" @click="downloadConfig()" class="mr-2 text-primary/60 hover:text-accent transition" title="Save to JSON">
+                <i class="fa-solid fa-download text-lg"></i>
+            </button>
+
+            <button type="button" @click="showCreator = false" class="px-4 py-2 text-primary hover:bg-gray-100 rounded-lg transition">Cancel</button>
+            <button type="button" @click="applyModel()" class="px-4 py-2 bg-accent text-white font-semibold rounded-lg shadow-lg hover:shadow-accent/40 transition">Use Model</button>
+        </div>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        <div class="w-1/3 min-w-[400px] bg-white border-r border-gray-200 overflow-y-auto p-6 space-y-6">
+            
+            <div>
+                <label class="block text-sm font-medium text-primary mb-2">Model Name</label>
+                <input type="text" x-model="modelName" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-accent/20 outline-none">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-primary mb-2">Model Description</label>
+                <input type="text" x-model="modelDescription" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-accent/20 outline-none">
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-semibold text-primary">Beads Configuration</h3>
+                    <button type="button" @click="addBead()" class="text-accent text-sm font-medium hover:underline">+ Add Bead</button>
+                </div>
+
+                <template x-for="(bead, index) in beads" :key="index">
+                    <div class="border border-gray-200 rounded-xl p-4 bg-gray-50 relative group hover:border-accent/30 transition-colors">
+                        <button type="button" @click="removeBead(index)" class="absolute top-2 right-2 text-primary hover:text-danger">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="text-xs font-semibold text-primary uppercase">Bead Name</label>
+                                <input type="text" x-model="bead.name" class="w-full text-sm border-b bg-transparent focus:border-accent outline-none">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-primary uppercase">Strategy</label>
+                                <select x-model="bead.strategy" class="w-full text-sm bg-transparent border-b outline-none cursor-pointer">
+                                    <option value="direct">Direct Mapping</option>
+                                    <option value="geometric_center">Geometric Center</option>
+                                    <option value="center_of_mass">Center of Mass</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                             <label class="text-xs font-semibold text-primary uppercase block mb-1">Apply to</label>
+                             <div class="flex gap-2 text-xs">
+                                <button type="button" @click="bead.scope = 'all'" :class="bead.scope === 'all' ? 'bg-secondary text-white' : 'bg-gray-200 text-primary'" class="px-2 py-1 rounded transition-colors">All</button>
+                                <button type="button" @click="bead.scope = 'purine'" :class="bead.scope === 'purine' ? 'bg-secondary text-white' : 'bg-gray-200 text-primary'" class="px-2 py-1 rounded transition-colors">Purines</button>
+                                <button type="button" @click="bead.scope = 'pyrimidine'" :class="bead.scope === 'pyrimidine' ? 'bg-secondary text-white' : 'bg-gray-200 text-primary'" class="px-2 py-1 rounded transition-colors">Pyrimidines</button>
+                                <button type="button" @click="bead.scope = 'adenine'" :class="bead.scope === 'adenine' ? 'bg-secondary text-white' : 'bg-gray-200 text-primary'" class="px-2 py-1 rounded transition-colors">A</button>
+                                <button type="button" @click="bead.scope = 'cytosine'" :class="bead.scope === 'cytosine' ? 'bg-secondary text-white' : 'bg-gray-200 text-primary'" class="px-2 py-1 rounded transition-colors">C</button>
+                                <button type="button" @click="bead.scope = 'guanine'" :class="bead.scope === 'guanine' ? 'bg-secondary text-white' : 'bg-gray-200 text-primary'" class="px-2 py-1 rounded transition-colors">G</button>
+                                <button type="button" @click="bead.scope = 'uracil'" :class="bead.scope === 'uracil' ? 'bg-secondary text-white' : 'bg-gray-200 text-primary'" class="px-2 py-1 rounded transition-colors">U</button>
+
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold text-primary uppercase block mb-2">Select Atoms</label>
+                            <div class="flex flex-wrap gap-1.5">
+                                <template x-for="atom in availableAtoms">
+                                    <button 
+                                        type="button"
+                                        @click="toggleAtom(bead, atom)"
+                                        class="px-2 py-1 text-xs border rounded transition-colors select-none"
+                                        :class="bead.atoms.includes(atom) ? 'bg-accent/10 border-accent text-accent font-bold' : 'bg-white border-gray-300 text-primary hover:bg-gray-100'"
+                                        x-text="atom">
+                                    </button>
+                                </template>
+                            </div>
+                            <p x-show="bead.strategy === 'direct' && bead.atoms.length > 1" class="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Only first atom used.
+                            </p>
+                            <p x-show="bead.atoms.length === 0" class="text-xs text-danger mt-1">
+                                Select at least one atom.
+                            </p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            
+            <button type="button" @click="updatePreview()" class="w-full py-3 bg-secondary text-white rounded-xl shadow hover:bg-secondary/90 transition-all mt-4">
+                <i class="fa-solid fa-sync mr-2"></i> Update Preview
+            </button>
+        </div>
+
+        <div class="w-2/3 bg-gray-100 relative">
+            <div id="custom-model-viewer" class="w-full h-full"></div>
+            
+            <div class="absolute bottom-4 right-4 max-w-sm w-full bg-white/90 backdrop-blur shadow-lg rounded-lg p-4 max-h-48 overflow-auto text-xs font-mono border border-gray-200 opacity-80 hover:opacity-100 transition-opacity">
+                <pre x-text="JSON.stringify(generateJson(), null, 2)"></pre>
+            </div>
+        </div>
+    </div>
+</div>

@@ -3,7 +3,9 @@
 
 {% block content %}
 <div id="upload-container" class="flex w-full items-center justify-center min-h-[500px]">
-    <form x-data="uploadForm" hx-post="/upload/file/" hx-target="#upload-container" hx-swap="innerHTML"
+    <form x-data="uploadForm" 
+        @set-custom-model.window="selectModel('custom', 'Custom Model')"
+        hx-post="/upload/file/" hx-target="#upload-container" hx-swap="innerHTML"
         hx-encoding="multipart/form-data" hx-target-error="#errors" hx-indicator="#loading-spinner"
         @htmx:config-request="submitForm($event)"
         class="bg-white rounded-2xl shadow-xl border border-primary/10 pt-4 p-8 flex flex-col gap-2 w-full max-w-md relative"
@@ -31,8 +33,31 @@
         </div>
 
         {% include "components/upload/file_input.html" %}
-
+        
         {% include "components/upload/model_select.html" %}  
+
+        <div x-show="selectedModel === 'custom'" x-transition class="bg-gray-50 border border-primary/10 rounded-xl p-3 flex gap-3">
+            <button type="button" @click="$dispatch('open-creator')" 
+                class="flex-1 py-2 px-3 bg-white border border-primary/20 rounded-lg text-sm font-medium text-primary hover:border-accent hover:text-accent transition shadow-sm flex flex-col items-center gap-1 group">
+                <i class="fa-solid fa-pen-to-square text-lg text-primary/40 group-hover:text-accent transition"></i>
+                Create Model
+            </button>
+
+            <div class="flex-1 relative">
+                <input type="file" accept=".json" class="hidden" x-ref="jsonUpload" @change="loadCustomJson($event)">
+                <button type="button" @click="$refs.jsonUpload.click()" 
+                    class="w-full h-full py-2 px-3 bg-white border border-primary/20 rounded-lg text-sm font-medium text-primary hover:border-accent hover:text-accent transition shadow-sm flex flex-col items-center gap-1 group">
+                    <i class="fa-solid fa-file-arrow-up text-lg text-primary/40 group-hover:text-accent transition"></i>
+                    Upload JSON
+                </button>
+            </div>
+        </div>
+        
+        <div x-show="selectedModel === 'custom' && customModelLoaded" x-transition class="text-xs text-center text-accent font-medium flex items-center justify-center gap-1">
+            <i class="fa-solid fa-circle-check"></i> Custom model configuration loaded.
+        </div>
+
+        <input type="hidden" name="custom_model_data" x-ref="customModelInput">
 
         {% include "components/upload/optional_select.html" %}
 
@@ -43,6 +68,7 @@
     </form>
 </div>
 
+{% include "components/upload/model_creator.html" %}
 
 <script>
     document.addEventListener('alpine:init', () => {
@@ -56,6 +82,7 @@
             errors: { file: false, model: false },
             isSubmitting: false,
             openUp: false,
+            customModelLoaded: false, 
 
             handleFileSelect(event) {
                 const file = event.target.files[0];
@@ -100,6 +127,11 @@
                 this.selectedLabel = name;
                 this.errors.model = false;
                 this.dropdownOpen = false;
+                
+                if (id !== 'custom') {
+                    this.customModelLoaded = false;
+                    this.$refs.customModelInput.value = '';
+                }
 
                 if (this.exampleId){
                     this.$nextTick(() => {
@@ -108,14 +140,35 @@
                 }
             },
 
+            loadCustomJson(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const json = JSON.parse(e.target.result);
+                        this.$refs.customModelInput.value = JSON.stringify(json);
+                        this.customModelLoaded = true;
+                        this.errors.model = false; 
+                    } catch (error) {
+                        alert("Invalid JSON file");
+                        console.error(error);
+                    }
+                };
+                reader.readAsText(file);
+            },
+
             validate() {
                 const hasFile = !!this.file;
                 const hasRcsb = this.rcsbId.trim().length > 0;
                 const hasExample = this.exampleId != '';
                 const hasModel = !!this.selectedModel;
+                
+                const customModelValid = this.selectedModel !== 'custom' || this.$refs.customModelInput.value !== '';
 
                 this.errors.file = !hasFile && !hasRcsb && !hasExample;
-                this.errors.model = !hasModel;
+                this.errors.model = !hasModel || !customModelValid;
 
                 return !this.errors.file && !this.errors.model;
             },
@@ -139,14 +192,156 @@
             checkPosition() {
                 const buttonRect = this.$refs.dropdownButton.getBoundingClientRect();
                 const spaceBelow = window.innerHeight - buttonRect.bottom;
+                this.openUp = spaceBelow < 250;
+            }
+        }));
 
-                if (spaceBelow < 250) {
-                    this.openUp = true;
+        Alpine.data('modelCreator', () => ({
+            showCreator: false,
+            modelName: 'My Custom Model',
+            modelDescription: 'Custom model generated by generator',
+            availableAtoms: ['P', 'OP1', 'OP2', "O5'", "C5'", "C4'", "O4'", "C3'", "O3'", "C2'", "O2'", "C1'", 'N1', 'C2', 'O2', 'N3', 'C4', 'N4', 'C5', 'C6', 'N7', 'C8', 'N9'],
+            beads: [
+                { beadID: 'A1', name: "P", scope: 'all', atoms: ['P'] },
+                { beadID: 'A2', name: "C4", scope: 'all', atoms: ["C4'"] },
+                { beadID: 'A4', name: "C2", scope: 'all', atoms: ["C2"] },
+                { beadID: 'A3', name: "N9", scope: 'purine', atoms: ["N9"] },
+                { beadID: 'A5', name: "C6", scope: 'purine', atoms: ["C6"] },
+                { beadID: 'A3', name: "N1", scope: 'pyrimidine', atoms: ["N1"] },
+                { beadID: 'A5', name: "C4", scope: 'pyrimidine', atoms: ["C4"] }
+            ],
+            intra_residues:
+            [
+                ['A1', 'A2'],
+                ['A2', 'A3'],
+                ['A3', 'A4'],
+                ['A4', 'A5'],
+                ['A5', 'A3']
+            ],
+            inter_residues: [
+                ['A2', 'A1']
+            ],
+
+            createBeadID() {
+                return 'A' + (this.beads.length + 1);
+            },
+
+            addBead() {
+                const id = this.createBeadID();
+                this.beads.push({ 
+                    beadID: id,
+                    name: id, 
+                    scope: 'all', 
+                    atoms: [] 
+                });
+            },
+
+            removeBead(index) {
+                this.beads.splice(index, 1);
+            },
+
+            toggleAtom(bead, atom) {
+                if (bead.atoms.includes(atom)) {
+                    bead.atoms = bead.atoms.filter(a => a !== atom);
                 } else {
-                    this.openUp = false;
+                    bead.atoms.push(atom);
                 }
             },
-        }))
+
+            generateJson() {
+                const json = {
+                    model_name: this.modelName,
+                    description: this.modelDescription,
+                    default_mapping: { 
+                        residues: ["A", "G", "C", "U"],
+                        config: { 
+                            bead_names: {}, 
+                            atom_centers: {}, 
+                    } 
+                    },
+                    mapping: [],
+                    connectivity: { intra_residue: [], inter_residue: [] }
+                };
+
+                const scopeResidues = {
+                    'all': ['A', 'G', 'C', 'U'],
+                    'purine': ['A', 'G'],
+                    'pyrimidine': ['C', 'U'],
+                    'adenine': ['A'],
+                    'cytosine': ['C'],
+                    'guanine': ['G'],
+                    'uracil': ['U'],
+                }
+                
+                this.beads.forEach(b => {
+                    const id = b.beadID
+                    const name = b.name
+                    if (b.scope === 'all') {
+                        json.default_mapping.config.bead_names[id] = name;
+                        json.default_mapping.config.atom_centers[id] = b.atoms;
+                    }
+
+                    else if (scopeResidues[b.scope]) {
+                        const targetResidues = scopeResidues[b.scope];
+                        let mappingEntry = json.mapping.find(m => JSON.stringify(m.residues) === JSON.stringify(targetResidues));
+
+                        if (!mappingEntry) {
+                            mappingEntry = {
+                                residues: targetResidues,
+                                config: {
+                                    bead_names: {},
+                                    atom_centers: {},
+                                    description: {}
+                                }
+                            };
+                            json.mapping.push(mappingEntry);
+                        }
+
+                        mappingEntry.config.bead_names[id] = name;
+                        mappingEntry.config.atom_centers[id] = b.atoms;
+                    }
+                });
+                json.connectivity.intra_residue = this.intra_residues;
+
+                if (this.inter_residues && this.inter_residues.length > 0) {
+                        json.connectivity.inter_residue = this.inter_residues.map(pair => ({
+                            source: pair[0],
+                            target: pair[1]
+                        }));
+                    }
+                return json;
+            },
+            
+            downloadConfig() {
+                const json = this.generateJson();
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(json, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                const filename = (this.modelName || "custom_model").replace(/\s+/g, '_').toLowerCase() + ".json";
+                downloadAnchorNode.setAttribute("download", filename);
+                document.body.appendChild(downloadAnchorNode); 
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            },
+
+            async updatePreview() {
+                const config = this.generateJson();
+                console.log("TODO: Implement preview logic via API");
+            },
+
+            applyModel() {
+                const jsonStr = JSON.stringify(this.generateJson());
+                document.querySelector('input[name="custom_model_data"]').value = jsonStr;
+                const formEl = document.querySelector('[x-data="uploadForm"]');
+                if (formEl && formEl.__x) {
+                     formEl.dispatchEvent(new CustomEvent('custom-model-ready'));
+                }
+                
+                this.showCreator = false;
+            }
+        }));
     });
+    
+    document.addEventListener('custom-model-ready', () => {});
 </script>
 {% endblock %}

@@ -53,6 +53,7 @@ class CoarseGrainModelRegistry:
             raise KeyError(
                 f"Model '{class_name}' not found. Available models: {available}"
             )
+        
         return cls._registry[class_name]
 
     @classmethod
@@ -350,6 +351,61 @@ class MassCenterModel(CalculateBeadModel):
     @property
     def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
         return calculate_center_of_mass
+
+class DynamicCoarseGrainModel(BaseCoarseGrainModel):
+    """
+    Model that builds itself from a runtime dictionary configuration,
+    supporting mixed strategies per bead.
+    """
+    name_verbose: str = "Custom Model"
+    
+    def __init__(self, config_data: dict):
+        self._custom_config = config_data
+    
+    @property
+    def JSON_model_file(self) -> pathlib.Path:
+        return pathlib.Path()
+
+    def read_json_model(self) -> dict | None:
+        return self._custom_config
+
+    def _filter_atoms(self, structure: Structure) -> None:
+        for model in structure:
+            for chain in model:
+                for res_id in range(len(chain) - 1, -1, -1):
+                    res = chain[res_id]
+                    
+                    if not self._should_keep_residue(res.name):
+                        del chain[res_id]
+                        continue
+
+                    self._filter_alternate_conformations(res)
+                    
+                    new_res = res.clone()
+                    for i in range(len(new_res) - 1, -1, -1):
+                        del new_res[i]
+                    
+                    config = self.nucleotides_config[res.name]
+                    bead_names_map = config.get("bead_names", {})
+                    atom_centers_map = config.get("atom_centers", {}) 
+                    #strategies_map = config.get("strategies", {})  
+
+                    sorted_bead_ids = sorted(bead_names_map.keys())
+
+                    for bead_id in sorted_bead_ids:
+                        bead_name = bead_names_map[bead_id]
+                        #strategy = strategies_map.get(bead_id, "direct")
+                        target_atoms_list = atom_centers_map.get(bead_id, [])
+                        
+                        if not target_atoms_list:
+                            continue
+                    for i in range(len(res) - 1, -1, -1):
+                        del res[i]
+                    for atom in new_res:
+                        res.add_atom(atom)
+
+        structure.remove_empty_chains()
+        structure.assign_serial_numbers(numbered_ter=True)
 
 
 @CoarseGrainModelRegistry.register

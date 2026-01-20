@@ -27,8 +27,14 @@ class StructureProcessor:
         return structure
 
     @staticmethod
-    def apply_coarse_graining(structure: Structure, model: str) -> Structure:
-        return process_structure_with_coarse_grain_model(structure, model)
+    def apply_coarse_graining(
+        structure: Structure, 
+        model: str, 
+        custom_model_data: dict | None = None # Dodany argument
+    ) -> Structure:
+        return process_structure_with_coarse_grain_model(
+            structure, model, custom_model_data
+        )
 
     @staticmethod
     def structure_to_pdb_string(structure: Structure) -> str:
@@ -55,10 +61,11 @@ class StructureProcessor:
         filename: str,
         file_format: SupportedFormats,
         selected_model: str,
+        custom_model_data: dict | None = None,  # Dodany argument
     ) -> DefaultDict[str, Any]:
         original_format = file_format.normalize_format()
 
-        model_data = DocsContextBuilder.get_model(selected_model)
+        model_data = DocsContextBuilder.get_model(selected_model, custom_model_data)
 
         reference_url = str(
             request.url_for(
