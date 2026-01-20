@@ -352,7 +352,7 @@ class MassCenterModel(CalculateBeadModel):
     def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
         return calculate_center_of_mass
 
-class DynamicCoarseGrainModel(BaseCoarseGrainModel):
+class DynamicCoarseGrainModel(CalculateBeadModel):
     """
     Model that builds itself from a runtime dictionary configuration,
     supporting mixed strategies per bead.
@@ -366,46 +366,56 @@ class DynamicCoarseGrainModel(BaseCoarseGrainModel):
     def JSON_model_file(self) -> pathlib.Path:
         return pathlib.Path()
 
+    @property
+    def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
+        return calculate_geometric_center
+    
     def read_json_model(self) -> dict | None:
         return self._custom_config
 
-    def _filter_atoms(self, structure: Structure) -> None:
-        for model in structure:
-            for chain in model:
-                for res_id in range(len(chain) - 1, -1, -1):
-                    res = chain[res_id]
+    def _get_residue_with_beads(self, res: Residue) -> Residue:
+        """
+        Overrides the base method to handle mixed strategies for a single residue.
+        """
+        res_clone = res.clone()
+
+        for i in range(len(res) - 1, -1, -1):
+            del res[i]
+
+        config = self.nucleotides_config[res.name]
+        strategies = config.get("strategies", {})
+                
+        for bead_id, atom_name in config["bead_names"].items():
+            atoms = self._get_atoms_for_bead(bead_id, res_clone)
+            
+            if not atoms:
+                continue
+
+            strategy = strategies.get(bead_id, "direct")
+
+            if strategy == "direct":
+                atom_name_to_find = atoms[0]
+                original_atom = next((a for a in res_clone if a.name == atom_name_to_find), None)
+                
+                if original_atom:
+                    new_atom = original_atom.clone()
+                    new_atom.name = atom_name 
+                    res.add_atom(new_atom)
                     
-                    if not self._should_keep_residue(res.name):
-                        del chain[res_id]
-                        continue
-
-                    self._filter_alternate_conformations(res)
-                    
-                    new_res = res.clone()
-                    for i in range(len(new_res) - 1, -1, -1):
-                        del new_res[i]
-                    
-                    config = self.nucleotides_config[res.name]
-                    bead_names_map = config.get("bead_names", {})
-                    atom_centers_map = config.get("atom_centers", {}) 
-                    #strategies_map = config.get("strategies", {})  
-
-                    sorted_bead_ids = sorted(bead_names_map.keys())
-
-                    for bead_id in sorted_bead_ids:
-                        bead_name = bead_names_map[bead_id]
-                        #strategy = strategies_map.get(bead_id, "direct")
-                        target_atoms_list = atom_centers_map.get(bead_id, [])
-                        
-                        if not target_atoms_list:
-                            continue
-                    for i in range(len(res) - 1, -1, -1):
-                        del res[i]
-                    for atom in new_res:
-                        res.add_atom(atom)
-
-        structure.remove_empty_chains()
-        structure.assign_serial_numbers(numbered_ter=True)
+            elif strategy in ["geometric_center", "center_of_mass"]:
+                if strategy == "center_of_mass":
+                    func = calculate_center_of_mass
+                else:
+                    func = calculate_geometric_center
+                
+                new_pos = func(res_clone, atoms)
+                
+                if new_pos:
+                    new_atom = Atom()
+                    new_atom.pos = new_pos
+                    new_atom.name = atom_name
+                    new_atom.element = Element("C") 
+                    res.add_atom(new_atom)
 
 
 @CoarseGrainModelRegistry.register
