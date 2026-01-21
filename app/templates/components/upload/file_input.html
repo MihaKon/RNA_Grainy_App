@@ -60,19 +60,22 @@
             <span>Or try example:</span>
 
             <button type="button" @click="setExample('1EHZ')"
-                class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
+                class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer"
+                :class="exampleId === '1EHZ' ? 'text-accent underline' : ''">
                 1EHZ
             </button>
             <span class="select-none">•</span>
 
             <button type="button" @click="setExample('1MNX')"
-                class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
+                class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer"
+                :class="exampleId === '1MNX' ? 'text-accent underline' : ''">
                 1MNX
             </button>
             <span class="select-none">•</span>
 
             <button type="button" @click="setExample('2F8S')"
-                class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer">
+                class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer"
+                :class="exampleId === '2F8S' ? 'text-accent underline' : ''">
                 2F8S
             </button>
         </div>
