@@ -42,7 +42,7 @@
 
 
 {% macro render_model_image(url) %}
-<div class="relative w-full aspect-[4/3] bg-gray-100 rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden group">
+<div class="relative w-full aspect-[4/3] bg-white rounded-xl border border-tertiary-light flex items-center justify-center overflow-hidden group">
     <img src="{{ url }}" 
          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -58,7 +58,7 @@
 {# === Citation List === #}
 {% macro render_citations(citation_list) %}
     {% if citation_list %}
-    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 text-xs text-accent mt-1">
+    <div class="bg-blue-50 p-4 rounded-lg border border-accent-light text-xs text-accent mt-1">
         <strong class="block mb-1 font-bold"><i class="fa-solid fa-quote-right mr-1"></i> Citation:</strong>
         <ul class="list-none space-y-1 text-tertiary">
             {% for cite in citation_list %}
@@ -73,8 +73,8 @@
 {# === Mapping Table  === #}
 {% macro mapping_table_rows(details) %}
 <table class="w-full text-sm text-left">
-    <tbody class="divide-y divide-gray-100">
-        <thead class="text-xs text-tertiary uppercase bg-gray-50 border-b border-gray-100">
+    <tbody class="divide-y divide-tertiary-light">
+        <thead class="text-xs text-tertiary uppercase bg border-b border-tertiary-light">
             <tr>
                 <th scope="col" class="px-3 py-2 w-1/4 font-semibold">
                     Bead ID
@@ -88,14 +88,14 @@
             </tr>
         </thead>
         {% for row in details %}
-        <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-3 py-2 font-mono text-accent font-semibold w-1/5 border-r border-gray-50 bg-white">
+        <tr>
+            <td class="px-3 py-2 font-mono text-accent font-semibold w-1/5">
                 {{ row.bead_id }}
             </td>
-            <td class="px-3 py-2 text-secondary w-1/5 break-words bg-white">
+            <td class="px-3 py-2 text-secondary w-1/5">
                 {{ row.bead }}
             </td>
-            <td class="px-3 py-2 text-secondary w-3/5 italic leading-relaxed">
+            <td class="px-3 py-2 text-secondary w-3/5">
                 {{ row.description }}
             </td>
         </tr>
@@ -121,9 +121,9 @@
     {% if mapping_data %}
         <div class="space-y-4">
             {% for title, details in mapping_data.items() %}
-                <div class="border border-gray-200 rounded-lg overflow-hidden">
-                    <div class="bg-gray-50 px-3 py-2 border-b border-gray-100">
-                        <h4 class="font-bold text-xs text-secondary uppercase tracking-wider">
+                <div class="border border-tertiary-light rounded-lg overflow-hidden">
+                    <div class="bg-gray-50 hover:bg-gray-100 px-3 py-2 border-b border-tertiary-light">
+                        <h4 class="font-bold text-xs text-secondary uppercase">
                             {{ title }}
                         </h4>
                     </div>
@@ -140,9 +140,9 @@
     {% if mapping_data %}
         <div class="space-y-4">
             {% for title, details in mapping_data.items() %}
-                <div class="border border-gray-200 rounded-lg overflow-hidden" x-data="{ open: false }">
+                <div class="border border-tertiary-light rounded-lg overflow-hidden" x-data="{ open: false }">
                     {{ collapse_header(title) }}
-                    <div x-show="open" x-collapse class="border-t border-gray-200">
+                    <div x-show="open" x-collapse class="border-t border-tertiary-light">
                         {{ mapping_table_rows(details) }}
                     </div>
                 </div>

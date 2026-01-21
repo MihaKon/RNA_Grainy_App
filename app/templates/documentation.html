@@ -2,9 +2,8 @@
 {% from "components/docs/model_display.html" import render_model_image, render_citations, render_mapping_documentation, tooltip %}
 
 {% block content %}
-<div class="w-full bg-gray-50 min-h-screen">
-    
-    <div class="bg-white border-b border-gray-200 py-8">
+<div class="w-full bg- min-h-screen">
+    <div class="bg-white border-b border-tertiary-light py-8">
         <div class="max-w-7xl mx-auto px-6">
             <h1 class="text-3xl font-bold text-primary">Model Documentation</h1>
             <p class="mt-2 text-secondary">
@@ -13,13 +12,13 @@
         </div>
         <div class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
             <aside class="hidden lg:block h-fit sticky top-24">
-                <nav class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 overflow-y-auto max-h-[80vh]">
+                <nav class="bg-white rounded-xl shadow-sm border border-tertiary-light p-4 overflow-y-auto max-h-[80vh]">
                     <h3 class="font-semibold text-secondary mb-3 px-2 text-sm uppercase tracking-wider">Available Models</h3>
                     <ul class="space-y-1">
                         {% for model in models %}
                             <li>
                                 <a href="#{{ model.id }}"
-                                   class="block px-3 py-2 text-sm text-secondary rounded-lg hover:bg-blue-50 hover:text-primary transition-colors">
+                                   class="block px-3 py-2 text-sm text-secondary rounded-lg hover:bg-accent-light hover:text-primary transition-colors">
                                     {{ model.name }}
                                 </a>
                             </li>
@@ -30,12 +29,12 @@
             <main class="flex flex-col gap-12">
                 {% for model in models %}
                     <section id="{{ model.id }}"
-                             class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-visible scroll-mt-6">
-                        <div class="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-start">
+                             class="bg-white rounded-2xl shadow-sm border border-tertiary-light overflow-visible scroll-mt-6">
+                        <div class="p-6  flex justify-between items-start">
                             <div>
                                 <h2 class="text-2xl font-bold text-primary flex items-center gap-3">
                                     {{ model.name }}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-accent border border-blue-200">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent-light text-accent border border-accent">
                                         {{ model.beads }} {{ 'bead' if (model.beads | int) == 1 else 'beads' }}/res
                                     </span>
                                 </h2>

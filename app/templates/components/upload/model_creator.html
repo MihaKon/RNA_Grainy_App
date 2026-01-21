@@ -1,6 +1,6 @@
 <div x-data="modelCreator()" 
      @open-creator.window="showCreator = true"
-     class="fixed inset-0 z-50 flex flex-col h-screen bg-gray-50" 
+     class="fixed inset-0 z-50 flex flex-col h-screen bg-white" 
      x-show="showCreator" 
      style="display: none;"
      x-transition>
@@ -12,7 +12,7 @@
                 <i class="fa-solid fa-download text-lg"></i>
             </button>
 
-            <button type="button" @click="showCreator = false" class="px-4 py-2 text-primary hover:bg-gray-100 rounded-lg transition">Cancel</button>
+            <button type="button" @click="showCreator = false" class="px-4 py-2 text-primary hover:bg-tertiary rounded-lg transition">Cancel</button>
             <button type="button" @click="applyModel()" class="px-4 py-2 bg-accent text-white font-semibold rounded-lg shadow-lg hover:shadow-accent/40 transition">Use Model</button>
         </div>
     </div>
@@ -37,7 +37,7 @@
                 </div>
 
                 <template x-for="(bead, index) in beads" :key="index">
-                    <div class="border border-gray-200 rounded-xl p-4 bg-gray-50 relative group hover:border-accent/30 transition-colors">
+                    <div class="border border-gray-200 rounded-xl p-4 bg-gray-50 relative group hover:border-primary/20 transition-colors">
                         <button type="button" @click="removeBead(index)" class="absolute top-2 right-2 text-primary hover:text-danger">
                             <i class="fa-solid fa-times"></i>
                         </button>
@@ -94,16 +94,10 @@
                     </div>
                 </template>
             </div>
-            
-            <button type="button" @click="updatePreview()" class="w-full py-3 bg-secondary text-white rounded-xl shadow hover:bg-secondary/90 transition-all mt-4">
-                <i class="fa-solid fa-sync mr-2"></i> Update Preview
-            </button>
         </div>
 
-        <div class="w-2/3 bg-gray-100 relative">
-            <div id="custom-model-viewer" class="w-full h-full"></div>
-            
-            <div class="absolute bottom-4 right-4 max-w-sm w-full bg-white/90 backdrop-blur shadow-lg rounded-lg p-4 max-h-48 overflow-auto text-xs font-mono border border-gray-200 opacity-80 hover:opacity-100 transition-opacity">
+        <div class="w-2/3 bg-gray-100 relative">            
+            <div class="w-full h-full bg-white/90 backdrop-blur shadow-lg rounded-lg p-4 overflow-auto text-xs font-mono border border-gray-200 opacity-80 hover:opacity-100 transition-opacity">
                 <pre x-text="JSON.stringify(generateJson(), null, 2)"></pre>
             </div>
         </div>

@@ -5,8 +5,8 @@
             class="hidden" />
 
         <label x-show="!file" for="file"
-            class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 bg-gray-50/50 group-hover:bg-accent/5"
-            :class="errors.file ? 'border-danger bg-danger-light/20' : 'border-primary/20 hover:border-accent'">
+            class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 group-hover:bg-accent-light"
+            :class="errors.file ? 'border-danger' : 'border-primary/10 hover:border-accent'">
             <div
                 class="flex flex-col items-center justify-center pt-5 pb-6 text-primary/60 group-hover:text-accent transition-colors">
                 <i class="fa-solid fa-cloud-arrow-up text-2xl mb-2"></i>
@@ -17,7 +17,7 @@
         </label>
 
         <div x-show="file" x-cloak
-            class="flex items-center justify-between w-full p-3 border rounded-xl bg-accent/5 border-accent/20">
+            class="flex items-center justify-between w-full p-3 border rounded-xl bg-accent-light border-accent">
             <div class="flex items-center gap-3 overflow-hidden">
                 <div
                     class="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center shrink-0 shadow-sm shadow-accent/20">
@@ -29,7 +29,7 @@
                 </div>
             </div>
             <button type="button" @click="removeFile"
-                class="p-2 text-primary/40 hover:text-danger transition-colors cursor-pointer">
+                class="p-2 text-tertiary hover:text-danger transition-colors cursor-pointer">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -50,8 +50,8 @@
                 placeholder="Enter PDB ID (e.g. 1RNA)"
                 class="block w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border bg-white shadow-sm outline-none transition-all placeholder:text-primary/30"
                 :class="errors.file 
-                               ? 'border-danger focus:border-danger focus:ring-2 focus:ring-danger/20' 
-                               : 'border-primary/20 focus:border-accent focus:ring-2 focus:ring-focus/50'" />
+                               ? 'border-danger focus:border-danger ' 
+                               : 'border-primary/10 focus:border-accent focus:ring-2 focus:ring-focus'" />
         </div>
 
         <input type="hidden" name="example_id" :value="exampleId" />
