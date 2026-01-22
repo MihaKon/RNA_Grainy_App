@@ -126,8 +126,8 @@ document.addEventListener("alpine:init", () => {
     },
 
     /// === Export Model Actions === //
-    
-    downloadConfig(){
+
+    downloadConfig() {
       const jsonObj = JsonBuilder.buildJson(this);
       JsonBuilder.downloadConfig(jsonObj, this.modelName);
     },
@@ -136,11 +136,7 @@ document.addEventListener("alpine:init", () => {
       const json = JsonBuilder.buildJson(this);
       const jsonStr = JSON.stringify(json);
 
-      window.dispatchEvent(
-        new CustomEvent("use-custom-model", {
-          detail: { json: jsonStr },
-        }),
-      );
+      Alpine.store("modelSelection").loadData(jsonStr);
 
       this.showCreator = false;
     },

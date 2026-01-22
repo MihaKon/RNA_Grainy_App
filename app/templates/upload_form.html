@@ -6,8 +6,6 @@ primary_button %} {% block content %}
 >
   <form
     x-data="uploadForm"
-    @set-custom-model.window="selectModel('custom', 'Custom Model')"
-    @use-custom-model.window="handleApplyModel($event.detail.json)"
     @htmx:config-request="submitForm($event)"
     hx-post="/upload/file/"
     hx-target="#upload-container"
@@ -57,6 +55,7 @@ primary_button %} {% block content %}
 
 {% include "components/creator/layout.html" %} {% endblock %} {% block
 scripts %}
+<script src="{{ url_for('static', path='/js/store.js') }}"></script>
 <script src="{{ url_for('static', path='/js/config.js') }}"></script>
 <script src="{{ url_for('static', path='/js/creator/json_builder.js') }}"></script>
 <script src="{{ url_for('static', path='/js/creator/creator_controller.js') }}"></script>

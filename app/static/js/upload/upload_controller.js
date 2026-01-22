@@ -1,17 +1,32 @@
 document.addEventListener("alpine:init", () => {
   Alpine.data("uploadForm", () => ({
+    init() {
+      this.$watch("$store.modelSelection.selectedId", (id) => {
+        this.selectedModel = id;
+      });
+
+      this.$watch("$store.modelSelection.selectedLabel", (label) => {
+        this.selectedLabel = label;
+      });
+
+      this.$watch("$store.modelSelection.customJson", (json) => {
+        if (json) {
+          this.handleApplyModel(json);
+        }
+      });
+    },
     // === State ===
     file: null,
     rcsbId: "",
     exampleId: "",
     selectedModel: "",
     selectedLabel: "Select model",
-    
+
     dropdownOpen: false,
     openUp: false,
     isSubmitting: false,
     customModelLoaded: false,
-    
+
     errors: { file: false, model: false },
 
     // === Input Handling ===
@@ -19,7 +34,7 @@ document.addEventListener("alpine:init", () => {
     handleFileSelect(event) {
       const file = event.target.files[0];
       if (file) {
-        this.resetInputs(); 
+        this.resetInputs();
         this.file = file;
         this.errors.file = false;
       }
@@ -92,7 +107,7 @@ document.addEventListener("alpine:init", () => {
 
     handleApplyModel(jsonStr) {
       this.processJson(jsonStr);
-      this.showCreator = false; 
+      this.showCreator = false;
     },
 
     processJson(jsonStr) {
@@ -111,7 +126,9 @@ document.addEventListener("alpine:init", () => {
 
     validate() {
       const hasInput = !!this.file || !!this.rcsbId.trim() || !!this.exampleId;
-      const customValid = this.selectedModel !== "custom" || this.$refs.customModelInput.value !== "";
+      const customValid =
+        this.selectedModel !== "custom" ||
+        this.$refs.customModelInput.value !== "";
       const hasModel = !!this.selectedModel && customValid;
 
       this.errors.file = !hasInput;
