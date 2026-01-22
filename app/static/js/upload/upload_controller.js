@@ -1,32 +1,32 @@
 document.addEventListener("alpine:init", () => {
   Alpine.data("uploadForm", () => ({
+    // === State ===
     file: null,
     rcsbId: "",
     exampleId: "",
     selectedModel: "",
     selectedLabel: "Select model",
+    
     dropdownOpen: false,
-    errors: { file: false, model: false },
-    isSubmitting: false,
     openUp: false,
+    isSubmitting: false,
     customModelLoaded: false,
+    
+    errors: { file: false, model: false },
+
+    // === Input Handling ===
 
     handleFileSelect(event) {
       const file = event.target.files[0];
       if (file) {
+        this.resetInputs(); 
         this.file = file;
-        this.rcsbId = "";
         this.errors.file = false;
       }
     },
 
-    removeFile() {
-      this.file = null;
-      this.$refs.fileInput.value = "";
-    },
-
     handleRcsbInput() {
-      if (this.rcsbId.trim() !== "") {
+      if (this.rcsbId.trim()) {
         this.removeFile();
         this.exampleId = "";
         this.errors.file = false;
@@ -34,20 +34,30 @@ document.addEventListener("alpine:init", () => {
     },
 
     setExample(id) {
+      this.resetInputs();
       this.exampleId = id;
-      this.rcsbId = "";
-      this.removeFile();
       this.errors.file = false;
 
       if (!this.selectedModel) {
         event.stopPropagation();
         this.dropdownOpen = true;
       } else {
-        this.$nextTick(() => {
-          this.$root.requestSubmit();
-        });
+        this.autoSubmit();
       }
     },
+
+    resetInputs() {
+      this.removeFile();
+      this.rcsbId = "";
+      this.exampleId = "";
+    },
+
+    removeFile() {
+      this.file = null;
+      if (this.$refs.fileInput) this.$refs.fileInput.value = "";
+    },
+
+    // === Model Handling ===
 
     selectModel(id, name) {
       this.selectedModel = id;
@@ -56,67 +66,64 @@ document.addEventListener("alpine:init", () => {
       this.dropdownOpen = false;
 
       if (id !== "custom") {
-        this.customModelLoaded = false;
-        this.$refs.customModelInput.value = "";
+        this.clearCustomModel();
       }
 
       if (this.exampleId) {
-        this.$nextTick(() => {
-          this.$root.requestSubmit();
-        });
+        this.autoSubmit();
       }
     },
+
+    clearCustomModel() {
+      this.customModelLoaded = false;
+      if (this.$refs.customModelInput) this.$refs.customModelInput.value = "";
+    },
+
+    // === JSON Handling ===
 
     loadCustomJsonFromFile(event) {
       const file = event.target.files[0];
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const json = JSON.parse(e.target.result);
-          this.$refs.customModelInput.value = JSON.stringify(json);
-          this.customModelLoaded = true;
-          this.errors.model = false;
-        } catch (error) {
-          alert("Invalid JSON file");
-          console.error(error);
-        }
-      };
+      reader.onload = (e) => this.processJson(e.target.result);
       reader.readAsText(file);
     },
 
-    loadCustomJsonFromString(jsonStr) {
+    handleApplyModel(jsonStr) {
+      this.processJson(jsonStr);
+      this.showCreator = false; 
+    },
+
+    processJson(jsonStr) {
       try {
-        const json = JSON.parse(jsonStr);
-        this.$refs.customModelInput.value = JSON.stringify(json);
+        JSON.parse(jsonStr);
+        this.$refs.customModelInput.value = jsonStr;
         this.customModelLoaded = true;
         this.errors.model = false;
       } catch (error) {
         alert("Invalid JSON data");
-        console.error(error);
+        console.error("JSON Parse Error:", error);
       }
-      this.showCreator = false;
     },
 
-    handleApplyModel(jsonStr) {
-      this.loadCustomJsonFromString(jsonStr);
-    },
+    // === Validation & Submission ===
 
     validate() {
-      const hasFile = !!this.file;
-      const hasRcsb = this.rcsbId.trim().length > 0;
-      const hasExample = this.exampleId != "";
-      const hasModel = !!this.selectedModel;
+      const hasInput = !!this.file || !!this.rcsbId.trim() || !!this.exampleId;
+      const customValid = this.selectedModel !== "custom" || this.$refs.customModelInput.value !== "";
+      const hasModel = !!this.selectedModel && customValid;
 
-      const customModelValid =
-        this.selectedModel !== "custom" ||
-        this.$refs.customModelInput.value !== "";
-
-      this.errors.file = !hasFile && !hasRcsb && !hasExample;
-      this.errors.model = !hasModel || !customModelValid;
+      this.errors.file = !hasInput;
+      this.errors.model = !hasModel;
 
       return !this.errors.file && !this.errors.model;
+    },
+
+    getSubmitPath() {
+      if (this.rcsbId.trim()) return UPLOAD_ENDPOINTS.RCSB;
+      if (this.exampleId) return UPLOAD_ENDPOINTS.EXAMPLE;
+      return UPLOAD_ENDPOINTS.FILE;
     },
 
     submitForm(event) {
@@ -125,15 +132,16 @@ document.addEventListener("alpine:init", () => {
         return;
       }
       this.isSubmitting = true;
-
-      if (this.rcsbId.trim() !== "") {
-        event.detail.path = "/upload/rcsb/";
-      } else if (this.exampleId !== "") {
-        event.detail.path = "/upload/example/";
-      } else {
-        event.detail.path = "/upload/file/";
-      }
+      event.detail.path = this.getSubmitPath();
     },
+
+    autoSubmit() {
+      this.$nextTick(() => {
+        this.$root.requestSubmit();
+      });
+    },
+
+    // === Dropdown Positioning ===
 
     checkPosition() {
       const buttonRect = this.$refs.dropdownButton.getBoundingClientRect();
