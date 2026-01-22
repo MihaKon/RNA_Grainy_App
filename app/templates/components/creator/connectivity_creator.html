@@ -1,0 +1,160 @@
+<div x-show="activeTab === 'connectivity'" class="space-y-8">
+  <div>
+    <h3 class="font-bold text-secondary mb-1 flex items-center gap-2">
+      Intra-Residue Connectivity
+    </h3>
+    <p class="text-xs text-tertiary mb-4">
+      Click intersections to connect beads within a single residue.
+    </p>
+
+    <div
+      class="overflow-x-auto bg-white border border-tertiary-light rounded-xl p-2 shadow-sm"
+    >
+      <table class="w-full text-xs">
+        <thead>
+          <tr>
+            <th class="p-2"></th>
+            <template x-for="b in getUniqueBeads()" :key="b.beadID">
+              <th
+                class="p-2 font-bold text-primary border-b border-tertiary-light"
+                x-text="b.beadID"
+              ></th>
+            </template>
+          </tr>
+        </thead>
+        <tbody>
+          <template
+            x-for="(rowBead, i) in getUniqueBeads()"
+            :key="rowBead.beadID"
+          >
+            <tr>
+              <td
+                class="p-2 font-bold text-primary text-right border-r border-tertiary-light"
+                x-text="rowBead.beadID"
+              ></td>
+              <template
+                x-for="(colBead, j) in getUniqueBeads()"
+                :key="colBead.beadID"
+              >
+                <td class="p-1 text-center">
+                  <button
+                    type="button"
+                    @click="toggleIntraConnection(rowBead.beadID, colBead.beadID)"
+                    :disabled="i >= j"
+                    class="cursor-pointer w-8 h-8 rounded-md transition-all flex items-center justify-center mx-auto"
+                    :class="{
+                                                                'bg-tertiary opacity-30 cursor-not-allowed': i >= j,
+                                                                'bg-accent text-white shadow-md': i < j && hasIntraConnection(rowBead.beadID, colBead.beadID),
+                                                                'bg-white border border-primary/10 hover:border-accent hover:bg-accent-light cursor-pointer': i < j && !hasIntraConnection(rowBead.beadID, colBead.beadID)
+                                                            }"
+                  >
+                    <i
+                      x-show="i < j && hasIntraConnection(rowBead.beadID, colBead.beadID)"
+                      class="fa-solid fa-link text-xs"
+                    ></i>
+                  </button>
+                </td>
+              </template>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+      <div class="mt-2 text-[10px] text-tertiary text-center">
+        Only upper triangle is active to prevent duplicates.
+      </div>
+    </div>
+  </div>
+
+  <div class="border-t border-tertiary-light"></div>
+
+  <div>
+    <h3 class="font-bold text-secondary mb-1 flex items-center gap-2">
+      Inter-Residue Connectivity
+    </h3>
+    <p class="text-xs text-tertiary mb-4">
+      Define connection between Residue (i) and Residue (i+1).
+      <span class="text-accent font-semibold">Max 1 connection allowed.</span>
+    </p>
+
+    <div
+      class="flex flex-col md:flex-row items-center gap-4 bg-gray-50 p-4 rounded-xl border border-tertiary-light"
+    >
+      <div class="flex-1 w-full">
+        <label
+          class="block text-[10px] font-bold text-tertiary uppercase mb-2 tracking-wider"
+          >Source Bead (Res i)</label
+        >
+        <div class="flex flex-wrap gap-2">
+          <template x-for="bead in getUniqueBeads()" :key="bead.beadID">
+            <button
+              type="button"
+              @click="setInterConnection(bead.beadID, inter_residues[0]?.target)"
+              class="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
+              :class="isInterSource(bead.beadID) 
+                                                    ? 'bg-accent text-white border-accent shadow-md' 
+                                                    : 'bg-white border border-primary/10 hover:border-accent hover:bg-accent-light cursor-pointer'"
+            >
+              <span x-text="bead.beadID"></span>
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <div class="text-primary/30 rotate-90 md:rotate-0">
+        <i class="fa-solid fa-arrow-right-long text-xl"></i>
+      </div>
+
+      <div class="flex-1 w-full">
+        <label
+          class="block text-[10px] font-bold text-primary/60 uppercase mb-2 tracking-wider text-right"
+          >Target Bead (Res i+1)</label
+        >
+        <div class="flex flex-wrap gap-2 justify-end">
+          <template x-for="bead in getUniqueBeads()" :key="bead.beadID">
+            <button
+              type="button"
+              @click="setInterConnection(inter_residues[0]?.source, bead.beadID)"
+              class="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
+              :class="isInterTarget(bead.beadID) 
+                                                    ? 'bg-accent text-white border-accent shadow-md' 
+                                                    : 'bg-white border border-primary/10 hover:border-accent hover:bg-accent-light cursor-pointer'"
+            >
+              <span x-text="bead.beadID"></span>
+            </button>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <div
+      x-show="inter_residues.length > 0"
+      x-transition
+      class="mt-4 flex items-center justify-between bg-accent-light px-4 py-2 rounded-lg border border-accent"
+    >
+      <div class="text-sm flex items-center gap-2">
+        <span class="text-tertiary font-medium">Selected Link:</span>
+        <span
+          class="px-2 py-0.5 bg-white rounded border border-accent/10 font-mono font-bold text-accent"
+          x-text="inter_residues[0].source"
+        ></span>
+        <i class="fa-solid fa-arrow-right text-xs text-tertiary/40"></i>
+        <span
+          class="px-2 py-0.5 bg-white rounded border border-secondary/10 font-mono font-bold text-accent"
+          x-text="inter_residues[0].target"
+        ></span>
+      </div>
+      <button
+        @click="clearInterConnection()"
+        class="text-xs text-danger font-bold cursor-pointer flex items-center gap-1"
+      >
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+    <div
+      x-show="inter_residues.length === 0"
+      class="mt-4 text-xs text-primary text-center"
+    >
+      No inter-residue connection defined yet.
+    </div>
+  </div>
+</div>

@@ -30,7 +30,7 @@ class StructureProcessor:
     def apply_coarse_graining(
         structure: Structure, 
         model: str, 
-        custom_model_data: dict | None = None # Dodany argument
+        custom_model_data: dict | None = None 
     ) -> Structure:
         return process_structure_with_coarse_grain_model(
             structure, model, custom_model_data
@@ -61,7 +61,7 @@ class StructureProcessor:
         filename: str,
         file_format: SupportedFormats,
         selected_model: str,
-        custom_model_data: dict | None = None,  # Dodany argument
+        custom_model_data: dict | None = None, 
     ) -> DefaultDict[str, Any]:
         original_format = file_format.normalize_format()
 

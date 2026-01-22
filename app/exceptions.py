@@ -18,6 +18,9 @@ class ModelLoadingError(AppException):
     """Exception raised for errors during model loading."""
     pass
 
+class InvalidModelParametersError(AppException):
+    """Exception raised for invalid model parameters."""
+    pass
 
 async def app_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
     error_message = str(exc)

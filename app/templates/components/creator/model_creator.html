@@ -1,0 +1,54 @@
+<div x-data="modelCreator()" 
+     @open-creator.window="showCreator = true"
+     class="fixed inset-0 z-50 flex flex-col h-screen bg-white" 
+     x-show="showCreator" 
+     style="display: none;"
+     x-transition>
+    
+    <div class="bg-white border-b border-tertiary-light px-6 py-4 flex justify-between items-center shadow-sm">
+        <h2 class="text-xl font-bold text-secondary">Custom Model Creator</h2>
+        <div class="flex gap-2">
+             <button type="button" @click="downloadConfig()" class="mr-2 text-primary cursor-pointer hover:text-accent transition" title="Save to JSON">
+                <i class="fa-solid fa-download text-lg"></i>
+            </button>
+            <button type="button" @click="showCreator = false" class="px-4 py-2 text-primary hover:bg-tertiary-light cursor-pointer rounded-lg transition">Cancel</button>
+            <button type="button" @click="applyModel()" class="px-4 py-2 bg-primary cursor-pointer text-white font-semibold rounded-lg shadow-lg hover:shadow-accent-light transition">Use Model</button>
+        </div>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        <div class="w-1/2 md:w-1/3 bg-white border-r border-tertiary-light flex flex-col">
+            <div class="flex border-b border-tertiary-light bg-gray-50/50">
+                <button @click="activeTab = 'beads'" 
+                        class="cursor-pointer flex-1 py-3 text-sm font-semibold transition-colors relative"
+                        :class="activeTab === 'beads' ? 'text-accent bg-white' : 'text-primary/60 hover:text-primary hover:bg-white/50'">
+                     Beads Config
+                    <div x-show="activeTab === 'beads'" class="absolute bottom-0 left-0 w-full h-0.5 bg-accent"></div>
+                </button>
+                <button @click="activeTab = 'connectivity'" 
+                        class="cursor-pointer flex-1 py-3 text-sm font-semibold transition-colors relative"
+                        :class="activeTab === 'connectivity' ? 'text-accent bg-white' : 'text-primary/60 hover:text-primary hover:bg-white/50'">
+                    Connectivity
+                    <div x-show="activeTab === 'connectivity'" class="absolute bottom-0 left-0 w-full h-0.5 bg-accent"></div>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+                {% include 'components/creator/bead_creator.html' %}
+                {% include 'components/creator/connectivity_creator.html' %}
+
+            </div>
+        </div>
+
+        <div class="w-2/3 bg-white relative flex flex-col">            
+            <div class="absolute inset-0 bg-dots-pattern opacity-5 pointer-events-none"></div>
+            <div class="w-full h-full bg-white backdrop-blur shadow-inner p-4 overflow-auto text-xs font-mono border-l border-tertiary-light">
+                <div class="absolute top-4 right-6 text-primary/30 font-bold uppercase tracking-widest text-xs pointer-events-none">
+                    Live JSON Preview
+                </div>
+                <pre class="text-primary" x-text="JSON.stringify(generateJson(), null, 2)"></pre>
+            </div>
+        </div>
+    </div>
+</div>

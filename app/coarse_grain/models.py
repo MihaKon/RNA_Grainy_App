@@ -6,6 +6,7 @@ import logging
 import pathlib
 from abc import ABC, abstractmethod
 from typing import Callable
+from app.exceptions import InvalidModelParametersError
 
 from gemmi import (
     Asu,
@@ -145,7 +146,12 @@ class BaseCoarseGrainModel(ABC):
         return coarse_structure
 
     def _get_bead_name_for_bead_id(self, res_name: str, bead_id: str) -> str:
-        return self.nucleotides_config[res_name]["bead_names"][bead_id]
+        try:
+            return self.nucleotides_config[res_name]["bead_names"][bead_id]
+        except KeyError:
+            raise InvalidModelParametersError(
+                f"Bead ID '{bead_id}' not found for residue '{res_name}' in model '{self.name_verbose}'."
+            )
 
     def _should_keep_residue(self, residue_name: str) -> bool:
         return residue_name in list(self.nucleotides_config.keys())

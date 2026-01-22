@@ -44,7 +44,7 @@ class DocsContextBuilder:
             for res_cfg in model_cls.nucleotides_config.values():
                 counts.add(len(res_cfg.get("bead_names", {})))
             raw_beads = sorted(list(counts))
-        image_name_for_url = "simrna" if model_name == "custom" else model_name
+        image_name_for_url = None if model_name == "custom" else model_name
 
         model_data = {
             "id": model_name,
@@ -64,7 +64,6 @@ class DocsContextBuilder:
     def load_model_config(cls, model_name: str, custom_model_data: dict[str, Any] | None = None) -> Tuple[BaseCoarseGrainModel, dict[str, Any]]:  # type: ignore
         if model_name == "custom":
             if custom_model_data is None:
-                # Fallback, choć nie powinno się zdarzyć przy poprawnym flow
                 raise ValueError("Custom model selected but no data provided.")
             
             instance = DynamicCoarseGrainModel(custom_model_data)
@@ -77,6 +76,8 @@ class DocsContextBuilder:
 
     @classmethod
     def get_image_url(cls, model_name: str) -> str:
+        if model_name is None:
+            return None
         filename = f"{model_name.lower()}.png"
         relative_path = MODELS_IMAGES_DIR.relative_to(STATIC_DIR) / filename
         img_path = relative_path.as_posix()
@@ -89,7 +90,6 @@ class DocsContextBuilder:
     @classmethod
     def format_mapping(cls, model_instance: BaseCoarseGrainModel) -> dict[str, Any]:  # type: ignore
         formatted_mapping: dict = {}
-        # Pobieramy konfigurację bezpośrednio z instancji
         raw_mapping = model_instance.nucleotides_config
 
         for res in raw_mapping.keys():
@@ -97,7 +97,6 @@ class DocsContextBuilder:
             bead_names = raw_mapping[res].get("bead_names", {})
             descriptions = raw_mapping[res].get("description", {})
             
-            # Sortujemy po kluczach (A1, A2...), aby zachować kolejność
             for bead_id in sorted(bead_names.keys()):
                 row_data.append(
                     {
