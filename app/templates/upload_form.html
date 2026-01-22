@@ -1,7 +1,5 @@
 {% extends "base.html" %} {% from "components/primary_button.html" import
-primary_button %} 
-
-{% block content %}
+primary_button %} {% block content %}
 <div
   id="upload-container"
   class="flex w-full items-center justify-center min-h-[500px]"
@@ -9,7 +7,7 @@ primary_button %}
   <form
     x-data="uploadForm"
     @set-custom-model.window="selectModel('custom', 'Custom Model')"
-    @use-custom-model.window="handleApplyModel($event.detail.json)" 
+    @use-custom-model.window="handleApplyModel($event.detail.json)"
     @htmx:config-request="submitForm($event)"
     hx-post="/upload/file/"
     hx-target="#upload-container"
@@ -57,12 +55,10 @@ primary_button %}
   </form>
 </div>
 
-{% include "components/creator/model_creator.html" %} 
-{% endblock %} 
-
-{% block scripts %}
-    <script src="{{ url_for('static', path='/js/config.js') }}"></script>
-    <script src="{{ url_for('static', path='/js/creator/json_builder.js') }}"></script>
-    <script src="{{ url_for('static', path='/js/creator/model_creator.js') }}"></script>
-    <script src="{{ url_for('static', path='/js/upload/upload_form.js') }}"></script>
+{% include "components/creator/layout.html" %} {% endblock %} {% block
+scripts %}
+<script src="{{ url_for('static', path='/js/config.js') }}"></script>
+<script src="{{ url_for('static', path='/js/creator/json_builder.js') }}"></script>
+<script src="{{ url_for('static', path='/js/creator/creator_controller.js') }}"></script>
+<script src="{{ url_for('static', path='/js/upload/upload_controller.js') }}"></script>
 {% endblock %}
