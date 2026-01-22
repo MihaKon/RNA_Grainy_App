@@ -57,8 +57,8 @@ document.addEventListener("alpine:init", () => {
     addBead() {
       const newID = "A" + (this.beads.length + 1);
       this.beads.push({
-        beadID: id,
-        name: id,
+        beadID: newID,
+        name: newID,
         scope: "all",
         strategy: "direct",
         atoms: [],
