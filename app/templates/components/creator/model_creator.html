@@ -34,10 +34,8 @@
             </div>
 
             <div class="flex-1 overflow-y-auto p-6 space-y-6">
-
                 {% include 'components/creator/bead_creator.html' %}
                 {% include 'components/creator/connectivity_creator.html' %}
-
             </div>
         </div>
 
@@ -47,7 +45,7 @@
                 <div class="absolute top-4 right-6 text-primary/30 font-bold uppercase tracking-widest text-xs pointer-events-none">
                     Live JSON Preview
                 </div>
-                <pre class="text-primary" x-text="JSON.stringify(generateJson(), null, 2)"></pre>
+                <pre class="text-primary" x-text="JSON.stringify(JsonGenerator.buildModelJson($data), null, 2)"></pre>
             </div>
         </div>
     </div>

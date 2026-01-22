@@ -6,7 +6,7 @@
     </button>
 
     <div class="flex-1 relative">
-        <input type="file" accept=".json" class="hidden" x-ref="jsonUpload" @change="loadCustomJson($event)">
+        <input type="file" accept=".json" class="hidden" x-ref="jsonUpload" @change="loadCustomJsonFromFile($event)">
         <button type="button" @click="$refs.jsonUpload.click()" 
             class="cursor-pointer w-full h-full py-2 px-3 bg-white border border-primary/10 rounded-lg text-sm font-medium text-primary hover:border-accent hover:text-accent transition shadow-sm flex flex-col items-center gap-1 group">
             <i class="fa-solid fa-file-arrow-up text-lg text-primary group-hover:text-accent transition"></i>

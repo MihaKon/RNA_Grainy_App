@@ -10,3 +10,4 @@ temp
 
 !app/static/images
 !app/static/examples
+!app/static/js
