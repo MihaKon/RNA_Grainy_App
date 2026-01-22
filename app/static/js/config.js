@@ -82,3 +82,8 @@ const DEFAULT_MODEL = {
   intra_residues: [["A1", "A2"], ["A2", "A3"], ["A3", "A4"], ["A4", "A5"], ["A5", "A3"]],
   inter_residues: [{ source: "A5", target: "A1" }],
 };
+
+const UPLOAD_ENDPOINTS ={
+  RCSB: "/upload/rcsb/",
+  EXAMPLE: "/upload/example/",
+}
