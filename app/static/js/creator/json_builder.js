@@ -1,13 +1,13 @@
-const JsonGenerator = {
+const JsonBuilder = {
   getAtomsForScope(scope) {
     return ATOM_DEFINITIONS[scope];
   },
 
-  getResiduesForScope(scope) {
-    return SCOPE_RESIDUES_MAP[scope] || [];
+  copy(obj){
+    return JSON.parse(JSON.stringify(obj));
   },
 
-  buildModelJson(state) {
+  buildJson(state) {
     const json = {
       model_name: state.modelName,
       description: state.modelDescription,
@@ -22,7 +22,7 @@ const JsonGenerator = {
       mapping: [],
       connectivity: {
         intra_residue: state.intra_residues,
-        inter_residue: state.inter_residues,
+        inter_residue: [],
       },
     };
 
@@ -57,8 +57,6 @@ const JsonGenerator = {
       }
     });
 
-    json.connectivity.intra_residue = state.intra_residues;
-
     const validInterResidues = state.inter_residues.filter(
       (pair) => pair.source && pair.target,
     );
@@ -73,12 +71,13 @@ const JsonGenerator = {
     return json;
   },
 
-  downloadConfig(jsonObject, filename) {
+  downloadConfig(jsonObj, filename) {
     const dataStr =
       "data:text/json;charset=utf-8," +
-      encodeURIComponent(JSON.stringify(jsonObject, null, 2));
+      encodeURIComponent(JSON.stringify(jsonObj, null, 2));
     const node = document.createElement("a");
     const safeName = (filename || "custom_model").replace(/\s+/g, "_").toLowerCase();
+
     node.setAttribute("href", dataStr);
     node.setAttribute("download", safeName + ".json");
     document.body.appendChild(node);

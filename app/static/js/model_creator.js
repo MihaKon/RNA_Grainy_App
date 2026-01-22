@@ -7,9 +7,9 @@ document.addEventListener("alpine:init", () => {
     // === Default Custom Model Data === //
     modelName: DEFAULT_MODEL.name,
     modelDescription: DEFAULT_MODEL.description,
-    beads: JSON.parse(JSON.stringify(DEFAULT_MODEL.beads)),
-    intra_residues: JSON.parse(JSON.stringify(DEFAULT_MODEL.intra_residues)),
-    inter_residues: JSON.parse(JSON.stringify(DEFAULT_MODEL.inter_residues)),
+    beads: JsonBuilder.copy(DEFAULT_MODEL.beads),
+    intra_residues: JsonBuilder.copy(DEFAULT_MODEL.intra_residues),
+    inter_residues: JsonBuilder.copy(DEFAULT_MODEL.inter_residues),
 
     /// === Helpers For HTML === //
     getAvailableScopes() {
@@ -21,7 +21,7 @@ document.addEventListener("alpine:init", () => {
     },
 
     getAtomsForScope(scope) {
-      return JsonGenerator.getAtomsForScope(scope);
+      return JsonBuilder.getAtomsForScope(scope);
     },
 
     getUniqueBeads() {
@@ -128,17 +128,20 @@ document.addEventListener("alpine:init", () => {
     /// === Export Model Actions === //
     
     downloadConfig(){
-      const jsonObj = JsonGenerator.buildModelJson(this);
-      JsonGenerator.downloadConfig(jsonObj, this.modelName);
+      const jsonObj = JsonBuilder.buildJson(this);
+      JsonBuilder.downloadConfig(jsonObj, this.modelName);
     },
-    
+
     applyModel() {
-      const jsonStr = JSON.stringify(this.generateJson());
+      const json = JsonBuilder.buildJson(this);
+      const jsonStr = JSON.stringify(json);
+
       window.dispatchEvent(
         new CustomEvent("use-custom-model", {
           detail: { json: jsonStr },
         }),
       );
+
       this.showCreator = false;
     },
   }));
