@@ -74,6 +74,7 @@
 
             <select
               x-model="bead.strategy"
+              x-on:change="bead.atoms = []"
               class="w-full text-sm bg-transparent border-b outline-none cursor-pointer py-1"
             >
               <template x-for="option in STRATEGY_OPTIONS" :key="option.value">
