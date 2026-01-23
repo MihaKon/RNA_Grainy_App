@@ -39,7 +39,7 @@
             <section x-data="{open:false}" class="bg-white rounded-2xl shadow border border-tertiary-light p-6 shrink-0">
                 {{ collapse_header('Model description', variant='comparison') }}
 
-                <div x-show="open" x-collapse class="mt-4 text-sm text-secondary">
+                <div x-show="open" class="mt-4 text-sm text-secondary">
                     
                     <div class="mb-4">
                         {{ render_model_image(model.image_url) }}
@@ -59,7 +59,7 @@
                 
                 {{ collapse_header('Atom mapping', variant='comparison') }}
 
-                <div x-show="open" x-collapse class="mt-4">
+                <div x-show="open" class="mt-4">
                     {% if model.beads %}
                     <div class="mb-4 flex items-center justify-between bg-accent-light px-3 py-2 rounded-lg border border-accent-light">
                         <span class="text-xs font-semibold text-accent uppercase tracking-wide">

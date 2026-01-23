@@ -142,7 +142,7 @@
             {% for title, details in mapping_data.items() %}
                 <div class="border border-tertiary-light rounded-lg overflow-hidden" x-data="{ open: false }">
                     {{ collapse_header(title) }}
-                    <div x-show="open" x-collapse class="border-t border-tertiary-light">
+                    <div x-show="open" class="border-t border-tertiary-light">
                         {{ mapping_table_rows(details) }}
                     </div>
                 </div>
