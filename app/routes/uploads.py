@@ -2,6 +2,7 @@ import json
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from gemmi import Structure
+from typing import Any
 
 from app.exceptions import FileProcessingError
 from app.models import (
@@ -19,38 +20,39 @@ from app.settings import MAX_FILE_UPLOAD_SIZE, TEMPLATES, EXAMPLES_DIR
 router = APIRouter(prefix="/upload", tags=["upload"])
 
 
-def process_structure(
+def process_structure_and_get_metadata(
     file_content: str,
     file_format: SupportedFormats,
     selected_model: str,
     custom_model_data: dict | None = None, 
-) -> Structure:
+) -> tuple[Structure, dict[str, int]]:
     original_structure = StructureProcessor.parse_structure(file_content, file_format)
-    return StructureProcessor.apply_coarse_graining(
-        original_structure, selected_model, custom_model_data
-    )
+    coarse_structure = StructureProcessor.apply_coarse_graining( original_structure, selected_model, custom_model_data)
 
-async def run_job_processing(
+    atom_counts = {
+        "original": StructureProcessor.get_structure_atom_count(original_structure),
+        "coarse": StructureProcessor.get_structure_atom_count(coarse_structure),
+    }
+    return coarse_structure, atom_counts
+
+
+async def save_structures(
     job_id: str,
-    file_content: str,
+    original_content: str,
     file_format: SupportedFormats,
-    selected_model: str,
-    custom_model_data: dict | None = None, 
+    coarse_structure: Structure,
 ) -> None:
     JobManager.setup_job_dir(job_id)
 
     original_format = file_format.normalize_format()
-    
-    coarse_structure = process_structure(
-        file_content, file_format, selected_model, custom_model_data
-    )
 
     cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
     pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
 
-    await JobManager.create_file(job_id, file_content, f"reference.{original_format.value}")
+    await JobManager.create_file(job_id, original_content, f"reference.{original_format.value}")
     await JobManager.create_file(job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}")
     await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
+
 
 async def handle_request_and_render(
     request: Request,
@@ -69,11 +71,17 @@ async def handle_request_and_render(
             raise FileProcessingError("Invalid Custom Model JSON format.")
 
     job_id = JobManager.create_job_id()
-    
-    await run_job_processing(job_id, file_content, file_format, selected_model, custom_model_data)
+    coarse_structure, atom_counts = process_structure_and_get_metadata(file_content, file_format, selected_model, custom_model_data)
+    await save_structures(job_id, file_content, file_format, coarse_structure)
 
     context = StructureProcessor.build_comparison_context(
-        request, job_id, filename, file_format, selected_model, custom_model_data
+        request=request, 
+        job_id=job_id, 
+        filename=filename, 
+        file_format=file_format, 
+        selected_model=selected_model, 
+        atom_counts=atom_counts, 
+        custom_model_data=custom_model_data
     )
     return TEMPLATES.TemplateResponse(
         request=request,
