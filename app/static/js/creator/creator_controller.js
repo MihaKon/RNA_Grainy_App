@@ -60,6 +60,7 @@ document.addEventListener("alpine:init", () => {
         beadID: newID,
         name: newID,
         scope: "all",
+        description: "",
         strategy: "direct",
         atoms: [],
       });

@@ -16,6 +16,7 @@ const JsonBuilder = {
         config: {
           bead_names: {},
           atom_centers: {},
+          description: {},
           strategies: {},
         },
       },
@@ -32,6 +33,7 @@ const JsonBuilder = {
       if (["all", "phosphate", "sugar"].includes(b.scope)) {
         json.default_mapping.config.bead_names[id] = b.name;
         json.default_mapping.config.atom_centers[id] = b.atoms;
+        json.default_mapping.config.description[id] = b.description;
         json.default_mapping.config.strategies[id] = b.strategy;
       } else if (b.scope in SCOPE_RESIDUES_MAP) {
         const targetResidues = SCOPE_RESIDUES_MAP[b.scope];
@@ -45,6 +47,7 @@ const JsonBuilder = {
             config: {
               bead_names: {},
               atom_centers: {},
+              description: {},
               strategies: {},
             },
           };
@@ -53,6 +56,7 @@ const JsonBuilder = {
 
         mappingRecord.config.bead_names[id] = b.name;
         mappingRecord.config.atom_centers[id] = b.atoms;
+        mappingRecord.config.description[id] = b.description;
         mappingRecord.config.strategies[id] = b.strategy;
       }
     });
