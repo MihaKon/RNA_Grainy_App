@@ -1,26 +1,10 @@
+{% from 'components/macros/select_field.html' import select_field %} 
+{% from 'components/macros/info_text.html' import info_text %}
+{% from
+'components/macros/input_field.html' import input_field %}
 <div x-show="activeTab === 'beads'" class="space-y-6">
-  {% include 'components/creator/infobox.html' %}
-  <div>
-    <label class="block text-sm font-medium text-primary mb-2"
-      >Model Name</label
-    >
-    <input
-      type="text"
-      x-model="modelName"
-      class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-focus outline-none"
-    />
-  </div>
-
-  <div>
-    <label class="block text-sm font-medium text-primary mb-2"
-      >Model Description</label
-    >
-    <input
-      type="text"
-      x-model="modelDescription"
-      class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-focus outline-none"
-    />
-  </div>
+  {% include 'components/creator/infobox.html' %} {{ input_field('modelName',
+  'Model Name') }} {{ input_field('modelDescription', 'Model Description') }}
 
   <div class="space-y-4">
     <div class="flex justify-between items-center">
@@ -46,55 +30,21 @@
           <i class="fa-solid fa-times"></i>
         </button>
 
-        <div class="grid grid-cols-3 gap-4 mb-4">
+        <div class="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <label class="text-xs font-semibold text-primary uppercase"
-              >Bead ID</label
-            >
-            <input
-              type="text"
-              x-model="bead.beadID"
-              class="w-full text-sm border-b bg-transparent focus:border-accent outline-none py-1"
-            />
+            {{ input_field('bead.beadID', 'Bead ID') }} 
+            {{ input_field('bead.name', 'Bead Name') }}
           </div>
-          <div>
-            <label class="text-xs font-semibold text-primary uppercase"
-              >Bead Name</label
-            >
-            <input
-              type="text"
-              x-model="bead.name"
-              class="w-full text-sm border-b bg-transparent focus:border-accent outline-none py-1"
-            />
-          </div>
-          <div>
-            <label class="text-xs font-semibold text-primary uppercase"
-              >Strategy</label
-            >
 
-            <select
-              x-model="bead.strategy"
-              x-on:change="bead.atoms = []"
-              class="w-full text-sm bg-transparent border-b outline-none cursor-pointer py-1"
-            >
-              <template x-for="option in STRATEGY_OPTIONS" :key="option.value">
-                <option :value="option.value" x-text="option.label"></option>
-              </template>
-            </select>
-          </div>
+            <div>
+            {{ select_field('bead.strategy', 'STRATEGY_OPTIONS', 'Strategy', "bead.atoms = []") }}
+            </div>
         </div>
 
         <div>
-          <label class="text-xs font-semibold text-primary uppercase"
-            >Bead Description</label
-          >
-          <input
-            type="text"
-            x-model="bead.description"
-            class="w-full text-sm border-b bg-transparent focus:border-accent outline-none py-1"
-          />
+          {{ input_field('bead.description', 'Bead Description') }}
         </div>
-        <div class="mb-3 py-4 ">
+        <div class="mb-3 py-4">
           <label class="text-xs font-semibold text-primary uppercase block mb-1"
             >Apply to</label
           >
@@ -129,19 +79,15 @@
             </template>
           </div>
 
-          <p
-            x-show="bead.strategy === 'direct'"
-            class="text-xs text-primary mt-1 flex items-center gap-1"
-          >
-            <i class="fa-solid fa-circle-info"></i> Direct mapping allows 1
-            atom.
-          </p>
-          <p
-            x-show="bead.atoms.length === 0"
-            class="text-xs text-danger mt-1 font-bold"
-          >
-            Select at least one atom.
-          </p>
+          {{ info_text(
+            "bead.strategy === 'direct'",
+            'Direct mapping allows 1 atom.'
+          ) }}
+          {{ info_text(
+            "bead.atoms.length === 0",
+            'Select at least one atom.',
+            type='error'
+          ) }}
         </div>
       </div>
     </template>
