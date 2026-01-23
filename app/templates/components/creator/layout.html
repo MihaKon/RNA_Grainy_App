@@ -27,18 +27,14 @@
     <div class="flex flex-1 overflow-hidden">
         <div class="w-1/2 md:w-1/3 bg-white border-r border-tertiary-light flex flex-col">
             <div class="flex border-b border-tertiary-light bg-gray-50/50">
-                <button @click="activeTab = 'beads'" 
-                        class="cursor-pointer flex-1 py-3 text-sm font-semibold transition-colors relative"
-                        :class="activeTab === 'beads' ? 'text-accent bg-white' : 'text-primary/60 hover:text-primary hover:bg-white/50'">
-                     Beads Config
-                    <div x-show="activeTab === 'beads'" class="absolute bottom-0 left-0 w-full h-0.5 bg-accent"></div>
-                </button>
-                <button @click="activeTab = 'connectivity'" 
-                        class="cursor-pointer flex-1 py-3 text-sm font-semibold transition-colors relative"
-                        :class="activeTab === 'connectivity' ? 'text-accent bg-white' : 'text-primary/60 hover:text-primary hover:bg-white/50'">
-                    Connectivity
-                    <div x-show="activeTab === 'connectivity'" class="absolute bottom-0 left-0 w-full h-0.5 bg-accent"></div>
-                </button>
+                <template x-for="tab in [{id: 'beads', label: 'Beads Config'}, {id: 'connectivity', label: 'Connectivity'}]" :key="tab.id">
+                    <button @click="activeTab = tab.id" 
+                            class="cursor-pointer flex-1 py-3 text-sm font-semibold transition-colors relative"
+                            :class="activeTab === tab.id ? 'text-accent bg-white' : 'text-primary/60 hover:text-primary hover:bg-white/50'">
+                        <span x-text="tab.label"></span>
+                        <div x-show="activeTab === tab.id" class="absolute bottom-0 left-0 w-full h-0.5 bg-accent"></div>
+                    </button>
+                </template>
             </div>
 
             <div class="flex-1 overflow-y-auto p-6 space-y-6">
