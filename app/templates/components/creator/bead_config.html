@@ -93,6 +93,7 @@
               <button
                 type="button"
                 @click="bead.scope = scope.value"
+                x-on:click="bead.atoms = []"
                 :class="bead.scope === scope.value ? 'bg-secondary text-white' : 'bg-tertiary-light text-primary hover:bg-accent-light'"
                 class="cursor-pointer px-2 py-1 rounded transition-colors text-xs"
               >
