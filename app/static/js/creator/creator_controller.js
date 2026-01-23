@@ -169,7 +169,7 @@ document.addEventListener("alpine:init", () => {
       const json = JsonBuilder.buildJsonFromState(this);
       const jsonStr = JSON.stringify(json);
 
-      Alpine.store("modelSelection").loadData(jsonStr);
+      Alpine.store("modelSelection").loadDataToForm(jsonStr);
     },
   }));
 });

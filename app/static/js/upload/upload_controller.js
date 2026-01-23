@@ -11,7 +11,7 @@ document.addEventListener("alpine:init", () => {
 
       this.$watch("$store.modelSelection.customJson", (json) => {
         if (json) {
-          this.handleApplyModel(json);
+          this.processJson(json);
         }
       });
     },
@@ -107,11 +107,6 @@ document.addEventListener("alpine:init", () => {
       const reader = new FileReader();
       reader.onload = (e) => this.processJson(e.target.result);
       reader.readAsText(file);
-    },
-
-    handleApplyModel(jsonStr) {
-      this.processJson(jsonStr);
-      this.showCreator = false;
     },
 
     processJson(jsonStr) {

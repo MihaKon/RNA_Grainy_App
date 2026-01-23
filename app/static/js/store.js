@@ -4,7 +4,7 @@ document.addEventListener("alpine:init", () => {
         selectedLabel: "Select model",
         customJson: "",
 
-        loadData(json) {
+        loadDataToForm(json) {
             this.customJson = json;
             this.selectedId = "custom";
             this.selectedLabel = "Custom Model";
@@ -17,7 +17,7 @@ document.addEventListener("alpine:init", () => {
         open() {
             this.isOpen = true;
         },
-        
+
         close() {
             this.isOpen = false;
         }
