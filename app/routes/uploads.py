@@ -2,7 +2,6 @@ import json
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from gemmi import Structure
-from typing import Any
 
 from app.exceptions import FileProcessingError
 from app.models import (
