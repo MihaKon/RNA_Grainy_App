@@ -139,12 +139,12 @@ document.addEventListener("alpine:init", () => {
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = (e) => this.processJson(e.target.result);
+      reader.onload = (e) => this.createJsonPreview(e.target.result);
       reader.readAsText(file);
       event.target.value = "";
     },
 
-    processJson(jsonStr) {
+    createJsonPreview(jsonStr) {
       try {
         const json = JSON.parse(jsonStr);
         const importedData = JsonBuilder.buildJsonFromFile(json);
@@ -167,9 +167,8 @@ document.addEventListener("alpine:init", () => {
 
     applyModel() {
       const json = JsonBuilder.buildJsonFromState(this);
-      const jsonStr = JSON.stringify(json);
 
-      Alpine.store("modelSelection").loadDataToForm(jsonStr);
+      Alpine.store("modelSelection").sendConfigToForm(json);
     },
   }));
 });

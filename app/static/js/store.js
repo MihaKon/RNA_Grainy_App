@@ -1,13 +1,12 @@
 document.addEventListener("alpine:init", () => {
     Alpine.store("modelSelection", {
+        customJson: "",
         selectedId: "",
         selectedLabel: "Select model",
-        customJson: "",
-
-        loadDataToForm(json) {
-            this.customJson = json;
+        sendConfigToForm(json) {
+            this.customJson = JSON.stringify(json, null, 2);
             this.selectedId = "custom";
-            this.selectedLabel = "Custom Model";
+            this.selectedLabel = json.model_name || "Custom Model";
         }
     });
 

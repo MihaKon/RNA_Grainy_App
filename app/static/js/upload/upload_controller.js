@@ -11,7 +11,7 @@ document.addEventListener("alpine:init", () => {
 
       this.$watch("$store.modelSelection.customJson", (json) => {
         if (json) {
-          this.processJson(json);
+          this.processJsonToModel(json);
         }
       });
     },
@@ -105,13 +105,14 @@ document.addEventListener("alpine:init", () => {
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = (e) => this.processJson(e.target.result);
+      reader.onload = (e) => this.processJsonToModel(e.target.result);
       reader.readAsText(file);
     },
 
-    processJson(jsonStr) {
+    processJsonToModel(jsonStr) {
       try {
-        JSON.parse(jsonStr);
+        const json = JSON.parse(jsonStr);
+        Alpine.store("modelSelection").sendConfigToForm(json);
         this.$refs.customModelInput.value = jsonStr;
         this.customModelLoaded = true;
         this.errors.model = false;
