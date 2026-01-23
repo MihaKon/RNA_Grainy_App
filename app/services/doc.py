@@ -56,7 +56,7 @@ class DocsContextBuilder:
             "beads": cls.format_beads(raw_beads),
             "citations": cls.format_citations(config),
             "mapping": cls.format_mapping(model_cls),
-            "image_url": cls.get_image_url(image_name_for_url)
+            "image_url": cls.get_image_url(image_name_for_url) or "",
         }
         return model_data
 
