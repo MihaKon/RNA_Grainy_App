@@ -76,6 +76,7 @@ const DEFAULT_MODEL = {
 };
 
 const UPLOAD_ENDPOINTS ={
+  FILE: "/upload/file/",
   RCSB: "/upload/rcsb/",
   EXAMPLE: "/upload/example/",
 }

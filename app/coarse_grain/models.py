@@ -88,7 +88,7 @@ class BaseCoarseGrainModel(ABC):
     def config(self) -> dict:
         config = self.read_json_model()
         if not config:
-            raise ValueError("Configuration is missing.")
+            raise InvalidModelParametersError("Configuration is missing.")
         return config
 
     @property
@@ -114,14 +114,13 @@ class BaseCoarseGrainModel(ABC):
                     for config_name, config_values in map["config"].items():
                         for k, v in config_values.items():
                             nucleotides_map[res][config_name][k] = v
-
         return nucleotides_map
 
     @property
     def connectivity_rules(self) -> tuple[list, dict]:
         conn = self.config.get("connectivity")
         if not conn:
-            raise ValueError("Configuration missing required 'connectivity' section")
+            raise InvalidModelParametersError("Configuration missing required 'connectivity' section")
 
         intra = conn.get("intra_residue", [])
         inter_config = conn.get("inter_residue", [])

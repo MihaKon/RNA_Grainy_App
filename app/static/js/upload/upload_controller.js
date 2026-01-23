@@ -34,7 +34,8 @@ document.addEventListener("alpine:init", () => {
     handleFileSelect(event) {
       const file = event.target.files[0];
       if (file) {
-        this.resetInputs();
+        this.rcsbId = "";
+        this.exampleId = "";
         this.file = file;
         this.errors.file = false;
       }
@@ -49,7 +50,8 @@ document.addEventListener("alpine:init", () => {
     },
 
     setExample(id) {
-      this.resetInputs();
+      this.removeFile();
+      this.rcsbId = "";
       this.exampleId = id;
       this.errors.file = false;
 
@@ -138,7 +140,7 @@ document.addEventListener("alpine:init", () => {
     },
 
     getSubmitPath() {
-      if (this.rcsbId.trim()) return UPLOAD_ENDPOINTS.RCSB;
+      if (this.rcsbId) return UPLOAD_ENDPOINTS.RCSB;
       if (this.exampleId) return UPLOAD_ENDPOINTS.EXAMPLE;
       return UPLOAD_ENDPOINTS.FILE;
     },

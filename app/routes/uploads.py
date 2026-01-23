@@ -59,16 +59,9 @@ async def handle_request_and_render(
     filename: str,
     file_format: SupportedFormats,
     selected_model: str,
-    custom_model_data_str: str | None = None, 
+    custom_model_data: dict | None = None, 
 ) -> HTMLResponse:
     
-    custom_model_data = None
-    if selected_model == "custom" and custom_model_data_str:
-        try:
-            custom_model_data = json.loads(custom_model_data_str)
-        except json.JSONDecodeError:
-            raise FileProcessingError("Invalid Custom Model JSON format.")
-
     job_id = JobManager.create_job_id()
     coarse_structure, atom_counts = process_structure_and_get_metadata(file_content, file_format, selected_model, custom_model_data)
     await save_structures(job_id, file_content, file_format, coarse_structure)
@@ -88,6 +81,8 @@ async def handle_request_and_render(
         context=context,
     )
 
+
+
 @router.post("/file/", response_class=HTMLResponse)
 async def upload_file(
     request: Request,
@@ -95,7 +90,8 @@ async def upload_file(
     selected_model: str = Form(...),
     custom_model_data: str = Form(None),
 ) -> HTMLResponse:
-    upload_req = FileUploadRequest(file=file, selected_model=selected_model) 
+    
+    upload_req = FileUploadRequest(file=file, selected_model=selected_model, custom_model_data=custom_model_data)  
     if upload_req.file.size is None:
         raise FileProcessingError("Uploaded file is empty.")
     elif upload_req.file.size > MAX_FILE_UPLOAD_SIZE:
@@ -115,7 +111,7 @@ async def upload_file(
     filename: str = upload_req.file.filename.split(".")[0]  # type: ignore
 
     return await handle_request_and_render(
-        request, file_content, filename, file_format, upload_req.selected_model, custom_model_data_str=custom_model_data
+        request, file_content, filename, file_format, upload_req.selected_model, custom_model_data=upload_req.custom_model_data
     )
 
 
@@ -126,7 +122,7 @@ async def upload_rcsb(
     selected_model: str = Form(...),
     custom_model_data: str = Form(None),
 ) -> HTMLResponse:
-    rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model)  # type: ignore
+    rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model, custom_model_data=custom_model_data)  # type: ignore
 
     file_content = await fetch_rcsb_file(rcsb_req.rcsb_id)
     if file_content is None:
@@ -138,7 +134,7 @@ async def upload_rcsb(
     filename: str = rcsb_req.rcsb_id
 
     return await handle_request_and_render(
-        request, file_content, filename, file_format, rcsb_req.selected_model, custom_model_data_str=custom_model_data
+        request, file_content, filename, file_format, rcsb_req.selected_model, custom_model_data=rcsb_req.custom_model_data
     )
 
 
@@ -149,7 +145,7 @@ async def upload_example(
     selected_model: str = Form(...),
     custom_model_data: str = Form(None),
 ) -> HTMLResponse: 
-    example_req = ExampleRequest(example_id=example_id, selected_model=selected_model)  # type: ignore
+    example_req = ExampleRequest(example_id=example_id, selected_model=selected_model, custom_model_data=custom_model_data)  # type: ignore
     example_path = EXAMPLES_DIR / f"{example_req.example_id}.{SupportedFormats.CIF.value}"
 
     if not example_path.exists():
@@ -168,5 +164,5 @@ async def upload_example(
 
             
     return await handle_request_and_render(
-        request, file_content, filename, file_format, example_req.selected_model, custom_model_data_str=custom_model_data
+        request, file_content, filename, file_format, example_req.selected_model, custom_model_data=example_req.custom_model_data
     )

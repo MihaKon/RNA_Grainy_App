@@ -28,20 +28,33 @@ async def app_exception_handler(request: Request, exc: Exception) -> HTMLRespons
     return render_form_error_message(
         request=request,
         error=error_message,
-        status_code=400
+        status_code=422
     )
 
 async def validation_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
-
-    assert isinstance(exc, ValidationError)
-    error_message = str(exc)
-    try:
+    if isinstance(exc, ValueError):
         first_error = exc.errors()[0]
-        error_message = first_error.get("msg", str(exc))
-        
-        error_message = error_message.replace("Value error, ", "")
-    except (IndexError, AttributeError):
-        error_message = "Validation Error"
+        error_type = first_error.get("type", "")
+        field_path = first_error.get("loc", [])
+        field_name = str(field_path[-1]) if field_path else "field"
+
+        error_map = {
+            "extra_forbidden": f"Unexpected field: {field_name}",
+            "missing": f"Required: {field_name}",
+            "value_error": f"Invalid value for {field_name}. Check data types and structure.",
+            "type_error": f"Invalid type for {field_name}. ",
+        }
+
+        error_message = error_map.get(error_type)
+        if not error_message:
+            for key in error_map:
+                if error_type.startswith(key):
+                    error_message = error_map[key]
+                    break
+        if not error_message:
+            error_message = f"Invalid {field_name}"
+    else:
+        error_message = str(exc).split("Value error, ")[-1]
 
     return render_form_error_message(
         request=request,
