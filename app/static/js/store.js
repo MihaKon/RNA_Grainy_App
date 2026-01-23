@@ -4,14 +4,22 @@ document.addEventListener("alpine:init", () => {
         selectedLabel: "Select model",
         customJson: "",
 
-        setCustom() {
-            this.selectedId = "custom";
-            this.selectedLabel = "Custom Model";
-        },
-
         loadData(json) {
             this.customJson = json;
-            this.setCustom(); 
+            this.selectedId = "custom";
+            this.selectedLabel = "Custom Model";
+        }
+    });
+
+    Alpine.store("openCreator", {
+        isOpen: false,
+        
+        open() {
+            this.isOpen = true;
+        },
+        
+        close() {
+            this.isOpen = false;
         }
     });
 });

@@ -96,7 +96,11 @@ document.addEventListener("alpine:init", () => {
 
     // === JSON Handling ===
 
-    loadCustomJsonFromFile(event) {
+    uploadJson(){
+      return this.$refs.jsonUpload.click();
+    },
+
+    readJsonFile(event) {
       const file = event.target.files[0];
       if (!file) return;
 

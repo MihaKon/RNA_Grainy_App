@@ -1,7 +1,9 @@
 document.addEventListener("alpine:init", () => {
   Alpine.data("modelCreator", () => ({
     // === State === //
-    showCreator: false,
+    get showCreator() {
+      return Alpine.store("openCreator").isOpen;
+    },
     activeTab: "beads",
 
     // === Default Custom Model Data === //
@@ -126,20 +128,48 @@ document.addEventListener("alpine:init", () => {
       this.inter_residues = [];
     },
 
-    /// === Export Model Actions === //
+    /// === Import / Export Model Actions === //
+
+    importConfig() {
+      this.$refs.importInput.click();
+    },
+
+    readJsonFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => this.processJson(e.target.result);
+      reader.readAsText(file);
+      event.target.value = "";
+    },
+
+    processJson(jsonStr) {
+      try {
+        const json = JSON.parse(jsonStr);
+        const importedData = JsonBuilder.buildJsonFromFile(json);
+
+        this.modelName = importedData.name;
+        this.modelDescription = importedData.description;
+        this.beads = importedData.beads;
+        this.intra_residues = importedData.intra_residues;
+        this.inter_residues = importedData.inter_residues;
+      } catch (error) {
+        alert("Invalid JSON data");
+        console.error("JSON Parse Error:", error);
+      }
+    },
 
     downloadConfig() {
-      const jsonObj = JsonBuilder.buildJson(this);
+      const jsonObj = JsonBuilder.buildJsonFromState(this);
       JsonBuilder.downloadConfig(jsonObj, this.modelName);
     },
 
     applyModel() {
-      const json = JsonBuilder.buildJson(this);
+      const json = JsonBuilder.buildJsonFromState(this);
       const jsonStr = JSON.stringify(json);
 
       Alpine.store("modelSelection").loadData(jsonStr);
-
-      this.showCreator = false;
     },
   }));
 });

@@ -6,8 +6,52 @@ const JsonBuilder = {
   copy(obj){
     return JSON.parse(JSON.stringify(obj));
   },
+  
+  buildJsonFromFile(json) {
+    const beads = [];
+    const extractDataFromConfig = (config, scope) =>{
+      if (!config || !config.bead_names) return;
 
-  buildJson(state) {
+      Object.keys(config.bead_names).forEach((beadID) => {
+        beads.push({
+          beadID: beadID,
+          name: config.bead_names[beadID] || beadID,
+          scope: scope,
+          description: config.description?.[beadID] || "",
+          strategy: config.strategies?.[beadID] || "direct",
+          atoms: config.atom_centers?.[beadID] || [],
+        });
+      });
+    };
+
+    extractDataFromConfig(json.default_mapping?.config, "all");
+
+    if (json.mapping && Array.isArray(json.mapping)) {
+      json.mapping.forEach(m => {
+        let detectedScope = "all";
+        const resStr = JSON.stringify(m.residues.sort());
+        
+        for (const [scopeKey, residues] of Object.entries(SCOPE_RESIDUES_MAP)) {
+          if (JSON.stringify([...residues].sort()) === resStr) {
+            detectedScope = scopeKey;
+            break;
+          }
+        }
+        
+        extractDataFromConfig(m.config, detectedScope);
+      });
+    }
+
+    return {
+      name: json.model_name || "Imported Model",
+      description: json.description || "",
+      beads: beads,
+      intra_residues: json.connectivity?.intra_residue || [],
+      inter_residues: json.connectivity?.inter_residue || []
+    };
+  },
+
+  buildJsonFromState(state) {
     const json = {
       model_name: state.modelName,
       description: state.modelDescription,

@@ -1,5 +1,4 @@
 <div x-data="modelCreator()" 
-     @open-creator.window="showCreator = true"
      class="fixed inset-0 z-50 flex flex-col h-screen bg-white" 
      x-show="showCreator" 
      style="display: none;"
@@ -8,11 +7,20 @@
     <div class="bg-white border-b border-tertiary-light px-6 py-4 flex justify-between items-center shadow-sm">
         <h2 class="text-xl font-bold text-secondary">Custom Model Creator</h2>
         <div class="flex gap-2">
+            <input type="file" 
+                   accept=".json" 
+                   x-ref="importInput" 
+                   @change="readJsonFile($event)" 
+                   class="hidden" />
+
+            <button type="button" @click="importConfig()" class="mr-2 text-primary cursor-pointer hover:text-accent transition" title="Load from JSON">
+                <i class="fa-solid fa-upload text-lg"></i>
+            </button>
              <button type="button" @click="downloadConfig()" class="mr-2 text-primary cursor-pointer hover:text-accent transition" title="Save to JSON">
                 <i class="fa-solid fa-download text-lg"></i>
             </button>
-            <button type="button" @click="showCreator = false" class="px-4 py-2 text-primary hover:bg-tertiary-light cursor-pointer rounded-lg transition">Cancel</button>
-            <button type="button" @click="applyModel()" class="px-4 py-2 bg-primary cursor-pointer text-white font-semibold rounded-lg shadow-lg hover:shadow-accent-light transition">Use Model</button>
+            <button type="button" @click="$store.openCreator.close()" class="px-4 py-2 text-primary hover:bg-tertiary-light cursor-pointer rounded-lg transition">Cancel</button>
+            <button type="button" @click="applyModel(); $store.openCreator.close();" class="px-4 py-2 bg-primary cursor-pointer text-white font-semibold rounded-lg shadow-lg hover:shadow-accent-light transition">Use Model</button>
         </div>
     </div>
 
@@ -45,7 +53,7 @@
                 <div class="absolute top-4 right-6 text-primary/30 font-bold uppercase tracking-widest text-xs pointer-events-none">
                     Live JSON Preview
                 </div>
-                <pre class="text-primary" x-text="JSON.stringify(JsonBuilder.buildJson($data), null, 2)"></pre>
+                <pre class="text-primary" x-text="JSON.stringify(JsonBuilder.buildJsonFromState($data), null, 2)"></pre>
             </div>
         </div>
     </div>
