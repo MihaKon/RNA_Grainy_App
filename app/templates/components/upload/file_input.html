@@ -58,27 +58,20 @@
 
         <div class="mt-2 flex items-center justify-end gap-2 text-xs text-primary/40">
             <span>Or try example:</span>
+            <template x-for="([id, name], index) in Object.entries(EXAMPLES)" :key="id">
+                <span class="inline-flex items-center gap-1">
+                    <button type="button"
+                            @click="setExample(name)"
+                                class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer"
+                                :class="exampleId === name ? 'text-accent underline' : ''">
+                        <span x-text="name"></span>
+                    </button>
 
-            <button type="button" @click="setExample('1EHZ')"
-                class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer"
-                :class="exampleId === '1EHZ' ? 'text-accent underline' : ''">
-                1EHZ
-            </button>
-            <span class="select-none">•</span>
+                    <span x-show="index < Object.entries(EXAMPLES).length - 1"
+                        class="select-none">•</span>
+                </span>
+            </template>
 
-            <button type="button" @click="setExample('1MNX')"
-                class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer"
-                :class="exampleId === '1MNX' ? 'text-accent underline' : ''">
-                1MNX
-            </button>
-            <span class="select-none">•</span>
-
-            <button type="button" @click="setExample('2F8S')"
-                class="font-medium hover:text-accent hover:underline decoration-dashed underline-offset-2 transition-colors cursor-pointer"
-                :class="exampleId === '2F8S' ? 'text-accent underline' : ''">
-                2F8S
-            </button>
-        </div>
 
         <p x-show="errors.file" x-transition class="mt-1 text-xs text-danger font-medium ml-1">
             Please upload a file or enter a PDB ID.

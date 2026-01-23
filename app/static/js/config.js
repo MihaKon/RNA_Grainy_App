@@ -79,3 +79,9 @@ const UPLOAD_ENDPOINTS ={
   RCSB: "/upload/rcsb/",
   EXAMPLE: "/upload/example/",
 }
+
+const EXAMPLES = {
+  1: "1EHZ",
+  2: "1MNX",
+  3: "2F8S",
+}
