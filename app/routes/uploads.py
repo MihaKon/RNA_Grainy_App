@@ -3,7 +3,6 @@ from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from gemmi import Structure
 
-from app.coarse_grain.parser import process_structure_with_coarse_grain_model
 from app.exceptions import FileProcessingError
 from app.models import (
     COARSE_FILE_FORMAT,
