@@ -56,7 +56,7 @@ class DocsContextBuilder:
             "beads": cls.format_beads(raw_beads),
             "citations": cls.format_citations(config),
             "mapping": cls.format_mapping(model_cls),
-            "image_url": cls.get_image_url(image_name_for_url),
+            "image_url": cls.get_image_url(image_name_for_url)
         }
         return model_data
 
@@ -75,7 +75,7 @@ class DocsContextBuilder:
         return model_instance, data  # type: ignore
 
     @classmethod
-    def get_image_url(cls, model_name: str) -> str:
+    def get_image_url(cls, model_name: str | None) -> str | None:
         if model_name is None:
             return None
         filename = f"{model_name.lower()}.png"

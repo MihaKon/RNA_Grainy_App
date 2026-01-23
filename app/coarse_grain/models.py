@@ -366,18 +366,15 @@ class DynamicCoarseGrainModel(CalculateBeadModel):
     name_verbose: str = "Custom Model"
     
     def __init__(self, config_data: dict):
-        self._custom_config = config_data
+        self._cached_model_data = config_data
+        self.JSON_model_file = pathlib.Path()
     
-    @property
-    def JSON_model_file(self) -> pathlib.Path:
-        return pathlib.Path()
-
+    def read_json_model(self) -> dict | None:
+        return self._cached_model_data
+    
     @property
     def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
         return calculate_geometric_center
-    
-    def read_json_model(self) -> dict | None:
-        return self._custom_config
 
     def _get_residue_with_beads(self, res: Residue) -> Residue:
         """
@@ -422,6 +419,7 @@ class DynamicCoarseGrainModel(CalculateBeadModel):
                     new_atom.name = atom_name
                     new_atom.element = Element("C") 
                     res.add_atom(new_atom)
+        return res_clone
 
 
 @CoarseGrainModelRegistry.register
@@ -617,3 +615,4 @@ class HireModel(MassCenterModel):
                     current_atoms[atom_b_name].serial,
                     order=1,
                 )
+
