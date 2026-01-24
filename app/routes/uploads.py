@@ -22,9 +22,13 @@ def process_structure_and_get_metadata(
     file_content: str,
     file_format: SupportedFormats,
     selected_model: str,
+    models: list[int],
+    chains: list[str],
     custom_model_data: dict | None = None,
-) -> tuple[Structure, dict[str, int]]:
-    original_structure = StructureProcessor.parse_structure(file_content, file_format)
+) -> tuple[Structure, Structure, dict[str, int]]:
+    original_structure = StructureProcessor.parse_structure(
+        file_content, file_format, models=models, chains=chains
+    )
     coarse_structure = StructureProcessor.apply_coarse_graining(
         original_structure, selected_model, custom_model_data
     )
@@ -33,12 +37,12 @@ def process_structure_and_get_metadata(
         "original": StructureProcessor.get_structure_atom_count(original_structure),
         "coarse": StructureProcessor.get_structure_atom_count(coarse_structure),
     }
-    return coarse_structure, atom_counts
+    return original_structure, coarse_structure, atom_counts
 
 
 async def save_structures(
     job_id: str,
-    original_content: str,
+    original_structure: Structure,
     file_format: SupportedFormats,
     coarse_structure: Structure,
 ) -> None:
@@ -46,6 +50,7 @@ async def save_structures(
 
     original_format = file_format.normalize_format()
 
+    original_content = StructureProcessor.structure_to_cif_string(original_structure)
     cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
     pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
 
@@ -66,13 +71,22 @@ async def handle_request_and_render(
     filename: str,
     file_format: SupportedFormats,
     selected_model: str,
+    models: list[int],
+    chains: list[str],
     custom_model_data: dict | None = None,
 ) -> HTMLResponse:
     job_id = JobManager.create_job_id()
-    coarse_structure, atom_counts = process_structure_and_get_metadata(
-        file_content, file_format, selected_model, custom_model_data
+    original_structure, coarse_structure, atom_counts = (
+        process_structure_and_get_metadata(
+            file_content,
+            file_format,
+            selected_model,
+            models,
+            chains,
+            custom_model_data,
+        )
     )
-    await save_structures(job_id, file_content, file_format, coarse_structure)
+    await save_structures(job_id, original_structure, file_format, coarse_structure)
 
     context = StructureProcessor.build_comparison_context(
         request=request,
@@ -81,6 +95,8 @@ async def handle_request_and_render(
         file_format=file_format,
         selected_model=selected_model,
         atom_counts=atom_counts,
+        selected_models=models,
+        selected_chains=chains,
         custom_model_data=custom_model_data,
     )
     return TEMPLATES.TemplateResponse(
@@ -96,9 +112,15 @@ async def upload_file(
     file: UploadFile = File(...),
     selected_model: str = Form(...),
     custom_model_data: str = Form(None),
+    models: str = Form(None),
+    chains: str = Form(None),
 ) -> HTMLResponse:
     upload_req = FileUploadRequest(
-        file=file, selected_model=selected_model, custom_model_data=custom_model_data
+        file=file,
+        selected_model=selected_model,
+        custom_model_data=custom_model_data,
+        models=models,
+        chains=chains,
     )
     if upload_req.file.size is None:
         raise FileProcessingError("Uploaded file is empty.")
@@ -124,6 +146,8 @@ async def upload_file(
         filename,
         file_format,
         upload_req.selected_model,
+        models=upload_req.models,  # type: ignore
+        chains=upload_req.chains,  # type: ignore
         custom_model_data=upload_req.custom_model_data,  # type: ignore
     )
 
@@ -134,11 +158,15 @@ async def upload_rcsb(
     rcsb_id: str = Form(...),
     selected_model: str = Form(...),
     custom_model_data: str = Form(None),
+    models: str = Form(None),
+    chains: str = Form(None),
 ) -> HTMLResponse:
     rcsb_req = RCSBRequest(
         rcsb_id=rcsb_id,
         selected_model=selected_model,
         custom_model_data=custom_model_data,
+        models=models,
+        chains=chains,
     )  # type: ignore
 
     file_content = await fetch_rcsb_file(rcsb_req.rcsb_id)
@@ -156,6 +184,8 @@ async def upload_rcsb(
         filename,
         file_format,
         rcsb_req.selected_model,
+        models=rcsb_req.models,  # type: ignore
+        chains=rcsb_req.chains,  # type: ignore
         custom_model_data=rcsb_req.custom_model_data,  # type: ignore
     )
 
@@ -166,11 +196,15 @@ async def upload_example(
     example_id: str = Form(...),
     selected_model: str = Form(...),
     custom_model_data: str = Form(None),
+    models: str = Form(None),
+    chains: str = Form(None),
 ) -> HTMLResponse:
     example_req = ExampleRequest(
         example_id=example_id,
         selected_model=selected_model,
         custom_model_data=custom_model_data,
+        models=models,
+        chains=chains,
     )  # type: ignore
     example_path = (
         EXAMPLES_DIR / f"{example_req.example_id}.{SupportedFormats.CIF.value}"
@@ -198,5 +232,7 @@ async def upload_example(
         filename,
         file_format,
         example_req.selected_model,
+        models=example_req.models,  # type: ignore
+        chains=example_req.chains,  # type: ignore
         custom_model_data=example_req.custom_model_data,  # type: ignore
     )

@@ -12,8 +12,24 @@ from gemmi import (
 )
 
 from app.coarse_grain.parser import process_structure_with_coarse_grain_model
+from app.exceptions import AppException
 from app.models import COARSE_FILE_FORMAT, SupportedFormats
 from app.services.doc import DocsContextBuilder
+
+
+def filter_structure_inplace(
+    structure: Structure, models: list[int], chains: list[str]
+) -> None:
+    if models:
+        for i in range(len(structure) - 1, -1, -1):
+            if structure[i].num not in models:
+                del structure[i]
+
+    if chains:
+        for model in structure:
+            for i in range(len(model) - 1, -1, -1):
+                if model[i].name not in chains:
+                    del model[i]
 
 
 class StructureProcessor:
@@ -23,12 +39,22 @@ class StructureProcessor:
         return atom_counts
 
     @staticmethod
-    def parse_structure(content: str, file_format: SupportedFormats) -> Structure:
+    def parse_structure(
+        content: str,
+        file_format: SupportedFormats,
+        models: list[int],
+        chains: list[str],
+    ) -> Structure:
         if file_format == SupportedFormats.CIF or file_format == SupportedFormats.MMCIF:
             dcif = cif.read_string(content)
             structure = make_structure_from_block(dcif.sole_block())
         else:
             structure = read_pdb_string(content)
+        filter_structure_inplace(structure, models, chains)
+        if not structure or not len(structure):
+            raise AppException(
+                "Provided structure after filtration is empty. Check selected models and chains."
+            )
         return structure
 
     @staticmethod
@@ -65,6 +91,8 @@ class StructureProcessor:
         file_format: SupportedFormats,
         selected_model: str,
         atom_counts: dict[str, int],
+        selected_models: list[int],
+        selected_chains: list[str],
         custom_model_data: dict | None = None,
     ) -> DefaultDict[str, Any]:
         original_format = file_format.normalize_format()
@@ -107,8 +135,8 @@ class StructureProcessor:
                 "coarse": coarse_atom_count,
                 "reduction": f"{reduction:.2%}",
             },
-            "selected_chains": ["TODO"],
-            "selected_models": ["TODO"],
+            "selected_chains": selected_chains,
+            "selected_models": selected_models,
             "model": model_data,
         }
 
