@@ -95,6 +95,8 @@ async def handle_request_and_render(
         file_format=file_format,
         selected_model=selected_model,
         atom_counts=atom_counts,
+        selected_models=models,
+        selected_chains=chains,
         custom_model_data=custom_model_data,
     )
     return TEMPLATES.TemplateResponse(

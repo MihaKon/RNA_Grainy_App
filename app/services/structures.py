@@ -12,6 +12,7 @@ from gemmi import (
 )
 
 from app.coarse_grain.parser import process_structure_with_coarse_grain_model
+from app.exceptions import AppException
 from app.models import COARSE_FILE_FORMAT, SupportedFormats
 from app.services.doc import DocsContextBuilder
 
@@ -50,6 +51,10 @@ class StructureProcessor:
         else:
             structure = read_pdb_string(content)
         filter_structure_inplace(structure, models, chains)
+        if not structure or not len(structure):
+            raise AppException(
+                "Provided structure after filtration is empty. Check selected models and chains."
+            )
         return structure
 
     @staticmethod
@@ -86,6 +91,8 @@ class StructureProcessor:
         file_format: SupportedFormats,
         selected_model: str,
         atom_counts: dict[str, int],
+        selected_models: list[int],
+        selected_chains: list[str],
         custom_model_data: dict | None = None,
     ) -> DefaultDict[str, Any]:
         original_format = file_format.normalize_format()
@@ -128,8 +135,8 @@ class StructureProcessor:
                 "coarse": coarse_atom_count,
                 "reduction": f"{reduction:.2%}",
             },
-            "selected_chains": ["TODO"],
-            "selected_models": ["TODO"],
+            "selected_chains": selected_chains,
+            "selected_models": selected_models,
             "model": model_data,
         }
 
