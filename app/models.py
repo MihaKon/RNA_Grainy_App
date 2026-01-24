@@ -24,13 +24,13 @@ class SupportedFormats(str, Enum):
 COARSE_FILE_FORMAT = SupportedFormats.MMCIF
 
 
-def is_letters_and_commas(text):
+def is_letters_and_commas(text: str) -> bool:
     pattern = r"[a-zA-Z,]+"
 
     return bool(re.fullmatch(pattern, text))
 
 
-def is_numbers_and_commas(text):
+def is_numbers_and_commas(text: str) -> bool:
     pattern = r"[\d,]+"
 
     return bool(re.fullmatch(pattern, text))
