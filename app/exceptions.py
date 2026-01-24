@@ -1,39 +1,50 @@
 from fastapi import Request
 from fastapi.responses import HTMLResponse
-from pydantic import ValidationError
+
 from app.messages import render_form_error_message
+
 
 class AppException(Exception):
     pass
 
+
 class InvalidRequestError(AppException):
     """Exception raised for invalid requests."""
+
     pass
+
 
 class FileProcessingError(AppException):
     """Exception raised for errors during file processing."""
+
     pass
+
 
 class ModelLoadingError(AppException):
     """Exception raised for errors during model loading."""
+
     pass
+
 
 class InvalidModelParametersError(AppException):
     """Exception raised for invalid model parameters."""
+
     pass
+
 
 async def app_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
     error_message = str(exc)
 
     return render_form_error_message(
-        request=request,
-        error=error_message,
-        status_code=422
+        request=request, error=error_message, status_code=422
     )
 
-async def validation_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
+
+async def validation_exception_handler(
+    request: Request, exc: Exception
+) -> HTMLResponse:
     if isinstance(exc, ValueError):
-        first_error = exc.errors()[0]
+        first_error = exc.errors()[0]  # type: ignore
         error_type = first_error.get("type", "")
         field_path = first_error.get("loc", [])
         field_name = str(field_path[-1]) if field_path else "field"
@@ -57,7 +68,5 @@ async def validation_exception_handler(request: Request, exc: Exception) -> HTML
         error_message = str(exc).split("Value error, ")[-1]
 
     return render_form_error_message(
-        request=request,
-        error=error_message,
-        status_code=422
+        request=request, error=error_message, status_code=422
     )

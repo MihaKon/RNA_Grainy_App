@@ -1,7 +1,11 @@
 import json
 from typing import Any, Tuple
 
-from app.coarse_grain.models import BaseCoarseGrainModel, CoarseGrainModelRegistry, DynamicCoarseGrainModel
+from app.coarse_grain.models import (
+    BaseCoarseGrainModel,
+    CoarseGrainModelRegistry,
+    DynamicCoarseGrainModel,
+)
 from app.settings import CITATIONS_DIR, MODELS_IMAGES_DIR, STATIC_DIR
 
 RESIDUE_TYPE = {
@@ -29,13 +33,17 @@ class DocsContextBuilder:
         return models_data
 
     @classmethod
-    def get_model(cls, model_name: str, custom_model_data: dict | None = None) -> dict[str, Any]:  # type: ignore
+    def get_model(
+        cls, model_name: str, custom_model_data: dict | None = None
+    ) -> dict[str, Any]:  # type: ignore
         data = cls._build_model_data(model_name, custom_model_data)
         data.pop("raw_beads", None)
         return data
 
     @classmethod
-    def _build_model_data(cls, model_name: str, custom_model_data: dict | None = None) -> dict[str, Any]:  # type: ignore
+    def _build_model_data(
+        cls, model_name: str, custom_model_data: dict | None = None
+    ) -> dict[str, Any]:  # type: ignore
         model_cls, config = cls.load_model_config(model_name, custom_model_data)
         raw_beads = config.get("beads_per_residue", [])
 
@@ -61,11 +69,13 @@ class DocsContextBuilder:
         return model_data
 
     @classmethod
-    def load_model_config(cls, model_name: str, custom_model_data: dict[str, Any] | None = None) -> Tuple[BaseCoarseGrainModel, dict[str, Any]]:  # type: ignore
+    def load_model_config(
+        cls, model_name: str, custom_model_data: dict[str, Any] | None = None
+    ) -> Tuple[BaseCoarseGrainModel, dict[str, Any]]:  # type: ignore
         if model_name == "custom":
             if custom_model_data is None:
                 raise ValueError("Custom model selected but no data provided.")
-            
+
             instance = DynamicCoarseGrainModel(custom_model_data)
             return instance, custom_model_data
 
@@ -96,7 +106,7 @@ class DocsContextBuilder:
             row_data = []
             bead_names = raw_mapping[res].get("bead_names", {})
             descriptions = raw_mapping[res].get("description", {})
-            
+
             for bead_id in sorted(bead_names.keys()):
                 row_data.append(
                     {
@@ -105,7 +115,7 @@ class DocsContextBuilder:
                         "description": descriptions.get(bead_id, "-"),
                     }
                 )
-            
+
             residue_type = RESIDUE_TYPE.get(res, "Other")
             if formatted_mapping.get(residue_type) is not None:
                 formatted_mapping[residue_type].append(row_data)

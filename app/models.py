@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import json
 from enum import Enum
 
 from fastapi import UploadFile
-import json
 from pydantic import BaseModel, field_validator
 
 from app.json_validation import CustomModelDefinition
@@ -25,14 +25,14 @@ COARSE_FILE_FORMAT = SupportedFormats.MMCIF
 
 class UploadBase(BaseModel):
     selected_model: str
-    custom_model_data: dict | None = None
+    custom_model_data: dict | str | None = None
 
     @field_validator("custom_model_data", mode="before")
     @classmethod
     def validate_json_structure(cls, v: str | dict | None) -> dict | None:
         if not v or (isinstance(v, str) and v.strip() == ""):
             return None
-        
+
         if isinstance(v, str):
             try:
                 data = json.loads(v)
@@ -40,7 +40,7 @@ class UploadBase(BaseModel):
                 raise ValueError("Invalid JSON format.")
         else:
             data = v
-        
+
         try:
             CustomModelDefinition.model_validate(data)
             return data
@@ -48,6 +48,7 @@ class UploadBase(BaseModel):
             raise ValueError("Invalid JSON format.")
         except Exception as e:
             raise ValueError(f"Invalid Custom Model structure: {e}")
+
 
 class FileUploadRequest(UploadBase):
     file: UploadFile
@@ -72,6 +73,7 @@ class RCSBRequest(UploadBase):
     def validate_rcsb_id(cls, v: str) -> str:
         v = v.strip().upper()
         return v
+
 
 class ExampleRequest(UploadBase):
     example_id: str

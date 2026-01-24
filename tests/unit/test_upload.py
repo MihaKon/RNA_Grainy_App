@@ -20,7 +20,7 @@ class TestRCSBUpload:
             data={"rcsb_id": "9XYZ", "selected_model": "SimModel"},
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     @pytest.mark.parametrize("rcsb_id", ["4GXY", "4gxy"])
     def test_fetch_rcsb_valid_id_returns_200(
@@ -60,7 +60,7 @@ class TestRCSBUpload:
             data={"rcsb_id": "9XYZ", "selected_model": "SimModel"},
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_fetch_rcsb_without_id_returns_422(self, client: TestClient) -> None:
         response = client.post(

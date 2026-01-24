@@ -33,9 +33,7 @@ class StructureProcessor:
 
     @staticmethod
     def apply_coarse_graining(
-        structure: Structure, 
-        model: str, 
-        custom_model_data: dict | None = None 
+        structure: Structure, model: str, custom_model_data: dict | None = None
     ) -> Structure:
         return process_structure_with_coarse_grain_model(
             structure, model, custom_model_data
@@ -67,14 +65,18 @@ class StructureProcessor:
         file_format: SupportedFormats,
         selected_model: str,
         atom_counts: dict[str, int],
-        custom_model_data: dict | None = None, 
+        custom_model_data: dict | None = None,
     ) -> DefaultDict[str, Any]:
         original_format = file_format.normalize_format()
 
         model_data = DocsContextBuilder.get_model(selected_model, custom_model_data)
         original_atom_count = atom_counts["original"]
         coarse_atom_count = atom_counts["coarse"]
-        reduction = 1 - (coarse_atom_count / original_atom_count) if original_atom_count > 0 else 0
+        reduction = (
+            1 - (coarse_atom_count / original_atom_count)
+            if original_atom_count > 0
+            else 0
+        )
 
         reference_url = str(
             request.url_for(

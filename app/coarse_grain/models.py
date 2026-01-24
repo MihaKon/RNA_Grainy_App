@@ -6,7 +6,6 @@ import logging
 import pathlib
 from abc import ABC, abstractmethod
 from typing import Callable
-from app.exceptions import InvalidModelParametersError
 
 from gemmi import (
     Asu,
@@ -25,6 +24,7 @@ from app.coarse_grain.geometry import (
     calculate_center_of_mass,
     calculate_geometric_center,
 )
+from app.exceptions import InvalidModelParametersError
 from app.settings import COARSE_GRAIN_MODELS_DIR
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ class CoarseGrainModelRegistry:
             raise KeyError(
                 f"Model '{class_name}' not found. Available models: {available}"
             )
-        
+
         return cls._registry[class_name]
 
     @classmethod
@@ -120,7 +120,9 @@ class BaseCoarseGrainModel(ABC):
     def connectivity_rules(self) -> tuple[list, dict]:
         conn = self.config.get("connectivity")
         if not conn:
-            raise InvalidModelParametersError("Configuration missing required 'connectivity' section")
+            raise InvalidModelParametersError(
+                "Configuration missing required 'connectivity' section"
+            )
 
         intra = conn.get("intra_residue", [])
         inter_config = conn.get("inter_residue", [])
@@ -209,13 +211,16 @@ class BaseCoarseGrainModel(ABC):
                 continue
 
             if intra_rules:
-                self._add_intra_residue_connections(structure, res, intra_rules, chain.name)
+                self._add_intra_residue_connections(
+                    structure, res, intra_rules, chain.name
+                )
 
             if prev_res and inter_rule.get("tail") and inter_rule.get("head"):
-                self._add_inter_residue_connection(structure, prev_res, res, inter_rule, chain.name)
+                self._add_inter_residue_connection(
+                    structure, prev_res, res, inter_rule, chain.name
+                )
 
             prev_res = res
-
 
     def _add_intra_residue_connections(
         self, structure: Structure, res: Residue, intra_rules: list, chain_name: str
@@ -358,6 +363,7 @@ class MassCenterModel(CalculateBeadModel):
     def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
         return calculate_center_of_mass
 
+
 class DynamicCoarseGrainModel(CalculateBeadModel):
     """
     Model that builds itself from a runtime dictionary configuration,
@@ -365,22 +371,21 @@ class DynamicCoarseGrainModel(CalculateBeadModel):
     """
 
     name_verbose: str
-    DEFAULT_INTER_TAIL = None
-    DEFAULT_INTER_HEAD = None
+    DEFAULT_INTER_TAIL: str | None = None  # type: ignore
+    DEFAULT_INTER_HEAD: str | None = None  # type: ignore
 
     def __init__(self, config_data: dict):
         self._cached_model_data = config_data
         self.JSON_model_file = pathlib.Path()
-        self.name_verbose = self.config['model_name']
+        self.name_verbose = self.config["model_name"]
 
-    
     def read_json_model(self) -> dict | None:
         return self._cached_model_data
-    
+
     @property
     def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
         return calculate_geometric_center
-        
+
     def _get_residue_with_beads(self, res: Residue) -> Residue:
         """
         Overrides the base method to handle mixed strategies for a single residue.
@@ -392,10 +397,10 @@ class DynamicCoarseGrainModel(CalculateBeadModel):
 
         config = self.nucleotides_config[res.name]
         strategies = config.get("strategies", {})
-                
+
         for bead_id, atom_name in config["bead_names"].items():
             atoms = self._get_atoms_for_bead(bead_id, res_clone)
-            
+
             if not atoms:
                 continue
 
@@ -403,26 +408,28 @@ class DynamicCoarseGrainModel(CalculateBeadModel):
 
             if strategy == "direct":
                 atom_name_to_find = atoms[0]
-                original_atom = next((a for a in res_clone if a.name == atom_name_to_find), None)
-                
+                original_atom = next(
+                    (a for a in res_clone if a.name == atom_name_to_find), None
+                )
+
                 if original_atom:
                     new_atom = original_atom.clone()
-                    new_atom.name = atom_name 
+                    new_atom.name = atom_name
                     res.add_atom(new_atom)
-                    
+
             elif strategy in ["geometric_center", "center_of_mass"]:
                 if strategy == "center_of_mass":
                     func = calculate_center_of_mass
                 else:
                     func = calculate_geometric_center
-                
+
                 new_pos = func(res_clone, atoms)
-                
+
                 if new_pos:
                     new_atom = Atom()
                     new_atom.pos = new_pos
                     new_atom.name = atom_name
-                    new_atom.element = Element("C") 
+                    new_atom.element = Element("C")
                     res.add_atom(new_atom)
         return res_clone
 
@@ -620,4 +627,3 @@ class HireModel(MassCenterModel):
                     current_atoms[atom_b_name].serial,
                     order=1,
                 )
-
