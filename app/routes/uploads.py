@@ -96,9 +96,15 @@ async def upload_file(
     file: UploadFile = File(...),
     selected_model: str = Form(...),
     custom_model_data: str = Form(None),
+    models: str = Form(None),
+    chains: str = Form(None),
 ) -> HTMLResponse:
     upload_req = FileUploadRequest(
-        file=file, selected_model=selected_model, custom_model_data=custom_model_data
+        file=file,
+        selected_model=selected_model,
+        custom_model_data=custom_model_data,
+        models=models,
+        chains=chains,
     )
     if upload_req.file.size is None:
         raise FileProcessingError("Uploaded file is empty.")
@@ -134,11 +140,15 @@ async def upload_rcsb(
     rcsb_id: str = Form(...),
     selected_model: str = Form(...),
     custom_model_data: str = Form(None),
+    models: str = Form(None),
+    chains: str = Form(None),
 ) -> HTMLResponse:
     rcsb_req = RCSBRequest(
         rcsb_id=rcsb_id,
         selected_model=selected_model,
         custom_model_data=custom_model_data,
+        models=models,
+        chains=chains,
     )  # type: ignore
 
     file_content = await fetch_rcsb_file(rcsb_req.rcsb_id)
@@ -166,11 +176,15 @@ async def upload_example(
     example_id: str = Form(...),
     selected_model: str = Form(...),
     custom_model_data: str = Form(None),
+    models: str = Form(None),
+    chains: str = Form(None),
 ) -> HTMLResponse:
     example_req = ExampleRequest(
         example_id=example_id,
         selected_model=selected_model,
         custom_model_data=custom_model_data,
+        models=models,
+        chains=chains,
     )  # type: ignore
     example_path = (
         EXAMPLES_DIR / f"{example_req.example_id}.{SupportedFormats.CIF.value}"
