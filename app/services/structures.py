@@ -16,6 +16,21 @@ from app.models import COARSE_FILE_FORMAT, SupportedFormats
 from app.services.doc import DocsContextBuilder
 
 
+def filter_structure_inplace(
+    structure: Structure, models: list[int], chains: list[str]
+) -> None:
+    if models:
+        for i in range(len(structure) - 1, -1, -1):
+            if structure[i].num not in models:
+                del structure[i]
+
+    if chains:
+        for model in structure:
+            for i in range(len(model) - 1, -1, -1):
+                if model[i].name not in chains:
+                    del model[i]
+
+
 class StructureProcessor:
     @staticmethod
     def get_structure_atom_count(structure: Structure) -> int:
@@ -23,12 +38,18 @@ class StructureProcessor:
         return atom_counts
 
     @staticmethod
-    def parse_structure(content: str, file_format: SupportedFormats) -> Structure:
+    def parse_structure(
+        content: str,
+        file_format: SupportedFormats,
+        models: list[int],
+        chains: list[str],
+    ) -> Structure:
         if file_format == SupportedFormats.CIF or file_format == SupportedFormats.MMCIF:
             dcif = cif.read_string(content)
             structure = make_structure_from_block(dcif.sole_block())
         else:
             structure = read_pdb_string(content)
+        filter_structure_inplace(structure, models, chains)
         return structure
 
     @staticmethod
