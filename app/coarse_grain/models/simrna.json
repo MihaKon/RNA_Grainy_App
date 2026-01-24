@@ -59,7 +59,7 @@
       ["A5", "A3"]
     ],
     "inter_residue": [
-      {
+      { 
         "source": "A2",
         "target": "A1"
       }

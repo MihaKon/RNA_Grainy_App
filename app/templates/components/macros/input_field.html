@@ -1,0 +1,37 @@
+{% macro input_field(model, label, placeholder="", type="default", extra_attrs="", error_condition="", extra_classes="", icon="", name="") %}
+<div>
+    {% if label %}
+    <label class="text-xs font-semibold text-primary uppercase">{{ label }}</label>
+    {% endif %}
+
+    <div class="relative">
+        {% if icon %}
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-primary/40">
+            <i class="{{ icon }}"></i>
+        </div>
+        {% endif %}
+
+        {% if type == "default" %}
+        <input
+            type="text"
+            x-model="{{ model }}"
+            placeholder="{{ placeholder }}"
+            {{ extra_attrs }}
+            class="block w-full {{ 'pl-10' if icon else 'pl-4' }} pr-4 py-2.5 text-sm rounded-xl border bg-white shadow-sm outline-none transition-all placeholder:text-primary/30 border-primary/10 focus:border-accent focus:ring-2 focus:ring-focus {{ extra_classes }}"
+        />
+        {% elif type == "validated" %}
+        <input
+            type="text"
+            x-model="{{ model }}"
+            {% if name %} name="{{ name }}" {% endif %}
+            placeholder="{{ placeholder }}"
+            {{ extra_attrs }}
+            class="block w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border bg-white shadow-sm outline-none transition-all placeholder:text-primary/30 {{ extra_classes }}"
+            :class="{{ error_condition }} 
+                             ? 'border-danger focus:border-danger' 
+                             : 'border-primary/10 focus:border-accent focus:ring-2 focus:ring-focus'"
+        />
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}

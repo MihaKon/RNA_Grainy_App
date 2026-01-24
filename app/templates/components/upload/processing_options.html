@@ -1,0 +1,26 @@
+{% from 'components/macros/input_field.html' import input_field %}
+
+<div class="space-y-1">
+    <div class="flex items-center justify-between">
+        <label class="text-sm font-medium text-primary ml-1">Optional Selection</label>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-1">
+            {{ input_field(
+                model='chain_ids', 
+                label='Chains', 
+                placeholder='e.g. A, B'
+            ) }}
+            <p class="text-xs text-primary/40 ml-1">Leave empty for all chains</p>
+        </div>
+        <div class="space-y-1">
+            {{ input_field(
+                model='model_ids', 
+                label='Models', 
+                placeholder='e.g. 1, 2'
+            ) }}
+            <p class="text-xs text-primary/40 ml-1">Empty: 1st model, -1: all</p>
+        </div>
+    </div>
+</div>

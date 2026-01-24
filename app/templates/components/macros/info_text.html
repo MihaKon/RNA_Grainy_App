@@ -1,0 +1,8 @@
+{% macro info_text(condition, message, icon="fa-circle-info", type="info") %}
+<p
+  x-show="{{ condition }}"
+  class="text-xs mt-1 flex items-center gap-1 {{ 'text-danger font-bold' if type == 'error' else 'text-primary' }}"
+>
+  <i class="fa-solid {{ icon }}"></i> {{ message }}
+</p>
+{% endmacro %}

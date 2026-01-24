@@ -5,46 +5,59 @@ from gemmi import Structure
 from app.exceptions import FileProcessingError
 from app.models import (
     COARSE_FILE_FORMAT,
+    ExampleRequest,
     FileUploadRequest,
     RCSBRequest,
-    ExampleRequest,
     SupportedFormats,
 )
 from app.rcsb import fetch_rcsb_file
 from app.services.jobs import JobManager
 from app.services.structures import StructureProcessor
-from app.settings import MAX_FILE_UPLOAD_SIZE, TEMPLATES, EXAMPLES_DIR
+from app.settings import EXAMPLES_DIR, MAX_FILE_UPLOAD_SIZE, TEMPLATES
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
 
-def process_structure(
+def process_structure_and_get_metadata(
     file_content: str,
     file_format: SupportedFormats,
     selected_model: str,
-) -> Structure:
+    custom_model_data: dict | None = None,
+) -> tuple[Structure, dict[str, int]]:
     original_structure = StructureProcessor.parse_structure(file_content, file_format)
-    return StructureProcessor.apply_coarse_graining(
-        original_structure, selected_model
+    coarse_structure = StructureProcessor.apply_coarse_graining(
+        original_structure, selected_model, custom_model_data
     )
 
-async def run_job_processing(
+    atom_counts = {
+        "original": StructureProcessor.get_structure_atom_count(original_structure),
+        "coarse": StructureProcessor.get_structure_atom_count(coarse_structure),
+    }
+    return coarse_structure, atom_counts
+
+
+async def save_structures(
     job_id: str,
-    file_content: str,
+    original_content: str,
     file_format: SupportedFormats,
-    selected_model: str,
+    coarse_structure: Structure,
 ) -> None:
     JobManager.setup_job_dir(job_id)
 
     original_format = file_format.normalize_format()
-    coarse_structure = process_structure(file_content, file_format, selected_model)
 
     cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
     pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
 
-    await JobManager.create_file(job_id, file_content, f"reference.{original_format.value}")
-    await JobManager.create_file(job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}")
-    await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
+    await JobManager.create_file(
+        job_id, original_content, f"reference.{original_format.value}"
+    )
+    await JobManager.create_file(
+        job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
+    )
+    await JobManager.create_file(
+        job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}"
+    )
 
 
 async def handle_request_and_render(
@@ -53,12 +66,22 @@ async def handle_request_and_render(
     filename: str,
     file_format: SupportedFormats,
     selected_model: str,
+    custom_model_data: dict | None = None,
 ) -> HTMLResponse:
     job_id = JobManager.create_job_id()
-    await run_job_processing(job_id, file_content, file_format, selected_model)
+    coarse_structure, atom_counts = process_structure_and_get_metadata(
+        file_content, file_format, selected_model, custom_model_data
+    )
+    await save_structures(job_id, file_content, file_format, coarse_structure)
 
     context = StructureProcessor.build_comparison_context(
-        request, job_id, filename, file_format, selected_model
+        request=request,
+        job_id=job_id,
+        filename=filename,
+        file_format=file_format,
+        selected_model=selected_model,
+        atom_counts=atom_counts,
+        custom_model_data=custom_model_data,
     )
     return TEMPLATES.TemplateResponse(
         request=request,
@@ -72,8 +95,11 @@ async def upload_file(
     request: Request,
     file: UploadFile = File(...),
     selected_model: str = Form(...),
+    custom_model_data: str = Form(None),
 ) -> HTMLResponse:
-    upload_req = FileUploadRequest(file=file, selected_model=selected_model)  # type: ignore
+    upload_req = FileUploadRequest(
+        file=file, selected_model=selected_model, custom_model_data=custom_model_data
+    )
     if upload_req.file.size is None:
         raise FileProcessingError("Uploaded file is empty.")
     elif upload_req.file.size > MAX_FILE_UPLOAD_SIZE:
@@ -93,7 +119,12 @@ async def upload_file(
     filename: str = upload_req.file.filename.split(".")[0]  # type: ignore
 
     return await handle_request_and_render(
-        request, file_content, filename, file_format, upload_req.selected_model
+        request,
+        file_content,
+        filename,
+        file_format,
+        upload_req.selected_model,
+        custom_model_data=upload_req.custom_model_data,  # type: ignore
     )
 
 
@@ -102,8 +133,13 @@ async def upload_rcsb(
     request: Request,
     rcsb_id: str = Form(...),
     selected_model: str = Form(...),
+    custom_model_data: str = Form(None),
 ) -> HTMLResponse:
-    rcsb_req = RCSBRequest(rcsb_id=rcsb_id, selected_model=selected_model)  # type: ignore
+    rcsb_req = RCSBRequest(
+        rcsb_id=rcsb_id,
+        selected_model=selected_model,
+        custom_model_data=custom_model_data,
+    )  # type: ignore
 
     file_content = await fetch_rcsb_file(rcsb_req.rcsb_id)
     if file_content is None:
@@ -115,7 +151,12 @@ async def upload_rcsb(
     filename: str = rcsb_req.rcsb_id
 
     return await handle_request_and_render(
-        request, file_content, filename, file_format, rcsb_req.selected_model
+        request,
+        file_content,
+        filename,
+        file_format,
+        rcsb_req.selected_model,
+        custom_model_data=rcsb_req.custom_model_data,  # type: ignore
     )
 
 
@@ -124,24 +165,38 @@ async def upload_example(
     request: Request,
     example_id: str = Form(...),
     selected_model: str = Form(...),
-) -> HTMLResponse: 
-    example_req = ExampleRequest(example_id=example_id, selected_model=selected_model)  # type: ignore
-    example_path = EXAMPLES_DIR / f"{example_req.example_id}.{SupportedFormats.CIF.value}"
+    custom_model_data: str = Form(None),
+) -> HTMLResponse:
+    example_req = ExampleRequest(
+        example_id=example_id,
+        selected_model=selected_model,
+        custom_model_data=custom_model_data,
+    )  # type: ignore
+    example_path = (
+        EXAMPLES_DIR / f"{example_req.example_id}.{SupportedFormats.CIF.value}"
+    )
 
     if not example_path.exists():
-        raise FileProcessingError(f"Example file not found for ID: {example_req.example_id}")
-    
+        raise FileProcessingError(
+            f"Example file not found for ID: {example_req.example_id}"
+        )
+
     try:
         file_content = example_path.read_text(encoding="utf-8")
     except UnicodeDecodeError as e:
         raise FileProcessingError(f"Error reading example file: {e}")
-    
+
     if file_content == "":
         raise FileProcessingError("Example file is empty.")
-    
+
     file_format = SupportedFormats.CIF
     filename: str = example_req.example_id
 
     return await handle_request_and_render(
-        request, file_content, filename, file_format, example_req.selected_model
+        request,
+        file_content,
+        filename,
+        file_format,
+        example_req.selected_model,
+        custom_model_data=example_req.custom_model_data,  # type: ignore
     )

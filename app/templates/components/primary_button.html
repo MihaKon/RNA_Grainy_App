@@ -1,5 +1,5 @@
 {% macro primary_button(id='', variant='primary', text='', classes='', button_type='button', download=None, href=None) %}
-  {% set base_classes = "py-3 hover:cursor-pointer text-white font-semibold rounded-xl shadow-md transition transform duration-300 ease-in-out hover:scale-[1.02] flex items-center justify-center text-center" %}
+  {% set base_classes = "py-3 hover:cursor-pointer text-white font-semibold rounded-xl shadow-lg shadow-accent/20 hover:shadow-accent/40 transition transform duration-300 ease-in-out hover:scale-[1.02] flex items-center justify-center text-center" %}
   {% set variants = {"primary": "bg-primary hover:bg-secondary", "danger": "bg-red-500 hover:bg-red-700"} %}
   {% set all_classes = [
       base_classes,

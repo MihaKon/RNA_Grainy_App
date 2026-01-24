@@ -1,7 +1,11 @@
 import json
 from typing import Any, Tuple
 
-from app.coarse_grain.models import BaseCoarseGrainModel, CoarseGrainModelRegistry
+from app.coarse_grain.models import (
+    BaseCoarseGrainModel,
+    CoarseGrainModelRegistry,
+    DynamicCoarseGrainModel,
+)
 from app.settings import CITATIONS_DIR, MODELS_IMAGES_DIR, STATIC_DIR
 
 RESIDUE_TYPE = {
@@ -29,15 +33,26 @@ class DocsContextBuilder:
         return models_data
 
     @classmethod
-    def get_model(cls, model_name: str) -> dict[str, Any]:  # type: ignore
-        data = cls._build_model_data(model_name)
+    def get_model(
+        cls, model_name: str, custom_model_data: dict | None = None
+    ) -> dict[str, Any]:  # type: ignore
+        data = cls._build_model_data(model_name, custom_model_data)
         data.pop("raw_beads", None)
         return data
 
     @classmethod
-    def _build_model_data(cls, model_name: str) -> dict[str, Any]:  # type: ignore
-        model_cls, config = cls.load_model_config(model_name)
+    def _build_model_data(
+        cls, model_name: str, custom_model_data: dict | None = None
+    ) -> dict[str, Any]:  # type: ignore
+        model_cls, config = cls.load_model_config(model_name, custom_model_data)
         raw_beads = config.get("beads_per_residue", [])
+
+        if not raw_beads and model_name == "custom":
+            counts = set()
+            for res_cfg in model_cls.nucleotides_config.values():
+                counts.add(len(res_cfg.get("bead_names", {})))
+            raw_beads = sorted(list(counts))
+        image_name_for_url = None if model_name == "custom" else model_name
 
         model_data = {
             "id": model_name,
@@ -49,19 +64,30 @@ class DocsContextBuilder:
             "beads": cls.format_beads(raw_beads),
             "citations": cls.format_citations(config),
             "mapping": cls.format_mapping(model_cls),
-            "image_url": cls.get_image_url(model_name),
+            "image_url": cls.get_image_url(image_name_for_url) or "",
         }
         return model_data
 
     @classmethod
-    def load_model_config(cls, model_name: str) -> Tuple[Any, dict[str, Any]]:  # type: ignore
+    def load_model_config(
+        cls, model_name: str, custom_model_data: dict[str, Any] | None = None
+    ) -> Tuple[BaseCoarseGrainModel, dict[str, Any]]:  # type: ignore
+        if model_name == "custom":
+            if custom_model_data is None:
+                raise ValueError("Custom model selected but no data provided.")
+
+            instance = DynamicCoarseGrainModel(custom_model_data)
+            return instance, custom_model_data
+
         model_cls = CoarseGrainModelRegistry.get_model(model_name)
         model_instance = model_cls()
         data = model_instance.read_json_model()
-        return model_cls, data  # type: ignore
+        return model_instance, data  # type: ignore
 
     @classmethod
-    def get_image_url(cls, model_name: str) -> str:
+    def get_image_url(cls, model_name: str | None) -> str | None:
+        if model_name is None:
+            return None
         filename = f"{model_name.lower()}.png"
         relative_path = MODELS_IMAGES_DIR.relative_to(STATIC_DIR) / filename
         img_path = relative_path.as_posix()
@@ -72,21 +98,25 @@ class DocsContextBuilder:
         return " or ".join(str(bead) for bead in beads)
 
     @classmethod
-    def format_mapping(cls, model_cls: type[BaseCoarseGrainModel]) -> dict[str, Any]:  # type: ignore
+    def format_mapping(cls, model_instance: BaseCoarseGrainModel) -> dict[str, Any]:  # type: ignore
         formatted_mapping: dict = {}
-        raw_mapping = model_cls().nucleotides_config
+        raw_mapping = model_instance.nucleotides_config
 
         for res in raw_mapping.keys():
             row_data = []
-            for bead_id in raw_mapping[res]["bead_names"].keys():
+            bead_names = raw_mapping[res].get("bead_names", {})
+            descriptions = raw_mapping[res].get("description", {})
+
+            for bead_id in sorted(bead_names.keys()):
                 row_data.append(
                     {
                         "bead_id": bead_id,
-                        "bead": raw_mapping[res]["bead_names"][bead_id],
-                        "description": raw_mapping[res]["description"][bead_id],
+                        "bead": bead_names[bead_id],
+                        "description": descriptions.get(bead_id, "-"),
                     }
                 )
-            residue_type = RESIDUE_TYPE[res]
+
+            residue_type = RESIDUE_TYPE.get(res, "Other")
             if formatted_mapping.get(residue_type) is not None:
                 formatted_mapping[residue_type].append(row_data)
             else:
@@ -108,6 +138,6 @@ class DocsContextBuilder:
 
         citations = []
         for i, k in enumerate(citations_keys.values(), start=1):
-            citations.append(f"{i}. {citations_values.get(k)}")
+            citations.append(f"{i}. {citations_values.get(k, k)}")
 
         return citations

@@ -24,6 +24,7 @@ from app.coarse_grain.geometry import (
     calculate_center_of_mass,
     calculate_geometric_center,
 )
+from app.exceptions import InvalidModelParametersError
 from app.settings import COARSE_GRAIN_MODELS_DIR
 
 logger = logging.getLogger(__name__)
@@ -53,6 +54,7 @@ class CoarseGrainModelRegistry:
             raise KeyError(
                 f"Model '{class_name}' not found. Available models: {available}"
             )
+
         return cls._registry[class_name]
 
     @classmethod
@@ -86,7 +88,7 @@ class BaseCoarseGrainModel(ABC):
     def config(self) -> dict:
         config = self.read_json_model()
         if not config:
-            raise ValueError("Configuration is missing.")
+            raise InvalidModelParametersError("Configuration is missing.")
         return config
 
     @property
@@ -112,14 +114,15 @@ class BaseCoarseGrainModel(ABC):
                     for config_name, config_values in map["config"].items():
                         for k, v in config_values.items():
                             nucleotides_map[res][config_name][k] = v
-
         return nucleotides_map
 
     @property
     def connectivity_rules(self) -> tuple[list, dict]:
         conn = self.config.get("connectivity")
         if not conn:
-            raise ValueError("Configuration missing required 'connectivity' section")
+            raise InvalidModelParametersError(
+                "Configuration missing required 'connectivity' section"
+            )
 
         intra = conn.get("intra_residue", [])
         inter_config = conn.get("inter_residue", [])
@@ -144,7 +147,12 @@ class BaseCoarseGrainModel(ABC):
         return coarse_structure
 
     def _get_bead_name_for_bead_id(self, res_name: str, bead_id: str) -> str:
-        return self.nucleotides_config[res_name]["bead_names"][bead_id]
+        try:
+            return self.nucleotides_config[res_name]["bead_names"][bead_id]
+        except KeyError:
+            raise InvalidModelParametersError(
+                f"Bead ID '{bead_id}' not found for residue '{res_name}' in model '{self.name_verbose}'."
+            )
 
     def _should_keep_residue(self, residue_name: str) -> bool:
         return residue_name in list(self.nucleotides_config.keys())
@@ -196,14 +204,18 @@ class BaseCoarseGrainModel(ABC):
         self, structure: Structure, chain: Chain, intra_rules: list, inter_rule: dict
     ) -> None:
         prev_res = None
+
         for res in chain:
             if not self._should_keep_residue(res.name):
                 prev_res = None
                 continue
 
-            self._add_intra_residue_connections(structure, res, intra_rules, chain.name)
+            if intra_rules:
+                self._add_intra_residue_connections(
+                    structure, res, intra_rules, chain.name
+                )
 
-            if prev_res is not None:
+            if prev_res and inter_rule.get("tail") and inter_rule.get("head"):
                 self._add_inter_residue_connection(
                     structure, prev_res, res, inter_rule, chain.name
                 )
@@ -350,6 +362,76 @@ class MassCenterModel(CalculateBeadModel):
     @property
     def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
         return calculate_center_of_mass
+
+
+class DynamicCoarseGrainModel(CalculateBeadModel):
+    """
+    Model that builds itself from a runtime dictionary configuration,
+    supporting mixed strategies per bead.
+    """
+
+    name_verbose: str
+    DEFAULT_INTER_TAIL: str | None = None  # type: ignore
+    DEFAULT_INTER_HEAD: str | None = None  # type: ignore
+
+    def __init__(self, config_data: dict):
+        self._cached_model_data = config_data
+        self.JSON_model_file = pathlib.Path()
+        self.name_verbose = self.config["model_name"]
+
+    def read_json_model(self) -> dict | None:
+        return self._cached_model_data
+
+    @property
+    def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
+        return calculate_geometric_center
+
+    def _get_residue_with_beads(self, res: Residue) -> Residue:
+        """
+        Overrides the base method to handle mixed strategies for a single residue.
+        """
+        res_clone = res.clone()
+
+        for i in range(len(res) - 1, -1, -1):
+            del res[i]
+
+        config = self.nucleotides_config[res.name]
+        strategies = config.get("strategies", {})
+
+        for bead_id, atom_name in config["bead_names"].items():
+            atoms = self._get_atoms_for_bead(bead_id, res_clone)
+
+            if not atoms:
+                continue
+
+            strategy = strategies.get(bead_id, "direct")
+
+            if strategy == "direct":
+                atom_name_to_find = atoms[0]
+                original_atom = next(
+                    (a for a in res_clone if a.name == atom_name_to_find), None
+                )
+
+                if original_atom:
+                    new_atom = original_atom.clone()
+                    new_atom.name = atom_name
+                    res.add_atom(new_atom)
+
+            elif strategy in ["geometric_center", "center_of_mass"]:
+                if strategy == "center_of_mass":
+                    func = calculate_center_of_mass
+                else:
+                    func = calculate_geometric_center
+
+                new_pos = func(res_clone, atoms)
+
+                if new_pos:
+                    new_atom = Atom()
+                    new_atom.pos = new_pos
+                    new_atom.name = atom_name
+                    new_atom.element = Element("C")
+                    res.add_atom(new_atom)
+        return res_clone
 
 
 @CoarseGrainModelRegistry.register

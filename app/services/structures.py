@@ -18,6 +18,11 @@ from app.services.doc import DocsContextBuilder
 
 class StructureProcessor:
     @staticmethod
+    def get_structure_atom_count(structure: Structure) -> int:
+        atom_counts = structure[0].count_atom_sites()
+        return atom_counts
+
+    @staticmethod
     def parse_structure(content: str, file_format: SupportedFormats) -> Structure:
         if file_format == SupportedFormats.CIF or file_format == SupportedFormats.MMCIF:
             dcif = cif.read_string(content)
@@ -27,8 +32,12 @@ class StructureProcessor:
         return structure
 
     @staticmethod
-    def apply_coarse_graining(structure: Structure, model: str) -> Structure:
-        return process_structure_with_coarse_grain_model(structure, model)
+    def apply_coarse_graining(
+        structure: Structure, model: str, custom_model_data: dict | None = None
+    ) -> Structure:
+        return process_structure_with_coarse_grain_model(
+            structure, model, custom_model_data
+        )
 
     @staticmethod
     def structure_to_pdb_string(structure: Structure) -> str:
@@ -55,10 +64,19 @@ class StructureProcessor:
         filename: str,
         file_format: SupportedFormats,
         selected_model: str,
+        atom_counts: dict[str, int],
+        custom_model_data: dict | None = None,
     ) -> DefaultDict[str, Any]:
         original_format = file_format.normalize_format()
 
-        model_data = DocsContextBuilder.get_model(selected_model)
+        model_data = DocsContextBuilder.get_model(selected_model, custom_model_data)
+        original_atom_count = atom_counts["original"]
+        coarse_atom_count = atom_counts["coarse"]
+        reduction = (
+            1 - (coarse_atom_count / original_atom_count)
+            if original_atom_count > 0
+            else 0
+        )
 
         reference_url = str(
             request.url_for(
@@ -85,9 +103,9 @@ class StructureProcessor:
             "job_id": job_id,
             "filename": filename,
             "atom_counts": {
-                "original": "TODO: Count atoms",
-                "coarse": "TODO: Count beads",
-                "reduction": "TODO: Compute reduction",
+                "original": original_atom_count,
+                "coarse": coarse_atom_count,
+                "reduction": f"{reduction:.2%}",
             },
             "selected_chains": ["TODO"],
             "selected_models": ["TODO"],
