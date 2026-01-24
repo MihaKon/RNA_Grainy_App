@@ -7,39 +7,57 @@ const JsonBuilder = {
     return JSON.parse(JSON.stringify(obj));
   },
   
+ inferScope(residues, atoms = []) {
+    const resScope = this.determineScopeByResidues(residues);
+
+    if (resScope === "all" && atoms.length > 0) {
+      const isPhosphate = atoms.every(atom => ATOM_DEFINITIONS.phosphate.includes(atom));
+      if (isPhosphate) return "phosphate";
+
+      const isSugar = atoms.every(atom => ATOM_DEFINITIONS.sugar.includes(atom));
+      if (isSugar) return "sugar";
+    }
+
+    return resScope;
+  },
+
+  determineScopeByResidues(residues) {
+    if (!residues || !Array.isArray(residues)) return "all";
+    const sortedRes = [...residues].map(r => r.toUpperCase()).sort();
+    const resStr = JSON.stringify(sortedRes);
+
+    for (const [scopeKey, scopeResidues] of Object.entries(SCOPE_RESIDUES_MAP)) {
+      const sortedScopeRes = [...scopeResidues].map(r => r.toUpperCase()).sort();
+      if (JSON.stringify(sortedScopeRes) === resStr) return scopeKey;
+    }
+    return "all";
+  },
+
   buildJsonFromFile(json) {
     const beads = [];
-    const extractDataFromConfig = (config, scope) =>{
+
+    const processConfig = (config, residues) => {
       if (!config || !config.bead_names) return;
 
       Object.keys(config.bead_names).forEach((beadID) => {
+        const atoms = config.atom_centers?.[beadID] || [];
+        const dynamicScope = this.inferScope(residues, atoms);
+
         beads.push({
           beadID: beadID,
           name: config.bead_names[beadID] || beadID,
-          scope: scope,
+          scope: dynamicScope,
           description: config.description?.[beadID] || "",
           strategy: config.strategies?.[beadID] || "direct",
-          atoms: config.atom_centers?.[beadID] || [],
+          atoms: atoms,
         });
       });
     };
 
-    extractDataFromConfig(json.default_mapping?.config, "all");
+    processConfig(json.default_mapping?.config, json.default_mapping?.residues);
 
     if (json.mapping && Array.isArray(json.mapping)) {
-      json.mapping.forEach(m => {
-        let detectedScope = "all";
-        const resStr = JSON.stringify(m.residues.sort());
-        
-        for (const [scopeKey, residues] of Object.entries(SCOPE_RESIDUES_MAP)) {
-          if (JSON.stringify([...residues].sort()) === resStr) {
-            detectedScope = scopeKey;
-            break;
-          }
-        }
-        
-        extractDataFromConfig(m.config, detectedScope);
-      });
+      json.mapping.forEach(m => processConfig(m.config, m.residues));
     }
 
     return {
