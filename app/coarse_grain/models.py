@@ -202,19 +202,20 @@ class BaseCoarseGrainModel(ABC):
         self, structure: Structure, chain: Chain, intra_rules: list, inter_rule: dict
     ) -> None:
         prev_res = None
+
         for res in chain:
             if not self._should_keep_residue(res.name):
                 prev_res = None
                 continue
 
-            self._add_intra_residue_connections(structure, res, intra_rules, chain.name)
+            if intra_rules:
+                self._add_intra_residue_connections(structure, res, intra_rules, chain.name)
 
-            if prev_res is not None:
-                self._add_inter_residue_connection(
-                    structure, prev_res, res, inter_rule, chain.name
-                )
+            if prev_res and inter_rule.get("tail") and inter_rule.get("head"):
+                self._add_inter_residue_connection(structure, prev_res, res, inter_rule, chain.name)
 
             prev_res = res
+
 
     def _add_intra_residue_connections(
         self, structure: Structure, res: Residue, intra_rules: list, chain_name: str
@@ -362,11 +363,16 @@ class DynamicCoarseGrainModel(CalculateBeadModel):
     Model that builds itself from a runtime dictionary configuration,
     supporting mixed strategies per bead.
     """
-    name_verbose: str = "Custom Model"
-    
+
+    name_verbose: str
+    DEFAULT_INTER_TAIL = None
+    DEFAULT_INTER_HEAD = None
+
     def __init__(self, config_data: dict):
         self._cached_model_data = config_data
         self.JSON_model_file = pathlib.Path()
+        self.name_verbose = self.config['model_name']
+
     
     def read_json_model(self) -> dict | None:
         return self._cached_model_data
@@ -374,7 +380,7 @@ class DynamicCoarseGrainModel(CalculateBeadModel):
     @property
     def center_calculator(self) -> Callable[[Residue, list[str]], Position | None]:
         return calculate_geometric_center
-
+        
     def _get_residue_with_beads(self, res: Residue) -> Residue:
         """
         Overrides the base method to handle mixed strategies for a single residue.
