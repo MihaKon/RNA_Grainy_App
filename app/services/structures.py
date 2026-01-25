@@ -51,7 +51,7 @@ class StructureProcessor:
         else:
             structure = read_pdb_string(content)
         filter_structure_inplace(structure, models, chains)
-        if not structure or not len(structure):
+        if not structure or not len(structure) or not len(structure[0]):
             raise AppException(
                 "Provided structure after filtration is empty. Check selected models and chains."
             )

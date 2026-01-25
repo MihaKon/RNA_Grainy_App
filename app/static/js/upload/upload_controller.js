@@ -9,6 +9,13 @@ document.addEventListener("alpine:init", () => {
         this.selectedLabel = label;
       });
 
+      this.$watch('rcsbId', (value) => {
+        if (value && value.trim().length > 0) {
+            this.removeFile(); 
+            this.exampleId = ""; 
+            this.errors.file = false;
+        }
+    });
       this.$watch("$store.modelSelection.customJson", (json) => {
         if (json) {
           this.processJsonToModel(json);
@@ -37,14 +44,6 @@ document.addEventListener("alpine:init", () => {
         this.rcsbId = "";
         this.exampleId = "";
         this.file = file;
-        this.errors.file = false;
-      }
-    },
-
-    handleRcsbInput() {
-      if (this.rcsbId.trim()) {
-        this.removeFile();
-        this.exampleId = "";
         this.errors.file = false;
       }
     },

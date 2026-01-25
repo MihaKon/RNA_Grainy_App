@@ -53,8 +53,7 @@
             <template x-for="scope in SCOPE_OPTIONS" :key="scope.value">
               <button
                 type="button"
-                @click="bead.scope = scope.value"
-                x-on:click="bead.atoms = []"
+                @click="bead.scope = scope.value; bead.atoms = []"
                 :class="bead.scope === scope.value ? 'bg-accent/10 border-accent text-accent font-bold' : 'bg-white border-tertiary-light text-primary hover:bg-accent-light'"
                 class="cursor-pointer px-2 py-1 rounded border transition-colors select-none text-xs"
               > 

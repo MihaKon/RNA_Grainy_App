@@ -123,3 +123,8 @@ class ExampleRequest(UploadBase):
     def validate_example_id(cls, v: str) -> str:
         v = v.strip()
         return v
+
+
+#TODO        v = v.strip().upper()
+#        if v not in ALLOWED_EXAMPLES_ID:
+#            raise ValueError("Invalid example ID.")
