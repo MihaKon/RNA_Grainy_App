@@ -57,8 +57,6 @@ document.addEventListener("alpine:init", () => {
       if (!this.selectedModel) {
         event.stopPropagation();
         this.dropdownOpen = true;
-      } else {
-        this.autoSubmit();
       }
     },
 
@@ -85,9 +83,6 @@ document.addEventListener("alpine:init", () => {
         this.clearCustomModel();
       }
 
-      if (this.presetId) {
-        this.autoSubmit();
-      }
     },
 
     clearCustomModel() {
@@ -151,12 +146,6 @@ document.addEventListener("alpine:init", () => {
       }
       this.isSubmitting = true;
       event.detail.path = this.getSubmitPath();
-    },
-
-    autoSubmit() {
-      this.$nextTick(() => {
-        this.$root.requestSubmit();
-      });
     },
 
     // === Dropdown Positioning ===
