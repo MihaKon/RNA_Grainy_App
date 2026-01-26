@@ -11,7 +11,7 @@ from app.exceptions import (
     app_exception_handler,
     validation_exception_handler,
 )
-from app.models import SupportedFormats
+from app.models.form import SupportedFormats
 from app.routes import docs, jobs, uploads
 from app.settings import STATIC_DIR, TEMPLATES
 

@@ -7,7 +7,7 @@ from enum import Enum
 from fastapi import UploadFile
 from pydantic import BaseModel, field_validator
 
-from app.json_validation import CustomModelDefinition
+from app.models.custom_model import CustomModelDefinition
 
 
 class SupportedFormats(str, Enum):
