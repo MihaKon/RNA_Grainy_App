@@ -1,6 +1,5 @@
 import json
 import re
-from enum import Enum
 
 from fastapi import UploadFile
 from pydantic import BaseModel, field_validator

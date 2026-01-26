@@ -1,7 +1,11 @@
 [tool.mypy]
+exclude = ['tools/']
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 
 [tool.isort]
 line_lenght = 88
 profile = "ruff"
+
+[tool.ruff]
+extend-exclude = ["tools"]

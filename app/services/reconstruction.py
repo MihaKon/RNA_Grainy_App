@@ -30,7 +30,7 @@ async def add_metadata_to_reconstructed_structure(job_id: str, selected_model: s
 
 async def reconstruct_structure_using_arena(job_id: str, selected_model: str, filename: str) -> None:
     win_input_path: Path = JobManager.get_file_path(job_id, "coarse.pdb")
-    win_output_path: Path = JobManager.get_reconstruct_file_path(job_id, "coarse_reconstructed.pdb")
+    win_output_path: Path = JobManager.reconstruct_file_path(job_id, "coarse_reconstructed.pdb")
 
     wsl_arena_bin = to_wsl_path(ARENA_DIR)
     wsl_input = to_wsl_path(win_input_path)

@@ -9,7 +9,6 @@ from app.models.form import (
     PresetRequest,
     FileUploadRequest,
     RCSBRequest,
-    SupportedFormats,
 )
 from app.rcsb import fetch_rcsb_file
 from app.services.jobs import JobManager
