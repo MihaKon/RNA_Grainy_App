@@ -52,7 +52,7 @@ async def validation_exception_handler(
         error_map = {
             "extra_forbidden": f"Unexpected field: {field_name}",
             "missing": f"Required: {field_name}",
-            "value_error": f"Invalid value for {field_name}. Check data types and structure.",
+            "value_error": f"Invalid value for {field_name}. " + ("Check file extension." if field_name == "file" else "Check data types and structure."),
             "type_error": f"Invalid type for {field_name}. ",
         }
 

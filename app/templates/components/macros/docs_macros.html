@@ -42,6 +42,7 @@
 
 
 {% macro render_model_image(url) %}
+{% if url %}
 <div class="relative w-full aspect-[4/3] bg-white rounded-xl border border-tertiary-light flex items-center justify-center overflow-hidden group">
     <img src="{{ url }}" 
          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -52,6 +53,7 @@
         <span class="text-sm font-medium">No preview</span>
     </div>
 </div>
+{% endif %}
 {% endmacro %}
 
 

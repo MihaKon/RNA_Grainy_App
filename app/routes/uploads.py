@@ -3,9 +3,9 @@ from fastapi.responses import HTMLResponse
 from gemmi import Structure
 
 from app.exceptions import FileProcessingError
-from app.models import (
+from app.models.form import (
     COARSE_FILE_FORMAT,
-    ExampleRequest,
+    PresetRequest,
     FileUploadRequest,
     RCSBRequest,
     SupportedFormats,
@@ -13,7 +13,7 @@ from app.models import (
 from app.rcsb import fetch_rcsb_file
 from app.services.jobs import JobManager
 from app.services.structures import StructureProcessor
-from app.settings import EXAMPLES_DIR, MAX_FILE_UPLOAD_SIZE, TEMPLATES
+from app.settings import PRESETS_DIR, MAX_FILE_UPLOAD_SIZE, TEMPLATES
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
@@ -52,7 +52,9 @@ async def save_structures(
 
     original_content = StructureProcessor.structure_to_cif_string(original_structure)
     cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
-    pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
+    if StructureProcessor.get_structure_atom_count(coarse_structure) <= 99999:
+        pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
+        await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
 
     await JobManager.create_file(
         job_id, original_content, f"reference.{original_format.value}"
@@ -60,9 +62,7 @@ async def save_structures(
     await JobManager.create_file(
         job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
     )
-    await JobManager.create_file(
-        job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}"
-    )
+
 
 
 async def handle_request_and_render(
@@ -126,7 +126,7 @@ async def upload_file(
         raise FileProcessingError("Uploaded file is empty.")
     elif upload_req.file.size > MAX_FILE_UPLOAD_SIZE:
         raise FileProcessingError(
-            f"File size exceeds maximum file upload size of: {MAX_FILE_UPLOAD_SIZE / 1024} KB."
+            f"File size exceeds maximum file upload size of: {MAX_FILE_UPLOAD_SIZE / 1024} KB." #TODO: MB
         )
 
     try:
@@ -190,49 +190,49 @@ async def upload_rcsb(
     )
 
 
-@router.post("/example/", response_class=HTMLResponse)
-async def upload_example(
+@router.post("/preset/", response_class=HTMLResponse)
+async def upload_preset(
     request: Request,
-    example_id: str = Form(...),
+    preset_id: str = Form(...),
     selected_model: str = Form(...),
     custom_model_data: str = Form(None),
     models: str = Form(None),
     chains: str = Form(None),
 ) -> HTMLResponse:
-    example_req = ExampleRequest(
-        example_id=example_id,
+    preset_req = PresetRequest(
+        preset_id=preset_id,
         selected_model=selected_model,
         custom_model_data=custom_model_data,
         models=models,
         chains=chains,
     )  # type: ignore
-    example_path = (
-        EXAMPLES_DIR / f"{example_req.example_id}.{SupportedFormats.CIF.value}"
+    preset_path= (
+        PRESETS_DIR / f"{preset_req.preset_id}.{SupportedFormats.CIF.value}"
     )
 
-    if not example_path.exists():
+    if not preset_path.exists():
         raise FileProcessingError(
-            f"Example file not found for ID: {example_req.example_id}"
+            f"Preset file not found for ID: {preset_req.preset_id}"
         )
 
     try:
-        file_content = example_path.read_text(encoding="utf-8")
+        file_content = preset_path.read_text(encoding="utf-8")
     except UnicodeDecodeError as e:
-        raise FileProcessingError(f"Error reading example file: {e}")
+        raise FileProcessingError(f"Error reading preset file: {e}")
 
     if file_content == "":
-        raise FileProcessingError("Example file is empty.")
+        raise FileProcessingError("Preset file is empty.")
 
     file_format = SupportedFormats.CIF
-    filename: str = example_req.example_id
+    filename: str = preset_req.preset_id
 
     return await handle_request_and_render(
         request,
         file_content,
         filename,
         file_format,
-        example_req.selected_model,
-        models=example_req.models,  # type: ignore
-        chains=example_req.chains,  # type: ignore
-        custom_model_data=example_req.custom_model_data,  # type: ignore
+        preset_req.selected_model,
+        models=preset_req.models,  # type: ignore
+        chains=preset_req.chains,  # type: ignore
+        custom_model_data=preset_req.custom_model_data,  # type: ignore
     )

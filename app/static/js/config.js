@@ -78,11 +78,16 @@ const DEFAULT_MODEL = {
 const UPLOAD_ENDPOINTS ={
   FILE: "/upload/file/",
   RCSB: "/upload/rcsb/",
-  EXAMPLE: "/upload/example/",
+  PRESET: "/upload/preset/",
 }
 
-const EXAMPLES = {
+const PRESETS = {
   1: "1EHZ",
   2: "1MNX",
   3: "2F8S",
 }
+
+JSON_MAX_CHARS = 5000;
+JSON_MAX_UPLOAD_SIZE = 8 * 1024;
+
+FILE_MAX_UPLOAD_SIZE = 25 * 1024 * 1024;

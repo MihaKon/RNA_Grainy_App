@@ -9,6 +9,13 @@ document.addEventListener("alpine:init", () => {
         this.selectedLabel = label;
       });
 
+      this.$watch('rcsbId', (value) => {
+        if (value && value.trim().length > 0) {
+            this.removeFile(); 
+            this.presetId = ""; 
+            this.errors.file = false;
+        }
+    });
       this.$watch("$store.modelSelection.customJson", (json) => {
         if (json) {
           this.processJsonToModel(json);
@@ -18,7 +25,7 @@ document.addEventListener("alpine:init", () => {
     // === State ===
     file: null,
     rcsbId: "",
-    exampleId: "",
+    presetId: "",
     selectedModel: "",
     selectedLabel: "Select model",
 
@@ -33,40 +40,35 @@ document.addEventListener("alpine:init", () => {
 
     handleFileSelect(event) {
       const file = event.target.files[0];
+      if (file && file.size > FILE_MAX_UPLOAD_SIZE) {
+        alert("File size exceeds the maximum upload limit.");
+        this.removeFile();
+        return;
+      }
       if (file) {
         this.rcsbId = "";
-        this.exampleId = "";
+        this.presetId = "";
         this.file = file;
         this.errors.file = false;
       }
     },
 
-    handleRcsbInput() {
-      if (this.rcsbId.trim()) {
-        this.removeFile();
-        this.exampleId = "";
-        this.errors.file = false;
-      }
-    },
-
-    setExample(id) {
+    setPreset(id) {
       this.removeFile();
       this.rcsbId = "";
-      this.exampleId = id;
+      this.presetId = id;
       this.errors.file = false;
 
       if (!this.selectedModel) {
         event.stopPropagation();
         this.dropdownOpen = true;
-      } else {
-        this.autoSubmit();
       }
     },
 
     resetInputs() {
       this.removeFile();
       this.rcsbId = "";
-      this.exampleId = "";
+      this.presetId = "";
     },
 
     removeFile() {
@@ -86,9 +88,6 @@ document.addEventListener("alpine:init", () => {
         this.clearCustomModel();
       }
 
-      if (this.exampleId) {
-        this.autoSubmit();
-      }
     },
 
     clearCustomModel() {
@@ -113,6 +112,10 @@ document.addEventListener("alpine:init", () => {
 
     processJsonToModel(jsonStr) {
       try {
+        if (jsonStr.length > JSON_MAX_UPLOAD_SIZE) {
+          alert("JSON file upload size exceeds the maximum limit.");
+          return;
+        }
         const json = JSON.parse(jsonStr);
         Alpine.store("modelSelection").sendConfigToForm(json);
         this.$refs.customModelInput.value = jsonStr;
@@ -127,7 +130,7 @@ document.addEventListener("alpine:init", () => {
     // === Validation & Submission ===
 
     validate() {
-      const hasInput = !!this.file || !!this.rcsbId.trim() || !!this.exampleId;
+      const hasInput = !!this.file || !!this.rcsbId.trim() || !!this.presetId;
       const customValid =
         this.selectedModel !== "custom" ||
         this.$refs.customModelInput.value !== "";
@@ -141,7 +144,7 @@ document.addEventListener("alpine:init", () => {
 
     getSubmitPath() {
       if (this.rcsbId) return UPLOAD_ENDPOINTS.RCSB;
-      if (this.exampleId) return UPLOAD_ENDPOINTS.EXAMPLE;
+      if (this.presetId) return UPLOAD_ENDPOINTS.PRESET;
       return UPLOAD_ENDPOINTS.FILE;
     },
 
@@ -152,12 +155,6 @@ document.addEventListener("alpine:init", () => {
       }
       this.isSubmitting = true;
       event.detail.path = this.getSubmitPath();
-    },
-
-    autoSubmit() {
-      this.$nextTick(() => {
-        this.$root.requestSubmit();
-      });
     },
 
     // === Dropdown Positioning ===
