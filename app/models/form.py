@@ -24,18 +24,15 @@ class SupportedFormats(str, Enum):
 
 COARSE_FILE_FORMAT = SupportedFormats.MMCIF
 
-
-def is_letters_and_commas(text: str) -> bool:
-    pattern = r"[a-zA-Z,]+"
-
-    return bool(re.fullmatch(pattern, text))
-
-
 def is_numbers_and_commas(text: str) -> bool:
-    pattern = r"[\d,]+"
+    pattern = r"[\d,\s]+"
 
     return bool(re.fullmatch(pattern, text))
 
+def is_numbers_letters_and_commas(text: str) -> bool:
+    pattern = r"^[a-zA-Z0-9,\s]*$"
+
+    return bool(re.fullmatch(pattern, text))
 
 class UploadBase(BaseModel):
     selected_model: str
@@ -71,12 +68,12 @@ class UploadBase(BaseModel):
         if v is None or v == "":
             return []
         if isinstance(v, list):
-            return [int(x) for x in v]
+            return [int(x) for x in v if int(x) > 0]
         if isinstance(v, str):
             if not is_numbers_and_commas(v):
-                raise ValueError("Incorrect symbols in the model selector.")
+                raise ValueError("Incorrect symbols in the model selector or provided model ID is negative.")
             return [int(x.strip()) for x in v.split(",") if x.strip()]
-        raise ValueError("models must be a string or list")
+        raise ValueError("Models must be a string or list")
 
     @field_validator("chains", mode="before")
     @classmethod
@@ -86,10 +83,10 @@ class UploadBase(BaseModel):
         if isinstance(v, list):
             return v
         if isinstance(v, str):
-            if not is_letters_and_commas(v):
+            if not is_numbers_letters_and_commas(v):
                 raise ValueError("Incorrect symbols in the chain selector.")
             return [x.strip() for x in v.split(",") if x.strip()]
-        raise ValueError("chains must be a string or list")
+        raise ValueError("Chains must be a string or list")
 
 
 class FileUploadRequest(UploadBase):
