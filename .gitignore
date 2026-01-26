@@ -9,5 +9,5 @@ temp
 .mypy_cache
 
 !app/static/images
-!app/static/examples
+!app/static/presets
 !app/static/js
