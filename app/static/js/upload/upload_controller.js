@@ -40,6 +40,11 @@ document.addEventListener("alpine:init", () => {
 
     handleFileSelect(event) {
       const file = event.target.files[0];
+      if (file && file.size > FILE_MAX_UPLOAD_SIZE) {
+        alert("File size exceeds the maximum upload limit.");
+        this.removeFile();
+        return;
+      }
       if (file) {
         this.rcsbId = "";
         this.presetId = "";
@@ -107,6 +112,10 @@ document.addEventListener("alpine:init", () => {
 
     processJsonToModel(jsonStr) {
       try {
+        if (jsonStr.length > JSON_MAX_UPLOAD_SIZE) {
+          alert("JSON file upload size exceeds the maximum limit.");
+          return;
+        }
         const json = JSON.parse(jsonStr);
         Alpine.store("modelSelection").sendConfigToForm(json);
         this.$refs.customModelInput.value = jsonStr;

@@ -18,6 +18,10 @@ document.addEventListener("alpine:init", () => {
       return SCOPE_OPTIONS;
     },
 
+    getJsonChars() {
+      return JSON.stringify(JsonBuilder.buildJsonFromState(this), null, 2).length;
+    },
+
     getStrategyLabel(val) {
       return STRATEGY_OPTIONS.find((opt) => opt.value === val).label;
     },
@@ -136,6 +140,11 @@ document.addEventListener("alpine:init", () => {
 
     readJsonFile(event) {
       const file = event.target.files[0];
+      if (file && file.size > JSON_MAX_UPLOAD_SIZE) {
+        alert("JSON file upload size exceeds the maximum limit.");
+        event.target.value = "";
+        return;
+      }
       if (!file) return;
 
       const reader = new FileReader();
@@ -146,6 +155,10 @@ document.addEventListener("alpine:init", () => {
 
     createJsonPreview(jsonStr) {
       try {
+        if (jsonStr.length > JSON_MAX_CHARS) {
+          alert("JSON data is too large");
+          return;
+        }
         const json = JSON.parse(jsonStr);
         const importedData = JsonBuilder.buildJsonFromFile(json);
 
@@ -160,14 +173,21 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
+    updateJsonPreview(){
+      jsonStr = JSON.stringify(JsonBuilder.buildJsonFromState(this), null, 2)
+      if (this.getJsonChars() > JSON_MAX_CHARS){
+        return "JSON data is too large.";
+      }
+      return jsonStr;
+    },
+
     downloadConfig() {
-      const jsonObj = JsonBuilder.buildJsonFromState(this);
-      JsonBuilder.downloadConfig(jsonObj, this.modelName);
+      const json = JsonBuilder.buildJsonFromState(this);
+      JsonBuilder.downloadConfig(json, this.modelName);
     },
 
     applyModel() {
       const json = JsonBuilder.buildJsonFromState(this);
-
       Alpine.store("modelSelection").sendConfigToForm(json);
     },
   }));

@@ -8,7 +8,7 @@ from fastapi import UploadFile
 from pydantic import BaseModel, field_validator
 
 from app.models.custom_model import CustomModelDefinition
-from app.settings import ALLOWED_PRESET_IDS
+from app.settings import ALLOWED_PRESET_IDS, JSON_MAX_CHARS, JSON_MAX_UPLOAD_SIZE
 
 
 class SupportedFormats(str, Enum):
@@ -36,17 +36,21 @@ def is_numbers_letters_and_commas(text: str) -> bool:
 
 class UploadBase(BaseModel):
     selected_model: str
-    custom_model_data: dict | str | None = None
+    custom_model_data: dict | None = None
     models: str | list[int]
     chains: str | list[str]
 
     @field_validator("custom_model_data", mode="before")
     @classmethod
-    def validate_json_structure(cls, v: str | dict | None) -> dict | None:
+    def validate_json_structure(cls, v: str | None) -> dict | None:
         if not v or (isinstance(v, str) and v.strip() == ""):
             return None
 
         if isinstance(v, str):
+            if (len(v.encode('utf-8')) > JSON_MAX_UPLOAD_SIZE):
+                raise ValueError("Custom model JSON upload size is too large.")
+            if len(v) > JSON_MAX_CHARS:
+                raise ValueError("Custom model JSON is too large.")
             try:
                 data = json.loads(v)
             except json.JSONDecodeError:

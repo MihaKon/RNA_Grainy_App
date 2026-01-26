@@ -16,11 +16,17 @@
             <button type="button" @click="importConfig()" class="mr-2 text-primary cursor-pointer hover:text-accent transition" title="Load from JSON">
                 <i class="fa-solid fa-upload text-lg"></i>
             </button>
-             <button type="button" @click="downloadConfig()" class="mr-2 text-primary cursor-pointer hover:text-accent transition" title="Save to JSON">
+             <button type="button" 
+             :disabled="getJsonChars() > 5000"
+             :class="getJsonChars() > 5000 ? 'cursor-not-allowed' : ''"
+             @click="downloadConfig()" class="mr-2 text-primary cursor-pointer hover:text-accent transition" title="Save to JSON">
                 <i class="fa-solid fa-download text-lg"></i>
             </button>
             <button type="button" @click="$store.openCreator.close()" class="px-4 py-2 text-primary hover:bg-tertiary-light cursor-pointer rounded-lg transition">Cancel</button>
-            <button type="button" @click="applyModel(); $store.openCreator.close();" class="px-4 py-2 bg-primary cursor-pointer text-white font-semibold rounded-lg shadow-lg hover:shadow-accent-light transition">Use Model</button>
+            <button type="button" 
+            :disabled="getJsonChars() > 5000"
+            :class="getJsonChars() > 5000 ? 'cursor-not-allowed' : ''"
+            @click="applyModel(); $store.openCreator.close();" class="px-4 py-2 bg-primary cursor-pointer text-white font-semibold rounded-lg shadow-lg hover:shadow-accent-light transition">Use Model</button>
         </div>
     </div>
 
@@ -46,10 +52,11 @@
         <div class="w-2/3 bg-white relative flex flex-col">            
             <div class="absolute inset-0 bg-dots-pattern opacity-5 pointer-events-none"></div>
             <div class="w-full h-full bg-white backdrop-blur shadow-inner p-4 overflow-auto text-xs font-mono border-l border-tertiary-light">
-                <div class="absolute top-4 right-6 text-primary/30 font-bold uppercase tracking-widest text-xs pointer-events-none">
+                <div class="absolute flex flex-col top-4 right-6 text-primary/30 font-bold uppercase tracking-widest text-xs pointer-events-none justify-tex">
                     Live JSON Preview
+                    <span :class="getJsonChars() > 5000 ? 'text-danger' : ''"> Char limit: <span x-text="getJsonChars()"></span>/5000</span>
                 </div>
-                <pre class="text-primary" x-text="JSON.stringify(JsonBuilder.buildJsonFromState($data), null, 2)"></pre>
+                <pre class="text-primary" x-text="updateJsonPreview()"></pre>
             </div>
         </div>
     </div>
