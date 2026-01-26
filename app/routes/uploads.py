@@ -4,6 +4,7 @@ from gemmi import Structure
 
 from app.exceptions import FileProcessingError
 from app.formats import SupportedFormats, COARSE_FILE_FORMAT
+
 from app.models.form import (
     PresetRequest,
     FileUploadRequest,
@@ -126,7 +127,7 @@ async def upload_file(
         raise FileProcessingError("Uploaded file is empty.")
     elif upload_req.file.size > MAX_FILE_UPLOAD_SIZE:
         raise FileProcessingError(
-            f"File size exceeds maximum file upload size of: {MAX_FILE_UPLOAD_SIZE / 1024} KB." #TODO: MB
+            f"File size exceeds maximum file upload size of: {MAX_FILE_UPLOAD_SIZE / 1024} MB." #TODO: MB
         )
 
     try:

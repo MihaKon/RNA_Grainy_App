@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import re
 from enum import Enum
@@ -8,21 +6,8 @@ from fastapi import UploadFile
 from pydantic import BaseModel, field_validator
 
 from app.models.custom_model import CustomModelDefinition
+from app.formats import SupportedFormats
 from app.settings import ALLOWED_PRESET_IDS, JSON_MAX_CHARS, JSON_MAX_UPLOAD_SIZE
-
-
-class SupportedFormats(str, Enum):
-    PDB = "pdb"
-    CIF = "cif"
-    MMCIF = "mmcif"
-
-    def normalize_format(self) -> SupportedFormats:
-        if self == SupportedFormats.CIF:
-            return SupportedFormats.MMCIF
-        return self
-
-
-COARSE_FILE_FORMAT = SupportedFormats.MMCIF
 
 def is_numbers_and_commas(text: str) -> bool:
     pattern = r"[\d,\s]+"
