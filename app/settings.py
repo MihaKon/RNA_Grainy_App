@@ -16,3 +16,9 @@ CITATIONS_DIR = BASE_DIR / "coarse_grain" / "metadata" / "citations.json"
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
 MAX_FILE_UPLOAD_SIZE = 25 * 1024 * 1024
 MAX_RCSB_UPLOAD_SIZE = 25 * 1024 * 1024
+
+ALLOWED_PRESET_IDS = {
+    "1EHZ",
+    "1MNX",
+    "2F8S"
+}

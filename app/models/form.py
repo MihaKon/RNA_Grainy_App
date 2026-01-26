@@ -8,6 +8,7 @@ from fastapi import UploadFile
 from pydantic import BaseModel, field_validator
 
 from app.models.custom_model import CustomModelDefinition
+from app.settings import ALLOWED_PRESET_IDS
 
 
 class SupportedFormats(str, Enum):
@@ -121,10 +122,8 @@ class PresetRequest(UploadBase):
 
     @field_validator("preset_id")
     def validate_preset_id(cls, v: str) -> str:
-        v = v.strip()
+        v = v.strip().upper()
+        if v not in ALLOWED_PRESET_IDS:
+           raise ValueError("Invalid example ID.")
         return v
 
-
-#TODO        v = v.strip().upper()
-#        if v not in ALLOWED_EXAMPLES_ID:
-#            raise ValueError("Invalid example ID.")
