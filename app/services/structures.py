@@ -101,6 +101,7 @@ class StructureProcessor:
         model_data = DocsContextBuilder.get_model(selected_model, custom_model_data)
         original_atom_count = atom_counts["original"]
         coarse_atom_count = atom_counts["coarse"]
+        is_pdb_available = coarse_atom_count <= 99999
         reduction = (
             1 - (coarse_atom_count / original_atom_count)
             if original_atom_count > 0
@@ -127,7 +128,7 @@ class StructureProcessor:
         initial_data = {
             "reference_url": reference_url,
             "coarse_mmcif_url": coarse_mmcif_url,
-            "coarse_pdb_url": coarse_pdb_url,
+            "coarse_pdb_url": coarse_pdb_url if is_pdb_available else None,
             "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
             "job_id": job_id,
             "filename": filename,
@@ -139,7 +140,7 @@ class StructureProcessor:
             "selected_chains": selected_chains,
             "selected_models": selected_models,
             "model": model_data,
-            "is_pdb_available": True if original_atom_count <= 99999 else False,
+            "is_pdb_available": is_pdb_available,
         }
 
         context: DefaultDict[str, Any] = defaultdict(list, initial_data)

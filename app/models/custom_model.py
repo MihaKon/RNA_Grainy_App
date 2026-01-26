@@ -26,7 +26,7 @@ class Connectivity(BaseModel):
 
     @field_validator("inter_residue")
     @classmethod
-    def validate_inter_residue_limit(cls,v):
+    def validate_inter_residue_limit(cls,v: list[InterResidueLink]) -> list[InterResidueLink]:
         if len(v) > 1:
             raise ValueError("Only one inter-residue link is supported.")
         return v

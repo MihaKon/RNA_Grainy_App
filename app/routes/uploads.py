@@ -52,7 +52,9 @@ async def save_structures(
 
     original_content = StructureProcessor.structure_to_cif_string(original_structure)
     cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
-    pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
+    if StructureProcessor.get_structure_atom_count(coarse_structure) <= 99999:
+        pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
+        await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
 
     await JobManager.create_file(
         job_id, original_content, f"reference.{original_format.value}"
@@ -60,9 +62,7 @@ async def save_structures(
     await JobManager.create_file(
         job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
     )
-    await JobManager.create_file(
-        job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}"
-    )
+
 
 
 async def handle_request_and_render(

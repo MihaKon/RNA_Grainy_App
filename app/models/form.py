@@ -36,7 +36,7 @@ def is_numbers_letters_and_commas(text: str) -> bool:
 
 class UploadBase(BaseModel):
     selected_model: str
-    custom_model_data: dict | None = None
+    custom_model_data: dict | str | None = None
     models: str | list[int]
     chains: str | list[str]
 
