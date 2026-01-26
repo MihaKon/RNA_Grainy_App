@@ -1,0 +1,3 @@
+[submodule "tools/Arena"]
+	path = tools/Arena
+	url = https://github.com/pylelab/Arena.git
