@@ -1,5 +1,6 @@
 {% from "components/primary_button.html" import primary_button %}
 {% from "components/molstar_viewer.html" import molstar_viewer %}
+{% from "components/macros/info_text.html" import info_text %}
 {% from "components/macros/docs_macros.html" import render_model_image, render_citations, render_mapping_comparison, collapse_header %}
 {% block content %}
     <div class="w-full h-full flex flex-col items-center py-6">
@@ -35,8 +36,20 @@
                     <div class="mt-6">
                         <p class="text-sm text-tertiary mb-2">Download as</p>
                         <div class="flex gap-3">
+                            {% if not is_pdb_available %}
+                                {{ primary_button(text='PDB', variant='disabled', classes='w-1/2', href=coarse_pdb_url, download=filename ~ '_' ~ model.name ~ '.pdb') }}
+                            {% else %}
                             {{ primary_button(text='PDB', classes='w-1/2', href=coarse_pdb_url, download=filename ~ '_' ~ model.name ~ '.pdb') }}
+                            {% endif %}
+
                             {{ primary_button(text='CIF', classes='w-1/2', href=coarse_mmcif_url, download=filename ~ '_' ~ model.name ~ '.cif') }}
+                        </div>
+                        <div class="mt-2 gap-2">
+                            {{ info_text('true', 'Reference atoms are taken from the first model and all chains unless specified otherwise.', icon='fa-circle-info', type='info')}}
+                            {{ info_text('true', 'If you parse large structures, PDB structures may be damaged or incomplete due to chain name shortening. Check your structures.', icon='fa-circle-info', type='info')}}
+                            {% if not is_pdb_available %}
+                                {{ info_text('true', 'PDB download is disabled for structures with 100,000 or more atoms.', icon='fa-triangle-exclamation', type='error') }}
+                            {% endif %}
                         </div>
                     </div>
                 </section>

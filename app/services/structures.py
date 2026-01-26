@@ -37,7 +37,7 @@ class StructureProcessor:
     def get_structure_atom_count(structure: Structure) -> int:
         atom_counts = structure[0].count_atom_sites()
         return atom_counts
-
+    
     @staticmethod
     def parse_structure(
         content: str,
@@ -69,6 +69,7 @@ class StructureProcessor:
     def structure_to_pdb_string(structure: Structure) -> str:
         write_options = PdbWriteOptions(preserve_serial=True, conect_records=True)
         write_options.link_records = False
+        structure.shorten_chain_names()
         return structure.make_pdb_string(options=write_options)
 
     @staticmethod
@@ -138,6 +139,7 @@ class StructureProcessor:
             "selected_chains": selected_chains,
             "selected_models": selected_models,
             "model": model_data,
+            "is_pdb_available": True if original_atom_count <= 99999 else False,
         }
 
         context: DefaultDict[str, Any] = defaultdict(list, initial_data)

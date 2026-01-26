@@ -14,7 +14,7 @@
                        {% if name %}name="{{ name }}"{% endif %}
                        {{ extra_attrs }}
                        name="{{ name }}"
-                       class="block w-full {{ 'pl-10' if icon else 'pl-4' }} pr-4 py-2.5 text-sm rounded-xl border bg-white shadow-sm outline-none transition-all placeholder:text-primary/30 border-primary/10 focus:border-accent focus:ring-2 focus:ring-focus {{ extra_classes }}" />
+                       class="block w-full {{ 'pl-10' if icon else 'pl-4' }} pr-4 py-2s.5 text-sm rounded-xl border bg-white shadow-sm outline-none transition-all placeholder:text-primary/30 border-primary/10 focus:border-accent focus:ring-2 focus:ring-focus {{ extra_classes }}" />
             {% elif type == "validated" %}
                 <input type="text"
                        x-model="{{ model }}"
