@@ -15,9 +15,9 @@ from app.rcsb import fetch_rcsb_file
 from app.services.jobs import JobManager
 from app.services.structures import StructureProcessor
 from app.settings import PRESETS_DIR, MAX_FILE_UPLOAD_SIZE, TEMPLATES, PDB_FILE_ATOM_LIMIT
+from app.services.reconstruction import reconstruct_structure_using_arena
 
 router = APIRouter(prefix="/upload", tags=["upload"])
-
 
 def process_structure_and_get_metadata(
     file_content: str,
@@ -46,6 +46,8 @@ async def save_structures(
     original_structure: Structure,
     file_format: SupportedFormats,
     coarse_structure: Structure,
+    selected_model: str,
+    filename: str,
 ) -> None:
     JobManager.setup_job_dir(job_id)
 
@@ -63,7 +65,7 @@ async def save_structures(
     if StructureProcessor.get_structure_atom_count(coarse_structure) <= PDB_FILE_ATOM_LIMIT:
         pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
         await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
-
+        await reconstruct_structure_using_arena(job_id, selected_model, filename)
 
 
 
@@ -88,7 +90,8 @@ async def handle_request_and_render(
             custom_model_data,
         )
     )
-    await save_structures(job_id, original_structure, file_format, coarse_structure)
+
+    await save_structures(job_id, original_structure, file_format, coarse_structure, selected_model, filename)
 
     context = StructureProcessor.build_comparison_context(
         request=request,

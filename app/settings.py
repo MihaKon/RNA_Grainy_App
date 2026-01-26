@@ -3,7 +3,7 @@ import pathlib
 from fastapi.templating import Jinja2Templates
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
-ARENA_EXE_DIR = BASE_DIR.parent / "tools" / "arena_exe"
+ARENA_DIR = BASE_DIR.parent / "tools" / "Arena" / "Arena"
 COARSE_GRAIN_MODELS_DIR = BASE_DIR / "coarse_grain" / "models"
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"

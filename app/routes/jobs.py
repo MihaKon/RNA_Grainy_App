@@ -5,7 +5,7 @@ from app.exceptions import InvalidRequestError
 from app.formats import SupportedFormats
 from app.services.jobs import JobManager
 
-FILE_TYPES = ["reference", "coarse"]
+FILE_TYPES = ["reference", "coarse", "coarse_reconstructed"]
 
 router = APIRouter(prefix="/api/job", tags=["job"])
 
@@ -20,10 +20,7 @@ async def get_job_file(
     if file_format not in (SupportedFormats.PDB.value, SupportedFormats.MMCIF.value):
         raise InvalidRequestError("Invalid file format requested.")
 
-    if file_type == "reference":
-        filename = f"reference.{file_format}"
-    else:
-        filename = f"coarse.{file_format}"
+    filename = f"{file_type}.{file_format}"
 
     file_path = JobManager.get_file_path(job_id, filename)
 

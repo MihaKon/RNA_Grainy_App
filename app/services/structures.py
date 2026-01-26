@@ -37,6 +37,18 @@ class StructureProcessor:
     def get_structure_atom_count(structure: Structure) -> int:
         atom_counts = structure[0].count_atom_sites()
         return atom_counts
+
+
+    @staticmethod
+    def read_structure_from_file(
+        content: str, file_format: SupportedFormats
+    ) -> Structure:
+        if file_format == SupportedFormats.CIF or file_format == SupportedFormats.MMCIF:
+            dcif = cif.read_string(content)
+            structure = make_structure_from_block(dcif.sole_block())
+        else:
+            structure = read_pdb_string(content)
+        return structure
     
     @staticmethod
     def parse_structure(
@@ -45,11 +57,7 @@ class StructureProcessor:
         models: list[int],
         chains: list[str],
     ) -> Structure:
-        if file_format == SupportedFormats.CIF or file_format == SupportedFormats.MMCIF:
-            dcif = cif.read_string(content)
-            structure = make_structure_from_block(dcif.sole_block())
-        else:
-            structure = read_pdb_string(content)
+        structure = StructureProcessor.read_structure_from_file(content, file_format)
         filter_structure_inplace(structure, models, chains)
         if not structure or not len(structure) or not len(structure[0]):
             raise AppException(
@@ -125,11 +133,18 @@ class StructureProcessor:
             ).include_query_params(file_format=SupportedFormats.PDB.value)
         )
 
+        coarse_reconstructed_pdb_url = str(
+            request.url_for(
+                "get_job_file", job_id=job_id, file_type="coarse_reconstructed"
+            ).include_query_params(file_format=SupportedFormats.PDB.value)
+        )
+
         initial_data = {
             "reference_url": reference_url,
             "coarse_mmcif_url": coarse_mmcif_url,
             "coarse_pdb_url": coarse_pdb_url if is_pdb_available else None,
-            "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
+            "coarse_reconstructed_pdb_url": coarse_reconstructed_pdb_url if is_pdb_available else None,
+            "file_format": [original_format.value, COARSE_FILE_FORMAT.value, SupportedFormats.PDB.value],
             "job_id": job_id,
             "filename": filename,
             "atom_counts": {
