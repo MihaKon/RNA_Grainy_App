@@ -116,11 +116,11 @@ class RCSBRequest(UploadBase):
         return v
 
 
-class ExampleRequest(UploadBase):
-    example_id: str
+class PresetRequest(UploadBase):
+    preset_id: str
 
-    @field_validator("example_id")
-    def validate_example_id(cls, v: str) -> str:
+    @field_validator("preset_id")
+    def validate_preset_id(cls, v: str) -> str:
         v = v.strip()
         return v
 

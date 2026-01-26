@@ -10,7 +10,7 @@ TEMP_DIR = BASE_DIR.parent / "temp"
 TEMPLATES = Jinja2Templates(directory=TEMPLATES_DIR)
 
 MODELS_IMAGES_DIR = STATIC_DIR / "images"
-EXAMPLES_DIR = STATIC_DIR / "examples"
+PRESETS_DIR = STATIC_DIR / "presets"
 CITATIONS_DIR = BASE_DIR / "coarse_grain" / "metadata" / "citations.json"
 
 TEMP_DIR.mkdir(parents=True, exist_ok=True)

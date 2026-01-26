@@ -73,28 +73,28 @@
       {{ input_field( model='rcsbId', label='', placeholder='Enter PDB ID (e.g. 1RNA)', type="validated", error_condition='errors.file',
       icon='fa-solid fa-dna', name="rcsb_id" ) }}
 
-      <input type="hidden" name="example_id" :value="exampleId" />
+      <input type="hidden" name="preset_id" :value="presetId" />
 
       <div
         class="mt-2 flex items-center justify-end gap-2 text-xs text-primary/40"
       >
         <span>Or try example:</span>
         <template
-          x-for="([id, name], index) in Object.entries(EXAMPLES)"
+          x-for="([id, name], index) in Object.entries(PRESETS)"
           :key="id"
         >
           <span class="inline-flex items-center gap-1">
             <button
               type="button"
-              @click="setExample(name)"
+              @click="setPreset(name)"
               class="font-medium hover:text-accent hover:underline underline-offset-2 transition-colors cursor-pointer"
-              :class="exampleId === name ? 'text-accent underline' : ''"
+              :class="presetId === name ? 'text-accent underline' : ''"
             >
               <span x-text="name"></span>
             </button>
 
             <span
-              x-show="index < Object.entries(EXAMPLES).length - 1"
+              x-show="index < Object.entries(PRESETS).length - 1"
               class="select-none"
               >•</span
             >

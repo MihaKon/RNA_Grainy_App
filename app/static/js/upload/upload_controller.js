@@ -12,7 +12,7 @@ document.addEventListener("alpine:init", () => {
       this.$watch('rcsbId', (value) => {
         if (value && value.trim().length > 0) {
             this.removeFile(); 
-            this.exampleId = ""; 
+            this.presetId = ""; 
             this.errors.file = false;
         }
     });
@@ -25,7 +25,7 @@ document.addEventListener("alpine:init", () => {
     // === State ===
     file: null,
     rcsbId: "",
-    exampleId: "",
+    presetId: "",
     selectedModel: "",
     selectedLabel: "Select model",
 
@@ -42,16 +42,16 @@ document.addEventListener("alpine:init", () => {
       const file = event.target.files[0];
       if (file) {
         this.rcsbId = "";
-        this.exampleId = "";
+        this.presetId = "";
         this.file = file;
         this.errors.file = false;
       }
     },
 
-    setExample(id) {
+    setPreset(id) {
       this.removeFile();
       this.rcsbId = "";
-      this.exampleId = id;
+      this.presetId = id;
       this.errors.file = false;
 
       if (!this.selectedModel) {
@@ -65,7 +65,7 @@ document.addEventListener("alpine:init", () => {
     resetInputs() {
       this.removeFile();
       this.rcsbId = "";
-      this.exampleId = "";
+      this.presetId = "";
     },
 
     removeFile() {
@@ -85,7 +85,7 @@ document.addEventListener("alpine:init", () => {
         this.clearCustomModel();
       }
 
-      if (this.exampleId) {
+      if (this.presetId) {
         this.autoSubmit();
       }
     },
@@ -126,7 +126,7 @@ document.addEventListener("alpine:init", () => {
     // === Validation & Submission ===
 
     validate() {
-      const hasInput = !!this.file || !!this.rcsbId.trim() || !!this.exampleId;
+      const hasInput = !!this.file || !!this.rcsbId.trim() || !!this.presetId;
       const customValid =
         this.selectedModel !== "custom" ||
         this.$refs.customModelInput.value !== "";
@@ -140,7 +140,7 @@ document.addEventListener("alpine:init", () => {
 
     getSubmitPath() {
       if (this.rcsbId) return UPLOAD_ENDPOINTS.RCSB;
-      if (this.exampleId) return UPLOAD_ENDPOINTS.EXAMPLE;
+      if (this.presetId) return UPLOAD_ENDPOINTS.PRESET;
       return UPLOAD_ENDPOINTS.FILE;
     },
 
