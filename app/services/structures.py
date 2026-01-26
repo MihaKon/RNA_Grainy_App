@@ -13,7 +13,7 @@ from gemmi import (
 
 from app.coarse_grain.parser import process_structure_with_coarse_grain_model
 from app.exceptions import AppException
-from app.models.form import COARSE_FILE_FORMAT, SupportedFormats
+from app.formats import COARSE_FILE_FORMAT, SupportedFormats
 from app.services.doc import DocsContextBuilder
 
 

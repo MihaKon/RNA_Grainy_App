@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
 
 from app.exceptions import InvalidRequestError
-from app.models.form import SupportedFormats
+from app.formats import SupportedFormats
 from app.services.jobs import JobManager
 
 FILE_TYPES = ["reference", "coarse"]
