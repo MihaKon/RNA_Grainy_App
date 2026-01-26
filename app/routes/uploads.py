@@ -14,7 +14,7 @@ from app.models.form import (
 from app.rcsb import fetch_rcsb_file
 from app.services.jobs import JobManager
 from app.services.structures import StructureProcessor
-from app.settings import PRESETS_DIR, MAX_FILE_UPLOAD_SIZE, TEMPLATES
+from app.settings import PRESETS_DIR, MAX_FILE_UPLOAD_SIZE, TEMPLATES, PDB_FILE_ATOM_LIMIT
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
@@ -50,19 +50,20 @@ async def save_structures(
     JobManager.setup_job_dir(job_id)
 
     original_format = file_format.normalize_format()
-
     original_content = StructureProcessor.structure_to_cif_string(original_structure)
-    cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
-    if StructureProcessor.get_structure_atom_count(coarse_structure) <= 99999:
-        pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
-        await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
+    coarse_cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
 
     await JobManager.create_file(
         job_id, original_content, f"reference.{original_format.value}"
     )
     await JobManager.create_file(
-        job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
+        job_id, coarse_cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
     )
+
+    if StructureProcessor.get_structure_atom_count(coarse_structure) <= PDB_FILE_ATOM_LIMIT:
+        pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
+        await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
+
 
 
 
