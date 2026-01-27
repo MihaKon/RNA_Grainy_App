@@ -93,7 +93,7 @@ const JsonBuilder = {
       const id = b.beadID;
 
       if (["all", "phosphate", "sugar"].includes(b.scope)) {
-        json.default_mapping.config.bead_names[id] = b.name;
+        json.default_mapping.config.bead_names[id] = b.name.toUpperCase();
         json.default_mapping.config.atom_centers[id] = b.atoms;
         json.default_mapping.config.description[id] = b.description;
         json.default_mapping.config.strategies[id] = b.strategy;
@@ -116,7 +116,7 @@ const JsonBuilder = {
           json.mapping.push(mappingRecord);
         }
 
-        mappingRecord.config.bead_names[id] = b.name;
+        mappingRecord.config.bead_names[id] = b.name.toUpperCase();
         mappingRecord.config.atom_centers[id] = b.atoms;
         mappingRecord.config.description[id] = b.description;
         mappingRecord.config.strategies[id] = b.strategy;

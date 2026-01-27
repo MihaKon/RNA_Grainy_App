@@ -23,7 +23,7 @@ class UploadBase(BaseModel):
     custom_model_data: dict | str | None = None
     models: str | list[int]
     chains: str | list[str]
-
+    
     @field_validator("custom_model_data", mode="before")
     @classmethod
     def validate_json_structure(cls, v: str | None) -> dict | None:

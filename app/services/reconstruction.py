@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+from app.exceptions import ReconstructionError
 from app.formats import SupportedFormats
 from app.services.jobs import JobManager
 from app.services.structures import StructureProcessor
@@ -54,4 +55,4 @@ async def reconstruct_structure_using_arena(job_id: str, selected_model: str, fi
 
         await add_metadata_to_reconstructed_structure(job_id, selected_model, filename)
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Arena reconstruction failed: {e.stderr or e.stdout}") from e
+        raise ReconstructionError(f"Arena reconstruction failed: {e.stderr or e.stdout}. Check your coarse grain model definition.") from e

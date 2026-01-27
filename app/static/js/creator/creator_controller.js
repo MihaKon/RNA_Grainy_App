@@ -63,8 +63,8 @@ document.addEventListener("alpine:init", () => {
     addBead() {
       const newID = "A" + (this.beads.length + 1);
       this.beads.push({
-        beadID: newID,
-        name: newID,
+        beadID: newID.toUpperCase(),
+        name: newID.toUpperCase(),
         scope: "all",
         description: "",
         strategy: "direct",
@@ -162,8 +162,8 @@ document.addEventListener("alpine:init", () => {
         const json = JSON.parse(jsonStr);
         const importedData = JsonBuilder.buildJsonFromFile(json);
 
-        this.modelName = importedData.name;
-        this.modelDescription = importedData.description;
+        this.modelName = importedData.name.toUpperCase();
+        this.modelDescription = importedData.description.toUpperCase();
         this.beads = importedData.beads;
         this.intra_residues = importedData.intra_residues;
         this.inter_residues = importedData.inter_residues;

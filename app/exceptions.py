@@ -31,6 +31,9 @@ class InvalidModelParametersError(AppException):
 
     pass
 
+class ReconstructionError(AppException):
+    """Exception raised for errors during structure reconstruction."""
+    pass
 
 async def app_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
     error_message = str(exc)
