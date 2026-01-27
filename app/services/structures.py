@@ -38,7 +38,6 @@ class StructureProcessor:
         atom_counts = structure[0].count_atom_sites()
         return atom_counts
 
-
     @staticmethod
     def read_structure_from_file(
         content: str, file_format: SupportedFormats
@@ -49,7 +48,7 @@ class StructureProcessor:
         else:
             structure = read_pdb_string(content)
         return structure
-    
+
     @staticmethod
     def parse_structure(
         content: str,
@@ -143,8 +142,14 @@ class StructureProcessor:
             "reference_url": reference_url,
             "coarse_mmcif_url": coarse_mmcif_url,
             "coarse_pdb_url": coarse_pdb_url if is_pdb_available else None,
-            "coarse_reconstructed_pdb_url": coarse_reconstructed_pdb_url if is_pdb_available else None,
-            "file_format": [original_format.value, COARSE_FILE_FORMAT.value, SupportedFormats.PDB.value],
+            "coarse_reconstructed_pdb_url": coarse_reconstructed_pdb_url
+            if is_pdb_available
+            else None,
+            "file_format": [
+                original_format.value,
+                COARSE_FILE_FORMAT.value,
+                SupportedFormats.PDB.value,
+            ],
             "job_id": job_id,
             "filename": filename,
             "atom_counts": {

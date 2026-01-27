@@ -13,10 +13,16 @@ from app.models.form import (
 from app.rcsb import fetch_rcsb_file
 from app.services.jobs import JobManager
 from app.services.structures import StructureProcessor
-from app.settings import PRESETS_DIR, MAX_FILE_UPLOAD_SIZE, TEMPLATES, PDB_FILE_ATOM_LIMIT
+from app.settings import (
+    PRESETS_DIR,
+    MAX_FILE_UPLOAD_SIZE,
+    TEMPLATES,
+    PDB_FILE_ATOM_LIMIT,
+)
 from app.services.reconstruction import reconstruct_structure_using_arena
 
 router = APIRouter(prefix="/upload", tags=["upload"])
+
 
 def process_structure_and_get_metadata(
     file_content: str,
@@ -61,11 +67,15 @@ async def save_structures(
         job_id, coarse_cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
     )
 
-    if StructureProcessor.get_structure_atom_count(coarse_structure) <= PDB_FILE_ATOM_LIMIT:
+    if (
+        StructureProcessor.get_structure_atom_count(coarse_structure)
+        <= PDB_FILE_ATOM_LIMIT
+    ):
         pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
-        await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
+        await JobManager.create_file(
+            job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}"
+        )
         await reconstruct_structure_using_arena(job_id, selected_model, filename)
-
 
 
 async def handle_request_and_render(
@@ -90,7 +100,14 @@ async def handle_request_and_render(
         )
     )
 
-    await save_structures(job_id, original_structure, file_format, coarse_structure, selected_model, filename)
+    await save_structures(
+        job_id,
+        original_structure,
+        file_format,
+        coarse_structure,
+        selected_model,
+        filename,
+    )
 
     context = StructureProcessor.build_comparison_context(
         request=request,
@@ -130,7 +147,7 @@ async def upload_file(
         raise FileProcessingError("Uploaded file is empty.")
     elif upload_req.file.size > MAX_FILE_UPLOAD_SIZE:
         raise FileProcessingError(
-            f"File size exceeds maximum file upload size of: {MAX_FILE_UPLOAD_SIZE / 1024} MB." #TODO: MB
+            f"File size exceeds maximum file upload size of: {MAX_FILE_UPLOAD_SIZE / 1024} MB."  # TODO: MB
         )
 
     try:
@@ -210,9 +227,7 @@ async def upload_preset(
         models=models,
         chains=chains,
     )  # type: ignore
-    preset_path= (
-        PRESETS_DIR / f"{preset_req.preset_id}.{SupportedFormats.CIF.value}"
-    )
+    preset_path = PRESETS_DIR / f"{preset_req.preset_id}.{SupportedFormats.CIF.value}"
 
     if not preset_path.exists():
         raise FileProcessingError(

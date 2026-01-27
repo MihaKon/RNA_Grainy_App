@@ -1,6 +1,7 @@
 from __future__ import annotations
 from enum import Enum
 
+
 class SupportedFormats(str, Enum):
     PDB = "pdb"
     CIF = "cif"
