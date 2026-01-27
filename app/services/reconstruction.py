@@ -1,4 +1,5 @@
 import subprocess
+import platform
 from pathlib import Path
 from app.exceptions import ReconstructionError
 from app.formats import SupportedFormats
@@ -42,15 +43,16 @@ async def reconstruct_structure_using_arena(
         job_id, "coarse_reconstructed.pdb"
     )
 
-    wsl_arena_bin = to_wsl_path(ARENA_DIR)
-    wsl_input = to_wsl_path(win_input_path)
-    wsl_output = to_wsl_path(win_output_path)
-
-    command = ["wsl", wsl_arena_bin, wsl_input, wsl_output, ARENA_DEFAULT_PARAMETER]
+    if platform.system() == "Windows":
+        wsl_arena_bin = to_wsl_path(ARENA_DIR)
+        wsl_input = to_wsl_path(win_input_path)
+        wsl_output = to_wsl_path(win_output_path)
+        command = ["wsl", wsl_arena_bin, wsl_input, wsl_output, ARENA_DEFAULT_PARAMETER]
+    else:
+        command = [str(ARENA_DIR), str(win_input_path), str(win_output_path), ARENA_DEFAULT_PARAMETER]
 
     try:
         subprocess.run(command, capture_output=True, text=True, check=True)
-
         await add_metadata_to_reconstructed_structure(job_id, selected_model, filename)
     except subprocess.CalledProcessError as e:
         raise ReconstructionError(
