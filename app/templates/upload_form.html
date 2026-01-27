@@ -1,5 +1,7 @@
 {% extends "base.html" %} {% from "components/primary_button.html" import
-primary_button %} {% block content %}
+primary_button %} 
+{% from "components/macros/info_text.html" import info_text %}
+{% block content %}
 <div
   id="upload-container"
   class="flex w-full items-center justify-center min-h-[500px]"
@@ -47,12 +49,15 @@ primary_button %} {% block content %}
 
     {% include "components/upload/processing_options.html" %}
 
-    <div class="pt-2">
+    <div class="pt-2 gap-2 flex flex-col">
       {{ primary_button(text='Process Structure', button_type="submit",
       classes='w-full') }}
+      {{ info_text(message="Back-mapping via Arena requires standard nomenclature. Custom pseudoatom names (e.g., B, S) are not supported for reconstruction and may lead to incorrect results.") }}
     </div>
   </form>
 </div>
+
+
 
 {% include "components/creator/layout.html" %} {% endblock %} {% block
 scripts %}
