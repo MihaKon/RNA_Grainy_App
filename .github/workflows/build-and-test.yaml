@@ -23,5 +23,5 @@ jobs:
       - run: pipenv run ruff check .
       - run: pipenv run mypy .
       - run: pipenv run pytest ./tests/unit
-      - run: playwright install
+      - run: pipenv run playwright install --with-deps
       - run: pipenv run pytest ./tests/e2e
