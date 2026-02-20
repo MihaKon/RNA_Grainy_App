@@ -1,6 +1,7 @@
 import pathlib
 import subprocess
 from io import BytesIO
+from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,7 +16,7 @@ BASE_URL = f"http://localhost:{PORT}"
 
 
 @pytest.fixture(scope="session", autouse=True)
-def start_local_server():
+def start_local_server() -> Generator:
     process = subprocess.Popen(
         ["uvicorn", "app.main:app", "--port", str(PORT)],
         stdout=subprocess.PIPE,
@@ -28,7 +29,7 @@ def start_local_server():
 
 
 @pytest.fixture
-def page(page: Page):
+def page(page: Page) -> Generator:
     page.goto(BASE_URL)
     yield page
 

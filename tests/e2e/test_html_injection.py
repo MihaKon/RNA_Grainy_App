@@ -3,7 +3,9 @@ import pathlib
 from playwright.sync_api import Page, expect
 
 
-def test_html_injection_in_custom_models(page: Page, test_data_dir: pathlib.Path):
+def test_html_injection_in_custom_models(
+    page: Page, test_data_dir: pathlib.Path
+) -> None:
     page.locator('[name="rcsb_id"]').fill("1RNA")
     page.locator('[class="block truncate text-sm text-primary/50"]').click()
 
