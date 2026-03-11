@@ -7,19 +7,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: mkdir -p app/static
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Cache pipenv virtualenv
+        id: cache-pipenv
         uses: actions/cache@v4
         with:
           path: ~/.local/share/virtualenvs
           key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pipenv-
-      - run: |
+
+      - name: Install pipenv dependencies
+        if: steps.cache-pipenv.outputs.cache-hit != 'true'
+        run: |
           pip install pipenv
           pipenv install --dev
+
+      - name: Cache Playwright browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/Pipfile.lock') }}
+
+      - name: Install Playwright browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        run: pipenv run playwright install --with-deps
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache node modules
+        id: cache-node
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install node dependencies
+        if: steps.cache-node.outputs.cache-hit != 'true'
+        run: npm install
+
       - run: pipenv run ruff check .
       - run: pipenv run mypy .
       - run: pipenv run pytest ./tests/unit
+
+      - name: Build Tailwind CSS
+        run: npm run dev
+
+      - run: pipenv run playwright install --with-deps
+      - run: pipenv run pytest ./tests/e2e
