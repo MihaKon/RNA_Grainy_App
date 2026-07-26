@@ -26,6 +26,11 @@ app.add_exception_handler(AppException, app_exception_handler)
 app.add_exception_handler(ValidationError, validation_exception_handler)
 
 
+@app.get("/healthz", include_in_schema=False)
+async def healthz() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request) -> HTMLResponse:
     return TEMPLATES.TemplateResponse(

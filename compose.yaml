@@ -1,0 +1,14 @@
+services:
+  app:
+    build:
+      context: .
+    init: true
+    ports:
+      - "127.0.0.1:5050:5050"
+    tmpfs:
+      - /app/temp:size=1g,mode=1777
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
