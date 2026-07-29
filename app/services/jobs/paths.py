@@ -1,7 +1,7 @@
 import uuid
 from pathlib import Path
 
-from app.exceptions import FileProcessingError, InvalidRequestError
+from app.exceptions import InvalidRequestError
 from app.settings import TEMP_DIR
 
 

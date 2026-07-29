@@ -10,7 +10,6 @@ from app.settings import (
     TEMP_DIR,
 )
 
-from .cleaner import JobCleaner
 from .paths import get_job_dir, get_job_file_path
 
 logger = logging.getLogger(__name__)
@@ -54,10 +53,6 @@ class JobManager:
     async def create_file(cls, job_id: str, content: str, filename: str) -> Path:
         required_size = len(content.encode("utf-8"))
         free_disk_size = cls._get_free_disk_size()
-
-        if free_disk_size < MIN_FREE_DISK_SIZE + required_size:
-            await asyncio.to_thread(JobCleaner.cleanup_jobs)
-            free_disk_size = cls._get_free_disk_size()
 
         if free_disk_size < MIN_FREE_DISK_SIZE + required_size:
             raise FileProcessingError(

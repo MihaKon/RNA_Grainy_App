@@ -1,8 +1,3 @@
-import asyncio
-import logging
-from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
-
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.gzip import GZipMiddleware
@@ -18,38 +13,10 @@ from app.exceptions import (
 )
 from app.models.form import SupportedFormats
 from app.routes import docs, jobs, uploads
-from app.services.jobs import JobCleaner
-from app.settings import JOB_CLEANUP_INTERVAL, STATIC_DIR, TEMPLATES
-
-logger = logging.getLogger(__name__)
+from app.settings import STATIC_DIR, TEMPLATES
 
 
-async def cleanup_jobs_periodically() -> None:
-    while True:
-        await asyncio.sleep(JOB_CLEANUP_INTERVAL)
-        try:
-            await asyncio.to_thread(JobCleaner.cleanup_jobs)
-        except Exception:
-            logger.exception("Unexpected error during expired job cleanup.")
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    await asyncio.to_thread(JobCleaner.cleanup_jobs)
-    cleanup_task = asyncio.create_task(cleanup_jobs_periodically())
-
-    try:
-        yield
-    finally:
-        cleanup_task.cancel()
-
-        try:
-            await cleanup_task
-        except asyncio.CancelledError:
-            pass
-
-
-app = FastAPI(title="RNA Coarse Grain App", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="RNA Coarse Grain App", version="0.1.0")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.add_middleware(GZipMiddleware)
 app.include_router(docs.router)
