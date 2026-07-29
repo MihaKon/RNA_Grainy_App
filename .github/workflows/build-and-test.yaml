@@ -73,6 +73,9 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      - name: Validate Docker Compose
+        run: docker compose config --quiet
+
       - name: Build Docker image
         uses: docker/build-push-action@v7
         with:
