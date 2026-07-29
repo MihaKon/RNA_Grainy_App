@@ -5,15 +5,15 @@ from gemmi import Structure
 from app.exceptions import FileProcessingError
 from app.models.form import (
     COARSE_FILE_FORMAT,
-    PresetRequest,
     FileUploadRequest,
+    PresetRequest,
     RCSBRequest,
     SupportedFormats,
 )
 from app.rcsb import fetch_rcsb_file
 from app.services.jobs import JobManager
 from app.services.structures import StructureProcessor
-from app.settings import PRESETS_DIR, MAX_FILE_UPLOAD_SIZE, TEMPLATES
+from app.settings import MAX_FILE_UPLOAD_SIZE, PRESETS_DIR, TEMPLATES
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 

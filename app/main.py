@@ -1,14 +1,14 @@
+import asyncio
+import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
-import asyncio
-from contextlib import asynccontextmanager
-from app.services.jobs import JobManager
-import logging
-from collections.abc import AsyncGenerator
 
 from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.exceptions import (
@@ -18,7 +18,8 @@ from app.exceptions import (
 )
 from app.models.form import SupportedFormats
 from app.routes import docs, jobs, uploads
-from app.settings import STATIC_DIR, TEMPLATES, JOB_CLEANUP_INTERVAL
+from app.services.jobs import JobCleaner
+from app.settings import JOB_CLEANUP_INTERVAL, STATIC_DIR, TEMPLATES
 
 logger = logging.getLogger(__name__)
 
@@ -27,14 +28,14 @@ async def cleanup_jobs_periodically() -> None:
     while True:
         await asyncio.sleep(JOB_CLEANUP_INTERVAL)
         try:
-            await asyncio.to_thread(JobManager.cleanup_expired_jobs)
+            await asyncio.to_thread(JobCleaner.cleanup_jobs)
         except Exception:
             logger.exception("Unexpected error during expired job cleanup.")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    await asyncio.to_thread(JobManager.cleanup_expired_jobs)
+    await asyncio.to_thread(JobCleaner.cleanup_jobs)
     cleanup_task = asyncio.create_task(cleanup_jobs_periodically())
 
     try:
