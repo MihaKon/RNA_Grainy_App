@@ -137,8 +137,9 @@ async def upload_file(
     if upload_req.file.size is None:
         raise FileProcessingError("Uploaded file is empty.")
     elif upload_req.file.size > MAX_FILE_UPLOAD_SIZE:
+        max_size_mb = MAX_FILE_UPLOAD_SIZE / (1024 * 1024)
         raise FileProcessingError(
-            f"File size exceeds maximum file upload size of: {MAX_FILE_UPLOAD_SIZE / 1024} KB."  # TODO: MB
+            f"File size exceeds maximum file upload size of: {max_size_mb:g} KB."
         )
 
     try:

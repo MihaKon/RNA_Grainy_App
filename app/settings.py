@@ -14,8 +14,9 @@ PRESETS_DIR = STATIC_DIR / "presets"
 CITATIONS_DIR = BASE_DIR / "coarse_grain" / "metadata" / "citations.json"
 
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
-MAX_FILE_UPLOAD_SIZE = 25 * 1024 * 1024
-MAX_RCSB_UPLOAD_SIZE = 25 * 1024 * 1024
+RCSB_URL = "https://files.rcsb.org/download/"
+MAX_FILE_UPLOAD_SIZE = 100 * 1024 * 1024
+MAX_RCSB_UPLOAD_SIZE = 100 * 1024 * 1024
 JSON_MAX_CHARS = 5000
 JSON_MAX_UPLOAD_SIZE = 8 * 1024
 
