@@ -1,34 +1,48 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-        <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>RNA Coarse Grain</title>
-                <meta name="description" content="RNA Coarse Grain">
-                <meta name="keywords" content="RNA, Coarse Grain, Simulation, Analysis">
-                <script src="https://kit.fontawesome.com/5ad53bb2b8.js"
-                        crossorigin="anonymous"></script>
-                <link href="{{ url_for('static',path='/css/app.css') }}" rel="stylesheet" />
-                <script defer
-                        src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-                <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
-                        integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"
-                        crossorigin="anonymous"></script>
-                <script src="https://cdn.jsdelivr.net/npm/htmx-ext-response-targets@2.0.4"
-                        integrity="sha384-T41oglUPvXLGBVyRdZsVRxNWnOOqCynaPubjUVjxhsjFTKrFJGEMm3/0KGmNQ+Pg"
-                        crossorigin="anonymous"></script>
-                <script src="https://cdn.jsdelivr.net/npm/molstar@latest/build/viewer/molstar.js"></script>
-                <link rel="stylesheet"
-                      type="text/css"
-                      href="https://cdn.jsdelivr.net/npm/molstar@latest/build/viewer/molstar.css" />
-        </head>
-        <body class="min-h-screen flex flex-col" hx-ext="response-targets">
-                {% include "partials/navbar.html" %}
-                <main class="flex-1 justify-center h-full flex ">
-                        {% block content %}{% endblock %}
-                </main>
-                {% include "partials/footer.html" %}
-                {% block scripts %}
-                {% endblock scripts %}
-        </body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RNA Coarse Grain</title>
+    <meta name="description" content="RNA Coarse Grain" />
+    <meta name="keywords" content="RNA, Coarse Grain, Simulation, Analysis" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', path='/images/rna-grainy-logo.png') }}"
+    />
+    <script
+      src="https://kit.fontawesome.com/5ad53bb2b8.js"
+      crossorigin="anonymous"
+    ></script>
+    <link href="{{ url_for('static',path='/css/app.css') }}" rel="stylesheet" />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
+      integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/htmx-ext-response-targets@2.0.4"
+      integrity="sha384-T41oglUPvXLGBVyRdZsVRxNWnOOqCynaPubjUVjxhsjFTKrFJGEMm3/0KGmNQ+Pg"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/molstar@latest/build/viewer/molstar.js"></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/npm/molstar@latest/build/viewer/molstar.css"
+    />
+  </head>
+  <body class="min-h-screen flex flex-col" hx-ext="response-targets">
+    {% include "partials/navbar.html" %}
+    <main class="flex-1 justify-center h-full flex">
+      {% block content %}{% endblock %}
+    </main>
+    {% include "partials/footer.html" %} {% block scripts %} {% endblock scripts
+    %}
+  </body>
 </html>
