@@ -1,7 +1,9 @@
 {
   "model_name": "iFoldRNA",
-  "beads_per_residue": [3],
-  "description": "iFoldRNA [1, 2] is a coarse-grained model that reduces the complexity of the all-atom RNA structure to a three-bead representation. In this model, each nucleotide is represented by three beads placed at the centers of mass of the phosphate group, the sugar ring, and the nitrogenous base [3]. Such geometry allows for the preservation of essential spatial features of the backbone and base orientation while significantly reducing the system's degrees of freedom. The model utilizes an energy function based on statistical potentials and thermodynamics. The energy function accounts for bonded interactions, which define the molecule's geometric constraints and are derived from experimental structures (bond lengths, bond angles, and torsion angles), as well as non-bonded interactions describing spatial interactions between beads (base pairing, base stacking, hydrophobic effect, and electrostatic repulsion of phosphate groups) [4]. iFoldRNA is a model used for investigating RNA thermodynamic properties, simulating de novo RNA folding via discrete molecular dynamics (DMD), and predicting tertiary structures [4]. iFoldRNAv2 is an improved version of this algorithm and is characterized by a reduction of the conformational space through the utilization of molecular geometric constraints provided by experimental data [2].",
+  "beads_per_residue": [
+    3
+  ],
+  "description": "iFoldRNA [1][2] is a coarse-grained model that reduces the complexity of the all-atom RNA structure to a three-bead representation. In this model, each nucleotide is represented by three beads placed at the centers of mass of the phosphate group, the sugar ring, and the nitrogenous base [3]. Such geometry allows for the preservation of essential spatial features of the backbone and base orientation while significantly reducing the system's degrees of freedom. The model utilizes an energy function based on statistical potentials and thermodynamics. The energy function accounts for bonded interactions, which define the molecule's geometric constraints and are derived from experimental structures (bond lengths, bond angles, and torsion angles), as well as non-bonded interactions describing spatial interactions between beads (base pairing, base stacking, hydrophobic effect, and electrostatic repulsion of phosphate groups) [4]. iFoldRNA is a model used for investigating RNA thermodynamic properties, simulating de novo RNA folding via discrete molecular dynamics (DMD), and predicting tertiary structures [4]. iFoldRNAv2 is an improved version of this algorithm and is characterized by a reduction of the conformational space through the utilization of molecular geometric constraints provided by experimental data [2].",
   "citations": {
     "1": "krokhotin2015ifoldrna",
     "2": "sharma2008ifoldrna",
@@ -9,7 +11,12 @@
     "4": "li2021rna"
   },
   "default_mapping": {
-    "residues": ["A", "G", "C", "U"],
+    "residues": [
+      "A",
+      "G",
+      "C",
+      "U"
+    ],
     "config": {
       "bead_names": {
         "A1": "P",
@@ -17,8 +24,21 @@
         "A3": "B"
       },
       "atom_centers": {
-        "A1": ["P", "OP1", "OP2"],
-        "A2": ["C1'", "C2'", "C3'", "C4'", "C5'", "O2'", "O3'", "O4'"]
+        "A1": [
+          "P",
+          "OP1",
+          "OP2"
+        ],
+        "A2": [
+          "C1'",
+          "C2'",
+          "C3'",
+          "C4'",
+          "C5'",
+          "O2'",
+          "O3'",
+          "O4'"
+        ]
       },
       "description": {
         "A1": "Phosphate group center of mass (P, OP1, OP2)",
@@ -28,10 +48,23 @@
   },
   "mapping": [
     {
-      "residues": ["A", "G"],
+      "residues": [
+        "A",
+        "G"
+      ],
       "config": {
         "atom_centers": {
-          "A3": ["N1", "C2", "N3", "C4", "C5", "C6", "N7", "C8", "N9"]
+          "A3": [
+            "N1",
+            "C2",
+            "N3",
+            "C4",
+            "C5",
+            "C6",
+            "N7",
+            "C8",
+            "N9"
+          ]
         },
         "description": {
           "A3": "Purine base center of mass"
@@ -39,10 +72,21 @@
       }
     },
     {
-      "residues": ["C", "U"],
+      "residues": [
+        "C",
+        "U"
+      ],
       "config": {
         "atom_centers": {
-          "A3": ["N1", "C2", "O2", "N3", "C4", "C5", "C6"]
+          "A3": [
+            "N1",
+            "C2",
+            "O2",
+            "N3",
+            "C4",
+            "C5",
+            "C6"
+          ]
         },
         "description": {
           "A3": "Pyrimidine base center of mass"
@@ -52,8 +96,14 @@
   ],
   "connectivity": {
     "intra_residue": [
-      ["A1", "A2"],
-      ["A2", "A3"]
+      [
+        "A1",
+        "A2"
+      ],
+      [
+        "A2",
+        "A3"
+      ]
     ],
     "inter_residue": [
       {
