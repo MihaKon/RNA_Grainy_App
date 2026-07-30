@@ -24,15 +24,18 @@ class SupportedFormats(str, Enum):
 
 COARSE_FILE_FORMAT = SupportedFormats.MMCIF
 
+
 def is_numbers_and_commas(text: str) -> bool:
     pattern = r"[\d,\s]+"
 
     return bool(re.fullmatch(pattern, text))
 
+
 def is_numbers_letters_and_commas(text: str) -> bool:
     pattern = r"^[a-zA-Z0-9,\s]*$"
 
     return bool(re.fullmatch(pattern, text))
+
 
 class UploadBase(BaseModel):
     selected_model: str
@@ -47,7 +50,7 @@ class UploadBase(BaseModel):
             return None
 
         if isinstance(v, str):
-            if (len(v.encode('utf-8')) > JSON_MAX_UPLOAD_SIZE):
+            if len(v.encode("utf-8")) > JSON_MAX_UPLOAD_SIZE:
                 raise ValueError("Custom model JSON upload size is too large.")
             if len(v) > JSON_MAX_CHARS:
                 raise ValueError("Custom model JSON is too large.")
@@ -75,7 +78,9 @@ class UploadBase(BaseModel):
             return [int(x) for x in v if int(x) > 0]
         if isinstance(v, str):
             if not is_numbers_and_commas(v):
-                raise ValueError("Incorrect symbols in the model selector or provided model ID is negative.")
+                raise ValueError(
+                    "Incorrect symbols in the model selector or provided model ID is negative."
+                )
             return [int(x.strip()) for x in v.split(",") if x.strip()]
         raise ValueError("Models must be a string or list")
 
@@ -125,6 +130,5 @@ class PresetRequest(UploadBase):
     def validate_preset_id(cls, v: str) -> str:
         v = v.strip().upper()
         if v not in ALLOWED_PRESET_IDS:
-           raise ValueError("Invalid example ID.")
+            raise ValueError("Invalid example ID.")
         return v
-

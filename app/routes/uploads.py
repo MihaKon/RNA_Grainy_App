@@ -54,7 +54,9 @@ async def save_structures(
     cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
     if StructureProcessor.get_structure_atom_count(coarse_structure) <= 99999:
         pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
-        await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
+        await JobManager.create_file(
+            job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}"
+        )
 
     await JobManager.create_file(
         job_id, original_content, f"reference.{original_format.value}"
@@ -62,7 +64,6 @@ async def save_structures(
     await JobManager.create_file(
         job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
     )
-
 
 
 async def handle_request_and_render(
@@ -126,7 +127,7 @@ async def upload_file(
         raise FileProcessingError("Uploaded file is empty.")
     elif upload_req.file.size > MAX_FILE_UPLOAD_SIZE:
         raise FileProcessingError(
-            f"File size exceeds maximum file upload size of: {MAX_FILE_UPLOAD_SIZE / 1024} KB." #TODO: MB
+            f"File size exceeds maximum file upload size of: {MAX_FILE_UPLOAD_SIZE / 1024} KB."  # TODO: MB
         )
 
     try:
@@ -206,9 +207,7 @@ async def upload_preset(
         models=models,
         chains=chains,
     )  # type: ignore
-    preset_path= (
-        PRESETS_DIR / f"{preset_req.preset_id}.{SupportedFormats.CIF.value}"
-    )
+    preset_path = PRESETS_DIR / f"{preset_req.preset_id}.{SupportedFormats.CIF.value}"
 
     if not preset_path.exists():
         raise FileProcessingError(

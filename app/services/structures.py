@@ -37,7 +37,7 @@ class StructureProcessor:
     def get_structure_atom_count(structure: Structure) -> int:
         atom_counts = structure[0].count_atom_sites()
         return atom_counts
-    
+
     @staticmethod
     def parse_structure(
         content: str,
