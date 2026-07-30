@@ -13,7 +13,7 @@
       <div class="flex flex-1 items-center justify-start gap-8">
         <a href="/" class="flex shrink-0 items-center gap-3 group outline-none">
           <div
-            class="flex items-center justify-center w-10 h-10 transition-transform duration-300 group-hover:scale-105"
+            class="flex items-center justify-center w-10 h-10 transition-transform duration-100 group-hover:scale-120"
           >
             <img
               src="{{ url_for('static', path='/images/rna-grainy-logo.png') }}"
@@ -23,9 +23,7 @@
               class="w-10 h-10 object-contain"
             />
           </div>
-          <span
-            class="text-white text-xl font-bold tracking-wider transition-colors duration-300 group-hover:underline group-hover:underline-offset-2"
-          >
+          <span class="text-white text-xl font-bold tracking-wider">
             RNAgrainy
           </span>
         </a>
@@ -37,7 +35,7 @@
               class="px-3 py-2 rounded-lg text-sm font-medium"
               :class="isActive('/')
                     ? 'text-white underline underline-offset-2'  
-                    : 'text-white hover:underline hover:underline-offset-2'"
+                    : 'text-white'"
             >
               Home
             </a>
@@ -46,7 +44,7 @@
               class="px-3 py-2 rounded-lg text-sm font-medium"
               :class="isActive('/documentation')
                     ? 'text-white underline underline-offset-2'  
-                    : 'text-white hover:underline hover:underline-offset-2'"
+                    : 'text-white'"
             >
               Documentation
             </a>
