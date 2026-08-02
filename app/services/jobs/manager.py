@@ -7,7 +7,7 @@ from pathlib import Path
 from app.exceptions import FileProcessingError
 from app.settings import (
     MIN_FREE_DISK_SIZE,
-    TEMP_DIR,
+    JOB_STORAGE_DIR,
 )
 
 from .paths import get_job_dir, get_job_file_path
@@ -32,21 +32,21 @@ class JobManager:
                 exc_info=True,
             )
             raise FileProcessingError(
-                "The server could not prepare temporary storage."
+                "The server could not prepare job storage."
             ) from exc
         return job_dir
 
     @staticmethod
     def _get_free_disk_size() -> int:
         try:
-            return shutil.disk_usage(TEMP_DIR).free
+            return shutil.disk_usage(JOB_STORAGE_DIR).free
         except OSError as exc:
             logger.warning(
                 "Could not check available disk space.",
                 exc_info=True,
             )
             raise FileProcessingError(
-                "The server could not access temporary storage."
+                "The server could not access job storage."
             ) from exc
 
     @classmethod
@@ -97,7 +97,7 @@ class JobManager:
             pass
         except OSError:
             logger.warning(
-                "Could not remove temporary job %s.",
+                "Could not remove job %s.",
                 job_id,
                 exc_info=True,
             )

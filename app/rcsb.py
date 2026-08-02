@@ -2,7 +2,7 @@ import httpx
 from httpx import HTTPStatusError
 
 from app.exceptions import FileProcessingError
-from app.settings import MAX_RCSB_UPLOAD_SIZE, RCSB_URL
+from app.settings import BYTES_PER_MIB, MAX_RCSB_DOWNLOAD_SIZE, RCSB_URL
 
 
 client = httpx.AsyncClient()
@@ -20,10 +20,10 @@ async def fetch_rcsb_file(rcsb_id: str) -> str | None:
 
         file_content = bytearray()
         async for chunk in response.aiter_bytes():
-            if len(file_content) + len(chunk) > MAX_RCSB_UPLOAD_SIZE:
-                max_size_mb = MAX_RCSB_UPLOAD_SIZE / (1024 * 1024)
+            if len(file_content) + len(chunk) > MAX_RCSB_DOWNLOAD_SIZE:
+                max_size_mib = MAX_RCSB_DOWNLOAD_SIZE / BYTES_PER_MIB
                 raise FileProcessingError(
-                    f"The requested RCSB file exceeds the {max_size_mb:g} MB size limit"
+                    f"The requested RCSB file exceeds the {max_size_mib:g} MiB size limit"
                 )
             file_content.extend(chunk)
 

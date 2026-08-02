@@ -6,9 +6,9 @@ from pathlib import Path
 
 from app.services.jobs.paths import is_valid_uuid
 from app.settings import (
-    JOB_MAX_LIFE_TIME,
+    JOB_MAX_LIFETIME,
     JOB_STORAGE_MAX_SIZE,
-    TEMP_DIR,
+    JOB_STORAGE_DIR,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,9 +27,6 @@ class JobCleaner:
         total_size = 0
 
         for file_path in directory.iterdir():
-            if file_path.is_symlink():
-                continue
-
             if file_path.is_file():
                 total_size += file_path.stat().st_size
 
@@ -39,37 +36,40 @@ class JobCleaner:
     def _scan_jobs(cls) -> list[JobSnapshot]:
         jobs: list[JobSnapshot] = []
         try:
-            job_dirs = list(TEMP_DIR.iterdir())
-        except OSError:
-            logger.exception("Could not scan temporary jobs directory.")
-            return jobs
-
-        for job_dir in job_dirs:
-            if not is_valid_uuid(job_dir.name):
-                continue
-
-            try:
-                if job_dir.is_symlink() or not job_dir.is_dir():
+            for job_dir in JOB_STORAGE_DIR.iterdir():
+                if not is_valid_uuid(job_dir.name):
                     continue
-                job_modification_time = job_dir.stat().st_mtime
-                job_size = cls.get_directory_size(job_dir)
 
-                jobs.append(
-                    JobSnapshot(
-                        path=job_dir,
-                        modified_at=job_modification_time,
-                        size=job_size,
+                try:
+                    if not job_dir.is_dir():
+                        continue
+                    job_modification_time = job_dir.stat().st_mtime
+                    job_size = cls.get_directory_size(job_dir)
+
+                    jobs.append(
+                        JobSnapshot(
+                            path=job_dir,
+                            modified_at=job_modification_time,
+                            size=job_size,
+                        )
                     )
-                )
-            except FileNotFoundError:
-                continue
+                except FileNotFoundError:
+                    logger.debug(
+                        "Job %s already removed.",
+                        job_dir.name,
+                    )
+                    continue
 
-            except OSError:
-                logger.warning(
-                    "Could not inspect job %s.",
-                    job_dir.name,
-                    exc_info=True,
-                )
+                except OSError:
+                    logger.warning(
+                        "Could not inspect job %s.",
+                        job_dir.name,
+                        exc_info=True,
+                    )
+
+        except OSError:
+            logger.exception("Could not scan job storage directory.")
+
         return jobs
 
     @classmethod
@@ -82,7 +82,7 @@ class JobCleaner:
         for job in jobs:
             try:
                 age = now - job.modified_at
-                if age >= JOB_MAX_LIFE_TIME:
+                if age >= JOB_MAX_LIFETIME:
                     shutil.rmtree(job.path)
                     removed_jobs_count += 1
                     continue
@@ -122,15 +122,14 @@ class JobCleaner:
                 total_size -= job.size
             except OSError:
                 logger.warning(
-                    "Could not remove temporary job %s.",
+                    "Could not remove job %s.",
                     job.path.name,
                     exc_info=True,
                 )
 
         if total_size > JOB_STORAGE_MAX_SIZE:
             logger.warning(
-                "Temporary job storage still exceeds the limit: "
-                "%d bytes used, %d bytes allowed.",
+                "Job storage still exceeds the limit: %d bytes used, %d bytes allowed.",
                 total_size,
                 JOB_STORAGE_MAX_SIZE,
             )
@@ -147,6 +146,6 @@ class JobCleaner:
         removed_count = expired_count + storage_count
 
         if removed_count:
-            logger.info("Removed %d temporary jobs.", removed_count)
+            logger.info("Removed %d jobs.", removed_count)
 
         return removed_count

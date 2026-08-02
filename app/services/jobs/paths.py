@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 
 from app.exceptions import InvalidRequestError
-from app.settings import TEMP_DIR
+from app.settings import JOB_STORAGE_DIR
 
 
 def is_valid_uuid(job_id: str) -> bool:
@@ -25,9 +25,9 @@ def check_path(path: Path, parent_path: Path) -> None:
 def get_job_dir(job_id: str) -> Path:
     validate_uuid(job_id)
 
-    job_dir = TEMP_DIR / job_id
+    job_dir = JOB_STORAGE_DIR / job_id
 
-    check_path(job_dir, TEMP_DIR)
+    check_path(job_dir, JOB_STORAGE_DIR)
     return job_dir
 
 

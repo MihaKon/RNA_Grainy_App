@@ -13,7 +13,7 @@ from app.models.form import (
 from app.rcsb import fetch_rcsb_file
 from app.services.jobs import JobManager
 from app.services.structures import StructureProcessor
-from app.settings import MAX_FILE_UPLOAD_SIZE, PRESETS_DIR, TEMPLATES
+from app.settings import BYTES_PER_MIB, MAX_FILE_UPLOAD_SIZE, PRESETS_DIR, TEMPLATES
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
@@ -137,9 +137,9 @@ async def upload_file(
     if upload_req.file.size is None:
         raise FileProcessingError("Uploaded file is empty.")
     elif upload_req.file.size > MAX_FILE_UPLOAD_SIZE:
-        max_size_mb = MAX_FILE_UPLOAD_SIZE / (1024 * 1024)
+        max_size_mib = MAX_FILE_UPLOAD_SIZE / BYTES_PER_MIB
         raise FileProcessingError(
-            f"File size exceeds maximum file upload size of: {max_size_mb:g} KB."
+            f"File size exceeds maximum file upload size of: {max_size_mib:g} MiB."
         )
 
     try:
