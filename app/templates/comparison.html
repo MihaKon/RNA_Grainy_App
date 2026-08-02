@@ -3,8 +3,8 @@
 {% from "components/macros/info_text.html" import info_text %}
 {% from "components/macros/docs_macros.html" import render_model_image, render_citations, render_mapping_comparison, collapse_header %}
 {% block content %}
-    <div class="w-full h-full flex flex-col items-center py-6">
-        <div class="w-full max-w-7xl px-6 grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 h-[80vh] overflow-y-hidden">
+    <div class="w-full flex flex-col items-center">
+        <div class="w-full max-w-7xl p-4 grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 h-[75vh] overflow-y-hidden border-2 border-tertiary-light p-4 rounded-2xl shadow-sm">
             <aside class="flex flex-col gap-6 h-full overflow-y-auto pr-2 pb-2">
                 <section class="bg-white rounded-2xl shadow border border-tertiary-light p-6 shrink-0">
                     <h2 class="text-lg font-semibold mb-4">Metadata</h2>
@@ -76,7 +76,16 @@
                 </section>
                 <div class="h-4 shrink-0"></div>
             </aside>
-            <section class="bg-white rounded-2xl z-60 shadow border border-tertiary-light p-2 h-full w-full relative overflow-hidden">
+            <section
+                class="
+                z-60 relative overflow-hidden
+                w-full min-w-0
+                h-[33dvh] min-h-[360px]
+                lg:h-full lg:min-h-0
+                bg-white rounded-2xl shadow
+                border border-tertiary-light p-2
+                "
+                >
                 {{ molstar_viewer('molstar-container',
                                 urls=[reference_url, coarse_mmcif_url],
                                 file_format=file_format) }}

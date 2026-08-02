@@ -1,5 +1,8 @@
 {% macro molstar_viewer(container_id, urls=[], file_format= '', classes='') %}
-<div id="{{ container_id }}" class="h-full w-full {{ classes }}"></div>
+<div
+  id="{{ container_id }}"
+  class="h-full min-h-0 w-full min-w-0 {{ classes }}"
+></div>
 
 <script type="text/javascript">
     molstar.Viewer.create('{{container_id}}', {
