@@ -11,19 +11,23 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="relative flex h-16 items-center justify-between">
       <div class="flex flex-1 items-center justify-start gap-8">
-        <a href="/" class="flex shrink-0 items-center gap-3 group outline-none">
+        <a
+          href="/"
+          class="flex w-48 shrink-0 items-center gap-3 group outline-none"
+        >
           <div
-            class="flex items-center justify-center w-10 h-10 transition-transform duration-100 group-hover:scale-120"
+            class="flex w-10 h-10 shrink-0 items-center justify-center transition-transform duration-100 group-hover:scale-[1.2]"
           >
             <img
               src="{{ url_for('static', path='/images/rna-grainy-logo.png') }}"
-              alt=""
+              alt="RNAgrainy logo"
               width="40"
               height="40"
-              class="w-10 h-10 object-contain"
+              style="width: 40px; height: 40px; object-fit: contain"
             />
           </div>
-          <span class="text-white text-xl font-bold tracking-wider">
+
+          <span class="whitespace-nowrap text-white text-xl font-bold tracking-wider">
             RNAgrainy
           </span>
         </a>
@@ -32,34 +36,35 @@
           <div class="flex space-x-1">
             <a
               href="/"
-              class="px-3 py-2 rounded-lg text-sm"
+              class="w-16 px-3 py-2 rounded-lg text-sm text-center transition-colors"
               :class="isActive('/')
-                    ? 'text-white font-bold'  
-                    : 'text-white font-normal'"
+                ? 'text-white font-bold'
+                : 'text-white font-normal hover:font-semibold'"
             >
               Home
             </a>
+
             <a
               href="/documentation"
-              class="px-3 py-2 rounded-lg text-sm"
+              class="w-32 px-3 py-2 rounded-lg text-sm text-center transition-colors"
               :class="isActive('/documentation')
-                    ? 'text-white font-bold'  
-                    : 'text-white font-normal'"
+                ? 'text-white font-bold'
+                : 'text-white font-normal hover:font-semibold'"
             >
               Documentation
             </a>
-                        <a
+
+            <a
               href="/about"
-              class="px-3 py-2 rounded-lg text-sm"
+              class="w-16 px-3 py-2 rounded-lg text-sm text-center transition-colors"
               :class="isActive('/about')
-                    ? 'text-white font-bold'  
-                    : 'text-white font-normal'"
+                ? 'text-white font-bold'
+                : 'text-white font-normal hover:font-semibold'"
             >
               About
             </a>
           </div>
         </div>
-      </div>
 
       <div class="absolute inset-y-0 right-0 flex items-center md:hidden">
         <button
@@ -117,6 +122,16 @@
             : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
       >
         Documentation
+      </a>
+
+      <a
+        href="/about"
+        class="block rounded-md px-3 py-2.5 text-base font-medium transition-colors outline-none"
+        :class="isActive('/about')
+            ? 'bg-accent text-white shadow-md shadow-accent/20'
+            : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
+      >
+        About
       </a>
     </div>
   </div>
