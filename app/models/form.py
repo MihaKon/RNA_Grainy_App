@@ -78,9 +78,7 @@ class UploadBase(BaseModel):
             return [int(x) for x in v if int(x) > 0]
         if isinstance(v, str):
             if not is_numbers_and_commas(v):
-                raise ValueError(
-                    "Incorrect symbols in the model selector or provided model ID is negative."
-                )
+                raise ValueError("Incorrect symbols in the model selector or provided model ID is negative.")
             return [int(x.strip()) for x in v.split(",") if x.strip()]
         raise ValueError("Models must be a string or list")
 

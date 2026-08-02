@@ -26,12 +26,8 @@ def process_structure_and_get_metadata(
     chains: list[str],
     custom_model_data: dict | None = None,
 ) -> tuple[Structure, Structure, dict[str, int]]:
-    original_structure = StructureProcessor.parse_structure(
-        file_content, file_format, models=models, chains=chains
-    )
-    coarse_structure = StructureProcessor.apply_coarse_graining(
-        original_structure, selected_model, custom_model_data
-    )
+    original_structure = StructureProcessor.parse_structure(file_content, file_format, models=models, chains=chains)
+    coarse_structure = StructureProcessor.apply_coarse_graining(original_structure, selected_model, custom_model_data)
 
     atom_counts = {
         "original": StructureProcessor.get_structure_atom_count(original_structure),
@@ -54,16 +50,10 @@ async def save_structures(
     cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
     if StructureProcessor.get_structure_atom_count(coarse_structure) <= 99999:
         pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
-        await JobManager.create_file(
-            job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}"
-        )
+        await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
 
-    await JobManager.create_file(
-        job_id, original_content, f"reference.{original_format.value}"
-    )
-    await JobManager.create_file(
-        job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
-    )
+    await JobManager.create_file(job_id, original_content, f"reference.{original_format.value}")
+    await JobManager.create_file(job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}")
 
 
 async def handle_request_and_render(
@@ -77,15 +67,13 @@ async def handle_request_and_render(
     custom_model_data: dict | None = None,
 ) -> HTMLResponse:
     job_id = JobManager.create_job_id()
-    original_structure, coarse_structure, atom_counts = (
-        process_structure_and_get_metadata(
-            file_content,
-            file_format,
-            selected_model,
-            models,
-            chains,
-            custom_model_data,
-        )
+    original_structure, coarse_structure, atom_counts = process_structure_and_get_metadata(
+        file_content,
+        file_format,
+        selected_model,
+        models,
+        chains,
+        custom_model_data,
     )
     await save_structures(job_id, original_structure, file_format, coarse_structure)
 
@@ -172,9 +160,7 @@ async def upload_rcsb(
 
     file_content = await fetch_rcsb_file(rcsb_req.rcsb_id)
     if file_content is None:
-        raise FileProcessingError(
-            f"Could not fetch file for RCSB ID: {rcsb_req.rcsb_id}"
-        )
+        raise FileProcessingError(f"Could not fetch file for RCSB ID: {rcsb_req.rcsb_id}")
 
     file_format = SupportedFormats.CIF
     filename: str = rcsb_req.rcsb_id
@@ -210,9 +196,7 @@ async def upload_preset(
     preset_path = PRESETS_DIR / f"{preset_req.preset_id}.{SupportedFormats.CIF.value}"
 
     if not preset_path.exists():
-        raise FileProcessingError(
-            f"Preset file not found for ID: {preset_req.preset_id}"
-        )
+        raise FileProcessingError(f"Preset file not found for ID: {preset_req.preset_id}")
 
     try:
         file_content = preset_path.read_text(encoding="utf-8")

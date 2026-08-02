@@ -3,9 +3,7 @@ from collections.abc import Iterable
 from gemmi import Atom, Position
 
 
-def calculate_center_of_mass(
-    residue: Iterable[Atom], atom_names: list[str]
-) -> Position | None:
+def calculate_center_of_mass(residue: Iterable[Atom], atom_names: list[str]) -> Position | None:
     total_mass = 0.0
     x, y, z = 0.0, 0.0, 0.0
 
@@ -23,9 +21,7 @@ def calculate_center_of_mass(
     return Position(x / total_mass, y / total_mass, z / total_mass)
 
 
-def calculate_geometric_center(
-    residue: Iterable[Atom], atom_names: list[str]
-) -> Position | None:
+def calculate_geometric_center(residue: Iterable[Atom], atom_names: list[str]) -> Position | None:
     count = 0.0
     x, y, z = 0.0, 0.0, 0.0
 

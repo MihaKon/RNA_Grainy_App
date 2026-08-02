@@ -51,17 +51,13 @@ class DocsContextBuilder:
         return models_data
 
     @classmethod
-    def get_model(
-        cls, model_name: str, custom_model_data: dict | None = None
-    ) -> dict[str, Any]:  # type: ignore
+    def get_model(cls, model_name: str, custom_model_data: dict | None = None) -> dict[str, Any]:  # type: ignore
         data = cls._build_model_data(model_name, custom_model_data)
         data.pop("raw_beads", None)
         return data
 
     @classmethod
-    def _build_model_data(
-        cls, model_name: str, custom_model_data: dict | None = None
-    ) -> dict[str, Any]:  # type: ignore
+    def _build_model_data(cls, model_name: str, custom_model_data: dict | None = None) -> dict[str, Any]:  # type: ignore
         model_cls, config = cls.load_model_config(model_name, custom_model_data)
         raw_beads = config.get("beads_per_residue", [])
 
@@ -72,9 +68,7 @@ class DocsContextBuilder:
             raw_beads = sorted(list(counts))
         image_name_for_url = None if model_name == "custom" else model_name
         citations = cls.format_citations(config)
-        description = config.get(
-            "description", f"Coarse-grained model: {model_cls.name_verbose}"
-        )
+        description = config.get("description", f"Coarse-grained model: {model_cls.name_verbose}")
 
         model_data = {
             "id": model_name,
@@ -186,11 +180,7 @@ class DocsContextBuilder:
             marker = f"[{citation.number}]"
 
             link = Markup(
-                '<a href="{}" '
-                'target="_blank" '
-                'rel="noopener noreferrer" '
-                'class="text-accent hover:underline">'
-                "{}</a>"
+                '<a href="{}" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">{}</a>'
             ).format(
                 citation.url,
                 marker,

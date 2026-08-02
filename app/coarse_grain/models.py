@@ -41,9 +41,7 @@ class CoarseGrainModelRegistry:
     _registry: dict[str, type[BaseCoarseGrainModel]] = {}
 
     @classmethod
-    def register(
-        cls, model_cls: type[BaseCoarseGrainModel]
-    ) -> type[BaseCoarseGrainModel]:
+    def register(cls, model_cls: type[BaseCoarseGrainModel]) -> type[BaseCoarseGrainModel]:
         cls._registry[model_cls.__name__] = model_cls
         return model_cls
 
@@ -51,9 +49,7 @@ class CoarseGrainModelRegistry:
     def get_model(cls, class_name: str) -> type[BaseCoarseGrainModel]:
         if class_name not in cls._registry:
             available = list(cls._registry.keys())
-            raise KeyError(
-                f"Model '{class_name}' not found. Available models: {available}"
-            )
+            raise KeyError(f"Model '{class_name}' not found. Available models: {available}")
 
         return cls._registry[class_name]
 
@@ -104,9 +100,7 @@ class BaseCoarseGrainModel(ABC):
     def _build_nucleotide_config(self) -> dict:
         nucleotides_map = {}
         for res in self.config["default_mapping"]["residues"]:
-            nucleotides_map[res] = copy.deepcopy(
-                self.config["default_mapping"]["config"]
-            )
+            nucleotides_map[res] = copy.deepcopy(self.config["default_mapping"]["config"])
 
         if self.config.get("mapping") is not None:
             for map in self.config["mapping"]:
@@ -120,9 +114,7 @@ class BaseCoarseGrainModel(ABC):
     def connectivity_rules(self) -> tuple[list, dict]:
         conn = self.config.get("connectivity")
         if not conn:
-            raise InvalidModelParametersError(
-                "Configuration missing required 'connectivity' section"
-            )
+            raise InvalidModelParametersError("Configuration missing required 'connectivity' section")
 
         intra = conn.get("intra_residue", [])
         inter_config = conn.get("inter_residue", [])
@@ -168,26 +160,19 @@ class BaseCoarseGrainModel(ABC):
                         continue
 
                     self._filter_alternate_conformations(res)
-                    self._filter_residue_atoms(
-                        res, self.nucleotides_config[res.name]["allowed_atoms"]
-                    )
+                    self._filter_residue_atoms(res, self.nucleotides_config[res.name]["allowed_atoms"])
 
         structure.remove_empty_chains()
         structure.assign_serial_numbers(numbered_ter=False)
 
     def _filter_alternate_conformations(self, residue: Residue) -> None:
         for atom_id in range(len(residue) - 1, -1, -1):
-            if (
-                residue[atom_id].altloc != EMPTY_ALTLOC
-                and residue[atom_id].altloc != PRIMARY_ATOM_ALTLOC
-            ):
+            if residue[atom_id].altloc != EMPTY_ALTLOC and residue[atom_id].altloc != PRIMARY_ATOM_ALTLOC:
                 del residue[atom_id]
                 continue
             residue[atom_id].altloc = EMPTY_ALTLOC
 
-    def _filter_residue_atoms(
-        self, residue: Residue, allowed_atom_names: list[str]
-    ) -> None:
+    def _filter_residue_atoms(self, residue: Residue, allowed_atom_names: list[str]) -> None:
         keep_set = set(allowed_atom_names)
         for atom_id in range(len(residue) - 1, -1, -1):
             if residue[atom_id].name not in keep_set:
@@ -200,9 +185,7 @@ class BaseCoarseGrainModel(ABC):
             for chain in model:
                 self._connect_chain_residues(structure, chain, intra_rules, inter_rule)
 
-    def _connect_chain_residues(
-        self, structure: Structure, chain: Chain, intra_rules: list, inter_rule: dict
-    ) -> None:
+    def _connect_chain_residues(self, structure: Structure, chain: Chain, intra_rules: list, inter_rule: dict) -> None:
         prev_res = None
 
         for res in chain:
@@ -211,14 +194,10 @@ class BaseCoarseGrainModel(ABC):
                 continue
 
             if intra_rules:
-                self._add_intra_residue_connections(
-                    structure, res, intra_rules, chain.name
-                )
+                self._add_intra_residue_connections(structure, res, intra_rules, chain.name)
 
             if prev_res and inter_rule.get("tail") and inter_rule.get("head"):
-                self._add_inter_residue_connection(
-                    structure, prev_res, res, inter_rule, chain.name
-                )
+                self._add_inter_residue_connection(structure, prev_res, res, inter_rule, chain.name)
 
             prev_res = res
 
@@ -255,20 +234,14 @@ class BaseCoarseGrainModel(ABC):
         inter_rule: dict[str, str],
         chain_name: str,
     ) -> None:
-        tail_atom_name = self._get_bead_name_for_bead_id(
-            prev_res.name, inter_rule["tail"]
-        )
-        head_atom_name = self._get_bead_name_for_bead_id(
-            curr_res.name, inter_rule["head"]
-        )
+        tail_atom_name = self._get_bead_name_for_bead_id(prev_res.name, inter_rule["tail"])
+        head_atom_name = self._get_bead_name_for_bead_id(curr_res.name, inter_rule["head"])
 
         tail_atom = next((a for a in prev_res if a.name == tail_atom_name), None)
         head_atom = next((a for a in curr_res if a.name == head_atom_name), None)
 
         if tail_atom and head_atom:
-            conn = self._create_connection(
-                prev_res, tail_atom, curr_res, head_atom, chain_name
-            )
+            conn = self._create_connection(prev_res, tail_atom, curr_res, head_atom, chain_name)
             structure.connections.append(conn)
             structure.add_conect(tail_atom.serial, head_atom.serial, order=1)
 
@@ -330,9 +303,7 @@ class CalculateBeadModel(BaseCoarseGrainModel):
         for i in range(len(res) - 1, -1, -1):
             del res[i]
 
-        for bead_id, atom_name in self.nucleotides_config[res.name][
-            "bead_names"
-        ].items():
+        for bead_id, atom_name in self.nucleotides_config[res.name]["bead_names"].items():
             atoms = self._get_atoms_for_bead(bead_id, res_clone)
             if not atoms:
                 continue
@@ -408,9 +379,7 @@ class DynamicCoarseGrainModel(CalculateBeadModel):
 
             if strategy == "direct":
                 atom_name_to_find = atoms[0]
-                original_atom = next(
-                    (a for a in res_clone if a.name == atom_name_to_find), None
-                )
+                original_atom = next((a for a in res_clone if a.name == atom_name_to_find), None)
 
                 if original_atom:
                     new_atom = original_atom.clone()
@@ -477,9 +446,7 @@ class Nares2PModel(GeometricCenterModel):
 
     INTER_P_BEAD_NAME = "PP"
 
-    def _calculate_inter_p_bead_position(
-        self, curr_res: Residue, prev_res: Residue
-    ) -> None:
+    def _calculate_inter_p_bead_position(self, curr_res: Residue, prev_res: Residue) -> None:
         atom_id_to_alter = None
         curr_res_sugar_id = None
         prev_res_sugar_id = None
@@ -493,11 +460,7 @@ class Nares2PModel(GeometricCenterModel):
             if prev_res[atom_id].name == "S":
                 prev_res_sugar_id = atom_id
 
-        if (
-            atom_id_to_alter is None
-            or curr_res_sugar_id is None
-            or prev_res_sugar_id is None
-        ):
+        if atom_id_to_alter is None or curr_res_sugar_id is None or prev_res_sugar_id is None:
             return
 
         curr_res[atom_id_to_alter].pos = calculate_geometric_center(
@@ -515,21 +478,15 @@ class Nares2PModel(GeometricCenterModel):
     ) -> None:
         self._calculate_inter_p_bead_position(curr_res, prev_res)
 
-        tail_atom_name = self._get_bead_name_for_bead_id(
-            prev_res.name, inter_rule["tail"]
-        )
-        head_atom_name = self._get_bead_name_for_bead_id(
-            curr_res.name, inter_rule["head"]
-        )
+        tail_atom_name = self._get_bead_name_for_bead_id(prev_res.name, inter_rule["tail"])
+        head_atom_name = self._get_bead_name_for_bead_id(curr_res.name, inter_rule["head"])
 
         tail_atom = next((a for a in prev_res if a.name == tail_atom_name), None)
         head_atom = next((a for a in curr_res if a.name == head_atom_name), None)
 
         if tail_atom and head_atom:
             structure.add_conect(tail_atom.serial, head_atom.serial, order=1)
-            conn = self._create_connection(
-                prev_res, tail_atom, curr_res, head_atom, chain_name
-            )
+            conn = self._create_connection(prev_res, tail_atom, curr_res, head_atom, chain_name)
             structure.connections.append(conn)
 
 

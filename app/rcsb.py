@@ -17,7 +17,5 @@ async def fetch_rcsb_file(rcsb_id: str) -> str | None:
     except HTTPStatusError:
         return None
     if response.num_bytes_downloaded > MAX_RCSB_UPLOAD_SIZE:
-        raise FileProcessingError(
-            f"File size exceeds maximum fetching file size of: {MAX_RCSB_UPLOAD_SIZE / 1024} KB."
-        )
+        raise FileProcessingError(f"File size exceeds maximum fetching file size of: {MAX_RCSB_UPLOAD_SIZE / 1024} KB.")
     return response.text

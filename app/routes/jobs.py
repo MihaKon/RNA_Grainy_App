@@ -11,9 +11,7 @@ router = APIRouter(prefix="/api/job", tags=["job"])
 
 
 @router.get("/{job_id}/{file_type}")
-async def get_job_file(
-    job_id: str, file_type: str, file_format: str = Query(...)
-) -> FileResponse:
+async def get_job_file(job_id: str, file_type: str, file_format: str = Query(...)) -> FileResponse:
     if file_type not in FILE_TYPES:
         raise InvalidRequestError("Invalid file type requested.")
 

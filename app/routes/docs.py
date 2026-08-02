@@ -11,6 +11,4 @@ router = APIRouter(prefix="/documentation", tags=["documentation"])
 async def documentation_page(request: Request) -> HTMLResponse:
     models_data = DocsContextBuilder.get_all_models()
 
-    return TEMPLATES.TemplateResponse(
-        request=request, name="documentation.html", context={"models": models_data}
-    )
+    return TEMPLATES.TemplateResponse(request=request, name="documentation.html", context={"models": models_data})

@@ -35,14 +35,10 @@ class InvalidModelParametersError(AppException):
 async def app_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
     error_message = str(exc)
 
-    return render_form_error_message(
-        request=request, error=error_message, status_code=422
-    )
+    return render_form_error_message(request=request, error=error_message, status_code=422)
 
 
-async def validation_exception_handler(
-    request: Request, exc: Exception
-) -> HTMLResponse:
+async def validation_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
     if isinstance(exc, ValueError):
         first_error = exc.errors()[0]  # type: ignore
         error_type = first_error.get("type", "")
@@ -53,11 +49,7 @@ async def validation_exception_handler(
             "extra_forbidden": f"Unexpected field: {field_name}",
             "missing": f"Required: {field_name}",
             "value_error": f"Invalid value for {field_name}. "
-            + (
-                "Check file extension."
-                if field_name == "file"
-                else "Check data types and structure."
-            ),
+            + ("Check file extension." if field_name == "file" else "Check data types and structure."),
             "type_error": f"Invalid type for {field_name}. ",
         }
 
@@ -72,6 +64,4 @@ async def validation_exception_handler(
     else:
         error_message = str(exc).split("Value error, ")[-1]
 
-    return render_form_error_message(
-        request=request, error=error_message, status_code=422
-    )
+    return render_form_error_message(request=request, error=error_message, status_code=422)

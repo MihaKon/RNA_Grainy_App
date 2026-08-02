@@ -17,9 +17,7 @@ from app.models.form import COARSE_FILE_FORMAT, SupportedFormats
 from app.services.doc import DocsContextBuilder
 
 
-def filter_structure_inplace(
-    structure: Structure, models: list[int], chains: list[str]
-) -> None:
+def filter_structure_inplace(structure: Structure, models: list[int], chains: list[str]) -> None:
     if models:
         for i in range(len(structure) - 1, -1, -1):
             if structure[i].num not in models:
@@ -52,18 +50,12 @@ class StructureProcessor:
             structure = read_pdb_string(content)
         filter_structure_inplace(structure, models, chains)
         if not structure or not len(structure) or not len(structure[0]):
-            raise AppException(
-                "Provided structure after filtration is empty. Check selected models and chains."
-            )
+            raise AppException("Provided structure after filtration is empty. Check selected models and chains.")
         return structure
 
     @staticmethod
-    def apply_coarse_graining(
-        structure: Structure, model: str, custom_model_data: dict | None = None
-    ) -> Structure:
-        return process_structure_with_coarse_grain_model(
-            structure, model, custom_model_data
-        )
+    def apply_coarse_graining(structure: Structure, model: str, custom_model_data: dict | None = None) -> Structure:
+        return process_structure_with_coarse_grain_model(structure, model, custom_model_data)
 
     @staticmethod
     def structure_to_pdb_string(structure: Structure) -> str:
@@ -102,27 +94,23 @@ class StructureProcessor:
         original_atom_count = atom_counts["original"]
         coarse_atom_count = atom_counts["coarse"]
         is_pdb_available = coarse_atom_count <= 99999
-        reduction = (
-            1 - (coarse_atom_count / original_atom_count)
-            if original_atom_count > 0
-            else 0
-        )
+        reduction = 1 - (coarse_atom_count / original_atom_count) if original_atom_count > 0 else 0
 
         reference_url = str(
-            request.url_for(
-                "get_job_file", job_id=job_id, file_type="reference"
-            ).include_query_params(file_format=original_format.value)
+            request.url_for("get_job_file", job_id=job_id, file_type="reference").include_query_params(
+                file_format=original_format.value
+            )
         )
         coarse_mmcif_url = str(
-            request.url_for(
-                "get_job_file", job_id=job_id, file_type="coarse"
-            ).include_query_params(file_format=COARSE_FILE_FORMAT.value)
+            request.url_for("get_job_file", job_id=job_id, file_type="coarse").include_query_params(
+                file_format=COARSE_FILE_FORMAT.value
+            )
         )
 
         coarse_pdb_url = str(
-            request.url_for(
-                "get_job_file", job_id=job_id, file_type="coarse"
-            ).include_query_params(file_format=SupportedFormats.PDB.value)
+            request.url_for("get_job_file", job_id=job_id, file_type="coarse").include_query_params(
+                file_format=SupportedFormats.PDB.value
+            )
         )
 
         initial_data = {
