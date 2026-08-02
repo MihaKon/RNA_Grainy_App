@@ -2,7 +2,7 @@
 primary_button %} {% block content %}
 <div
   id="upload-container"
-  class="flex w-full items-center justify-center min-h-[500px]"
+  class="flex w-full items-center justify-center min-h-[500px] m-2"
   x-cloak
 >
   <form
@@ -14,7 +14,7 @@ primary_button %} {% block content %}
     hx-encoding="multipart/form-data"
     hx-target-error="#errors"
     hx-indicator="#loading-spinner"
-    class="bg-white rounded-2xl shadow-xl border border-primary/10 pt-4 p-8  flex flex-col gap-2 w-full max-w-md relative"
+    class="bg-white rounded-2xl shadow-xl border border-primary/10 py-4 px-6 flex flex-col gap-1 w-full max-w-md relative"
     novalidate
   >
     <div
@@ -54,8 +54,8 @@ primary_button %} {% block content %}
   </form>
 </div>
 
-{% include "components/creator/layout.html" %} {% endblock %} {% block
-scripts %}
+{% include "components/creator/layout.html" %} {% endblock %} {% block scripts
+%}
 <script src="{{ url_for('static', path='/js/store.js') }}"></script>
 <script src="{{ url_for('static', path='/js/config.js') }}"></script>
 <script src="{{ url_for('static', path='/js/creator/json_builder.js') }}"></script>

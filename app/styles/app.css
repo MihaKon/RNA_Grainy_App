@@ -1,6 +1,6 @@
 @import "tailwindcss";
-@source "./templates";
-
+@source "../templates";
+@source "../static/js";
 
 @theme {
     --color-primary: #212D40;

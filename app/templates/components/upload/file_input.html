@@ -15,11 +15,11 @@
     <label
       x-show="!file"
       for="file"
-      class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 group-hover:bg-accent-light"
+      class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 group-hover:bg-accent-light"
       :class="errors.file ? 'border-danger' : 'border-primary/10 hover:border-accent'"
     >
       <div
-        class="flex flex-col items-center justify-center pt-5 pb-6 text-primary/60 group-hover:text-accent transition-colors"
+        class="flex flex-col items-center justify-center text-primary/60 group-hover:text-accent transition-colors"
       >
         <i class="fa-solid fa-cloud-arrow-up text-2xl mb-2"></i>
         <p class="text-sm">
@@ -45,7 +45,7 @@
           ></span>
           <span
             class="text-xs text-primary/70"
-            x-text="(file?.size / 1024).toFixed(1) + ' KB'"
+            x-text="(file?.size / 1024 / 1024).toFixed(2) + ' MB'"
           ></span>
         </div>
       </div>
@@ -70,8 +70,7 @@
 
   <div>
     <div class="relative">
-      {{ input_field( model='rcsbId', label='', placeholder='Enter PDB ID (e.g. 1RNA)', type="validated", error_condition='errors.file',
-      icon='fa-solid fa-dna', name="rcsb_id" ) }}
+      {{ input_field(model="rcsbId", label="", placeholder="Enter PDB ID (e.g. 1RNA)", type="validated", error_condition="errors.file", icon="fa-solid fa-dna", name="rcsb_id") }}
 
       <input type="hidden" name="preset_id" :value="presetId" />
 

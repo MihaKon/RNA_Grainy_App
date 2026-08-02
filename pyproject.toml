@@ -4,8 +4,8 @@ disallow_incomplete_defs = true
 
 
 [tool.ruff]
-line-length = 88
+line-length = 120
 
 [tool.isort]
-line_length = 88
+line_length = 120
 profile = "ruff"
