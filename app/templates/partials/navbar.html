@@ -50,6 +50,16 @@
             >
               Documentation
             </a>
+
+                        <a
+              href="/about"
+              class="px-3 py-2 rounded-lg text-sm font-medium"
+              :class="isActive('/about')
+                    ? 'text-white underline underline-offset-2'  
+                    : 'text-white hover:underline hover:underline-offset-2'"
+            >
+              About
+            </a>
           </div>
         </div>
       </div>
@@ -110,6 +120,16 @@
             : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
       >
         Documentation
+      </a>
+
+            <a
+        href="/about"
+        class="block rounded-md px-3 py-2.5 text-base font-medium transition-colors outline-none"
+        :class="isActive('/about')
+            ? 'bg-accent text-white shadow-md shadow-accent/20' 
+            : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
+      >
+        About
       </a>
     </div>
   </div>
