@@ -37,9 +37,9 @@
       href="https://cdn.jsdelivr.net/npm/molstar@latest/build/viewer/molstar.css"
     />
   </head>
-  <body class="min-h-screen flex flex-col" hx-ext="response-targets">
+  <body class="min-h-dvh  flex flex-col" hx-ext="response-targets">
     {% include "partials/navbar.html" %}
-    <main class="flex-1 justify-center h-full flex">
+    <main class="flex flex-1 min-h-0 justify-center lg:overflow-y-auto">
       {% block content %}{% endblock %}
     </main>
     {% include "partials/footer.html" %} {% block scripts %} {% endblock scripts
