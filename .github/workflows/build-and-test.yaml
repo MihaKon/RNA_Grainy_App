@@ -92,7 +92,7 @@ jobs:
         run: |
           test "$(docker compose ps --status running --quiet cleaner)" != ""
           docker compose exec -T cleaner python -c \
-            "from app.services.jobs import JobCleaner; JobCleaner.cleanup_jobs()"
+            "from app.services.workspaces import WorkspaceCleaner; WorkspaceCleaner.cleanup_workspaces()"
 
       - name: Show logs
         if: failure()

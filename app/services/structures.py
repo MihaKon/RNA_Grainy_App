@@ -87,7 +87,7 @@ class StructureProcessor:
     @staticmethod
     def build_comparison_context(
         request: Request,
-        job_id: str,
+        workspace_id: str,
         filename: str,
         file_format: SupportedFormats,
         selected_model: str,
@@ -110,25 +110,25 @@ class StructureProcessor:
 
         reference_url = str(
             request.url_for(
-                "get_job_file", job_id=job_id, file_type="reference"
+                "get_result_file", workspace_id=workspace_id, file_type="reference"
             ).include_query_params(file_format=original_format.value)
         )
         coarse_mmcif_url = str(
             request.url_for(
-                "get_job_file", job_id=job_id, file_type="coarse"
+                "get_result_file", workspace_id=workspace_id, file_type="coarse"
             ).include_query_params(file_format=COARSE_FILE_FORMAT.value)
         )
 
         coarse_pdb_url = str(
             request.url_for(
-                "get_job_file", job_id=job_id, file_type="coarse"
+                "get_result_file", workspace_id=workspace_id, file_type="coarse"
             ).include_query_params(file_format=SupportedFormats.PDB.value)
         )
 
         consumed_url = str(
             request.url_for(
-                "mark_job_as_consumed",
-                job_id=job_id,
+                "mark_result_as_consumed",
+                workspace_id=workspace_id,
             )
         )
 
@@ -138,7 +138,7 @@ class StructureProcessor:
             "coarse_pdb_url": coarse_pdb_url if is_pdb_available else None,
             "consumed_url": consumed_url,
             "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
-            "job_id": job_id,
+            "workspace_id": workspace_id,
             "filename": filename,
             "atom_counts": {
                 "original": original_atom_count,
