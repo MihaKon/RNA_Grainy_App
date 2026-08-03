@@ -13,10 +13,10 @@ render_citations, render_mapping_comparison, collapse_header %} {% block content
   data-reference-format="{{ file_format[0] }}"
   data-coarse-format="{{ file_format[1] }}"
   data-pdb-available="{{ 'true' if is_pdb_available else 'false' }}"
-  class="w-full h-full flex flex-col items-center py-6"
+  class="w-full flex flex-col items-center"
 >
   <div
-    class="w-full max-w-7xl px-6 grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 h-[80vh] overflow-y-hidden"
+    class="w-full max-w-7xl p-4 grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 h-[75vh] overflow-y-hidden border-2 border-tertiary-light rounded-2xl shadow-sm"
   >
     <aside class="flex flex-col gap-6 h-full overflow-y-auto pr-2 pb-2">
       <section
@@ -101,7 +101,7 @@ render_citations, render_mapping_comparison, collapse_header %} {% block content
       <div class="h-4 shrink-0"></div>
     </aside>
     <section
-      class="bg-white rounded-2xl z-60 shadow border border-tertiary-light p-2 h-full w-full relative overflow-hidden"
+      class="z-60 relative overflow-hidden w-full min-w-0 h-[33dvh] min-h-[360px] lg:h-full lg:min-h-0 bg-white rounded-2xl shadow border border-tertiary-light p-2"
     >
       <div
         id="comparison-loading-error"
