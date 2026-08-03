@@ -3,8 +3,8 @@ import signal
 import threading
 from types import FrameType
 
-from app.services.jobs.cleaner import JobCleaner
-from app.settings import JOB_CLEANUP_INTERVAL
+from app.services.workspaces.cleaner import WorkspaceCleaner
+from app.settings import WORKSPACE_CLEANUP_INTERVAL
 
 logger = logging.getLogger(__name__)
 stop_event = threading.Event()
@@ -22,17 +22,17 @@ def main() -> None:
     signal.signal(signal.SIGTERM, request_shutdown)
     signal.signal(signal.SIGINT, request_shutdown)
 
-    logger.info("Job cleaner started.")
+    logger.info("Workspace cleaner started.")
 
     while not stop_event.is_set():
         try:
-            JobCleaner.cleanup_jobs()
+            WorkspaceCleaner.cleanup_workspaces()
         except Exception:
-            logger.exception("Unexpected error during job cleanup.")
+            logger.exception("Unexpected error during workspace cleanup.")
 
-        stop_event.wait(JOB_CLEANUP_INTERVAL)
+        stop_event.wait(WORKSPACE_CLEANUP_INTERVAL)
 
-    logger.info("Job cleaner stopped.")
+    logger.info("Workspace cleaner stopped.")
 
 
 if __name__ == "__main__":
