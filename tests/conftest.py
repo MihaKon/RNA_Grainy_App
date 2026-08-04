@@ -1,12 +1,17 @@
 import pathlib
 
 from io import BytesIO
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 from gemmi import Structure, cif, make_structure_from_block
 
 from app.main import app as fastapi_app
+import app.services.workspaces.manager
+import app.services.workspaces.cleaner
+import app.services.workspaces.paths
+import app.settings
 
 
 TEST_DATA_DIR = pathlib.Path(__file__).parent / "data"
@@ -53,3 +58,33 @@ def structure(cif_file: BytesIO) -> Structure:
     cif_doc = cif.read_string(cif_content)
     block = cif_doc.sole_block()
     return make_structure_from_block(block)
+
+
+@pytest.fixture
+def isolated_workspace_storage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """
+    Provide an isolated workspace storage directory for each test.
+    """
+
+    monkeypatch.setattr(
+        app.settings,
+        "WORKSPACE_STORAGE_DIR",
+        tmp_path,
+    )
+    monkeypatch.setattr(
+        app.services.workspaces.paths,
+        "WORKSPACE_STORAGE_DIR",
+        tmp_path,
+    )
+    monkeypatch.setattr(
+        app.services.workspaces.manager,
+        "WORKSPACE_STORAGE_DIR",
+        tmp_path,
+    )
+    monkeypatch.setattr(
+        app.services.workspaces.cleaner,
+        "WORKSPACE_STORAGE_DIR",
+        tmp_path,
+    )
+
+    return tmp_path
