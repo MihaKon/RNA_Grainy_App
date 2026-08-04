@@ -9,6 +9,11 @@ import app.settings
 
 
 @pytest.fixture
+def anyio_backend() -> str:
+    return "asyncio"
+
+
+@pytest.fixture
 def isolated_workspace_storage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """
     Provide an isolated workspace storage directory for each test.
