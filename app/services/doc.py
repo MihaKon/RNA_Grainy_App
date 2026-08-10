@@ -1,5 +1,4 @@
 import json
-import re
 from dataclasses import dataclass
 from typing import Any, Tuple, TypedDict
 
@@ -18,8 +17,6 @@ RESIDUE_TYPE = {
     "C": "Pyrimidine",
     "U": "Pyrimidine",
 }
-
-CITATION_REFERENCE_PATTERN = re.compile(r"\[(\d+(?:\s*,\s*\d+)*)\]")
 
 
 class CitationData(TypedDict):
