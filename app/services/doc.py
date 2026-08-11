@@ -1,5 +1,8 @@
 import json
-from typing import Any, Tuple
+from dataclasses import dataclass
+from typing import Any, Tuple, TypedDict
+
+from markupsafe import Markup, escape
 
 from app.coarse_grain.models import (
     BaseCoarseGrainModel,
@@ -16,8 +19,20 @@ RESIDUE_TYPE = {
 }
 
 
+class CitationData(TypedDict):
+    text: str
+    url: str
+
+
+@dataclass(frozen=True)
+class Citation:
+    number: int
+    text: str
+    url: str
+
+
 class DocsContextBuilder:
-    _citations_cache: dict[str, str] | None = None
+    _citations_cache: dict[str, CitationData] | None = None
 
     @classmethod
     def get_all_models(cls) -> list[dict[str, Any]]:  # type: ignore
@@ -53,16 +68,18 @@ class DocsContextBuilder:
                 counts.add(len(res_cfg.get("bead_names", {})))
             raw_beads = sorted(list(counts))
         image_name_for_url = None if model_name == "custom" else model_name
+        citations = cls.format_citations(config)
+        description = config.get(
+            "description", f"Coarse-grained model: {model_cls.name_verbose}"
+        )
 
         model_data = {
             "id": model_name,
             "name": model_cls.name_verbose,
-            "description": config.get(
-                "description", f"Coarse-grained model: {model_cls.name_verbose}"
-            ),
+            "description": cls.format_description(description, citations),
             "raw_beads": raw_beads,
             "beads": cls.format_beads(raw_beads),
-            "citations": cls.format_citations(config),
+            "citations": citations,
             "mapping": cls.format_mapping(model_cls),
             "image_url": cls.get_image_url(image_name_for_url) or "",
         }
@@ -125,19 +142,60 @@ class DocsContextBuilder:
         return formatted_mapping
 
     @classmethod
-    def load_citations(cls) -> dict[str, str]:
-        if cls._citations_cache is None:
-            with open(CITATIONS_DIR, "r", encoding="utf-8") as f:
-                cls._citations_cache = json.load(f)
-        return cls._citations_cache
+    def load_citations(cls) -> dict[str, CitationData]:
+        citations = cls._citations_cache
+
+        if citations is None:
+            with open(CITATIONS_DIR, "r", encoding="utf-8") as file:
+                citations = json.load(file)
+
+            cls._citations_cache = citations
+
+        return citations
 
     @classmethod
-    def format_citations(cls, config: dict[str, Any]) -> list[str]:  # type: ignore
+    def format_citations(cls, config: dict[str, Any]) -> list[Citation]:  # type: ignore
         citations_keys = config.get("citations", {})
         citations_values = cls.load_citations()
 
-        citations = []
-        for i, k in enumerate(citations_keys.values(), start=1):
-            citations.append(f"{i}. {citations_values.get(k, k)}")
+        citations: list[Citation] = []
+        for number, citation_key in enumerate(citations_keys.values(), start=1):
+            citation = citations_values[citation_key]
+
+            citations.append(
+                Citation(
+                    number=number,
+                    text=citation["text"],
+                    url=citation["url"],
+                )
+            )
 
         return citations
+
+    @staticmethod
+    def format_description(
+        description: str,
+        citations: list[Citation],
+    ) -> Markup:
+        formatted_description = str(escape(description))
+
+        for citation in citations:
+            marker = f"[{citation.number}]"
+
+            link = Markup(
+                '<a href="{}" '
+                'target="_blank" '
+                'rel="noopener noreferrer" '
+                'class="text-accent hover:underline">'
+                "{}</a>"
+            ).format(
+                citation.url,
+                marker,
+            )
+
+            formatted_description = formatted_description.replace(
+                marker,
+                str(link),
+            )
+
+        return Markup(formatted_description)
