@@ -7,7 +7,7 @@ services:
     ports:
       - "127.0.0.1:5050:5050"
     volumes:
-      - job-storage:/app/temp
+      - workspace-storage:/app/temp
     logging:
       driver: json-file
       options:
@@ -19,9 +19,9 @@ services:
       context: .
     init: true
     restart: unless-stopped
-    command: [ "python", "-m", "app.services.jobs.worker" ]
+    command: [ "python", "-m", "app.services.workspaces.worker" ]
     volumes:
-      - job-storage:/app/temp
+      - workspace-storage:/app/temp
     healthcheck:
       disable: true
     logging:
@@ -31,4 +31,4 @@ services:
         max-file: "3"
 
 volumes:
-  job-storage:
+  workspace-storage:

@@ -11,7 +11,7 @@ from app.models.form import (
     SupportedFormats,
 )
 from app.rcsb import fetch_rcsb_file
-from app.services.jobs import JobManager
+from app.services.workspaces import WorkspaceManager
 from app.services.structures import StructureProcessor
 from app.settings import BYTES_PER_MIB, MAX_FILE_UPLOAD_SIZE, PRESETS_DIR, TEMPLATES
 
@@ -41,7 +41,7 @@ def process_structure_and_get_metadata(
 
 
 async def save_structures(
-    job_id: str,
+    workspace_id: str,
     original_structure: Structure,
     file_format: SupportedFormats,
     coarse_structure: Structure,
@@ -57,23 +57,23 @@ async def save_structures(
     if StructureProcessor.get_structure_atom_count(coarse_structure) <= 99999:
         pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
 
-    JobManager.setup_job_dir(job_id)
+    WorkspaceManager.setup_workspace_dir(workspace_id)
 
     try:
         if pdb_content is not None:
-            await JobManager.create_file(
-                job_id,
+            await WorkspaceManager.create_file(
+                workspace_id,
                 pdb_content,
                 f"coarse.{SupportedFormats.PDB.value}",
             )
-        await JobManager.create_file(
-            job_id, original_content, f"reference.{original_format.value}"
+        await WorkspaceManager.create_file(
+            workspace_id, original_content, f"reference.{original_format.value}"
         )
-        await JobManager.create_file(
-            job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
+        await WorkspaceManager.create_file(
+            workspace_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
         )
     except Exception:
-        JobManager.cleanup_job(job_id)
+        WorkspaceManager.cleanup_workspace(workspace_id)
         raise
 
 
@@ -87,7 +87,7 @@ async def handle_request_and_render(
     chains: list[str],
     custom_model_data: dict | None = None,
 ) -> HTMLResponse:
-    job_id = JobManager.create_job_id()
+    workspace_id = WorkspaceManager.create_workspace_id()
     original_structure, coarse_structure, atom_counts = (
         process_structure_and_get_metadata(
             file_content,
@@ -98,11 +98,13 @@ async def handle_request_and_render(
             custom_model_data,
         )
     )
-    await save_structures(job_id, original_structure, file_format, coarse_structure)
+    await save_structures(
+        workspace_id, original_structure, file_format, coarse_structure
+    )
 
     context = StructureProcessor.build_comparison_context(
         request=request,
-        job_id=job_id,
+        workspace_id=workspace_id,
         filename=filename,
         file_format=file_format,
         selected_model=selected_model,

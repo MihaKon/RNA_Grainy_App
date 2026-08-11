@@ -3,16 +3,16 @@ from fastapi.responses import FileResponse, Response
 
 from app.exceptions import InvalidRequestError
 from app.models.form import SupportedFormats
-from app.services.jobs import JobManager
+from app.services.workspaces import WorkspaceManager
 
 FILE_TYPES = ["reference", "coarse"]
 
-router = APIRouter(prefix="/api/job", tags=["job"])
+router = APIRouter(prefix="/api/results", tags=["results"])
 
 
-@router.get("/{job_id}/{file_type}")
-async def get_job_file(
-    job_id: str, file_type: str, file_format: str = Query(...)
+@router.get("/{workspace_id}/{file_type}")
+async def get_result_file(
+    workspace_id: str, file_type: str, file_format: str = Query(...)
 ) -> FileResponse:
     if file_type not in FILE_TYPES:
         raise InvalidRequestError("Invalid file type requested.")
@@ -25,15 +25,15 @@ async def get_job_file(
     else:
         filename = f"coarse.{file_format}"
 
-    file_path = JobManager.get_file_path(job_id, filename)
+    file_path = WorkspaceManager.get_file_path(workspace_id, filename)
 
     return FileResponse(path=file_path, media_type="application/octet-stream")
 
 
 @router.post(
-    "/{job_id}/consumed",
+    "/{workspace_id}/consumed",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def mark_job_as_consumed(job_id: str) -> Response:
-    JobManager.cleanup_job(job_id)
+async def mark_result_as_consumed(workspace_id: str) -> Response:
+    WorkspaceManager.cleanup_workspace(workspace_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
