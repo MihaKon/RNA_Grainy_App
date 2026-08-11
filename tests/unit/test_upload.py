@@ -23,6 +23,7 @@ class TestRCSBUpload:
         assert response.status_code == 422
 
     @pytest.mark.parametrize("rcsb_id", ["4GXY", "4gxy"])
+    @pytest.mark.usefixtures("isolated_workspace_storage")
     def test_fetch_rcsb_valid_id_returns_200(
         self,
         client: TestClient,
@@ -111,8 +112,11 @@ class TestFileUpload:
 
         assert response.status_code == 422
 
+    @pytest.mark.usefixtures("isolated_workspace_storage")
     def test_correct_pdb_file_upload_returns_200(
-        self, client: TestClient, pdb_file: io.BytesIO
+        self,
+        client: TestClient,
+        pdb_file: io.BytesIO,
     ) -> None:
         response = client.post(
             "/upload/file/",
@@ -121,6 +125,7 @@ class TestFileUpload:
         )
         assert response.status_code == 200
 
+    @pytest.mark.usefixtures("isolated_workspace_storage")
     def test_correct_cif_file_upload_returns_200(
         self, client: TestClient, cif_file: io.BytesIO
     ) -> None:

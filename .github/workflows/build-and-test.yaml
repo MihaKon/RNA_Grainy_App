@@ -45,6 +45,9 @@ jobs:
       - name: Install Playwright browsers and system dependencies
         run: pipenv run playwright install --with-deps chromium
 
+      - name: Build Tailwind CSS
+        run: npm run build
+
       - name: Run Ruff
         run: pipenv run ruff check .
 
@@ -53,9 +56,9 @@ jobs:
 
       - name: Run unit tests
         run: pipenv run pytest tests/unit
-
-      - name: Build Tailwind CSS
-        run: npm run build
+        
+      - name: Run integration tests
+        run: pipenv run pytest tests/integration
 
       - name: Run E2E tests
         run: pipenv run pytest tests/e2e
