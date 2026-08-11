@@ -15,6 +15,7 @@ from app.models.form import SupportedFormats
 from app.routes import docs, jobs, uploads
 from app.settings import STATIC_DIR, TEMPLATES
 
+
 app = FastAPI(title="RNA Coarse Grain App", version="0.1.0")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.add_middleware(GZipMiddleware)
@@ -24,6 +25,11 @@ app.include_router(jobs.router)
 
 app.add_exception_handler(AppException, app_exception_handler)
 app.add_exception_handler(ValidationError, validation_exception_handler)
+
+
+@app.get("/healthz", include_in_schema=False)
+async def healthz() -> dict[str, str]:
+    return {"status": "ok"}
 
 
 @app.get("/", response_class=HTMLResponse)

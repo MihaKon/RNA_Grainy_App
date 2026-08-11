@@ -3,5 +3,5 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 
 [tool.isort]
-line_lenght = 88
+line_length = 88
 profile = "ruff"

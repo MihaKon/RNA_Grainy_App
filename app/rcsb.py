@@ -2,22 +2,32 @@ import httpx
 from httpx import HTTPStatusError
 
 from app.exceptions import FileProcessingError
-from app.settings import MAX_RCSB_UPLOAD_SIZE
+from app.settings import BYTES_PER_MIB, MAX_RCSB_DOWNLOAD_SIZE, RCSB_URL
 
-RCSB_URL = "https://files.rcsb.org/download/"
+
 client = httpx.AsyncClient()
 
 
 async def fetch_rcsb_file(rcsb_id: str) -> str | None:
     rcsb_id = rcsb_id.strip().upper()
     url = RCSB_URL + f"{rcsb_id}.cif"
-    response = await client.get(url)
+
+    async with client.stream("GET", url) as response:
+        try:
+            response.raise_for_status()
+        except HTTPStatusError:
+            return None
+
+        file_content = bytearray()
+        async for chunk in response.aiter_bytes():
+            if len(file_content) + len(chunk) > MAX_RCSB_DOWNLOAD_SIZE:
+                max_size_mib = MAX_RCSB_DOWNLOAD_SIZE / BYTES_PER_MIB
+                raise FileProcessingError(
+                    f"The requested RCSB file exceeds the {max_size_mib:g} MiB size limit"
+                )
+            file_content.extend(chunk)
+
     try:
-        response.raise_for_status()
-    except HTTPStatusError:
-        return None
-    if response.num_bytes_downloaded > MAX_RCSB_UPLOAD_SIZE:
-        raise FileProcessingError(
-            f"File size exceeds maximum fetching file size of: {MAX_RCSB_UPLOAD_SIZE / 1024} KB."
-        )
-    return response.text
+        return file_content.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise FileProcessingError("The RCSB file has invalid text encoding.") from exc

@@ -1,0 +1,34 @@
+services:
+  app:
+    build:
+      context: .
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5050:5050"
+    volumes:
+      - job-storage:/app/temp
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  cleaner:
+    build:
+      context: .
+    init: true
+    restart: unless-stopped
+    command: [ "python", "-m", "app.services.jobs.worker" ]
+    volumes:
+      - job-storage:/app/temp
+    healthcheck:
+      disable: true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  job-storage:

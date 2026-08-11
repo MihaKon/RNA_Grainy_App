@@ -37,7 +37,7 @@ class StructureProcessor:
     def get_structure_atom_count(structure: Structure) -> int:
         atom_counts = structure[0].count_atom_sites()
         return atom_counts
-    
+
     @staticmethod
     def parse_structure(
         content: str,
@@ -125,10 +125,18 @@ class StructureProcessor:
             ).include_query_params(file_format=SupportedFormats.PDB.value)
         )
 
+        consumed_url = str(
+            request.url_for(
+                "mark_job_as_consumed",
+                job_id=job_id,
+            )
+        )
+
         initial_data = {
             "reference_url": reference_url,
             "coarse_mmcif_url": coarse_mmcif_url,
             "coarse_pdb_url": coarse_pdb_url if is_pdb_available else None,
+            "consumed_url": consumed_url,
             "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
             "job_id": job_id,
             "filename": filename,

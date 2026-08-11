@@ -5,15 +5,15 @@ from gemmi import Structure
 from app.exceptions import FileProcessingError
 from app.models.form import (
     COARSE_FILE_FORMAT,
-    PresetRequest,
     FileUploadRequest,
+    PresetRequest,
     RCSBRequest,
     SupportedFormats,
 )
 from app.rcsb import fetch_rcsb_file
 from app.services.jobs import JobManager
 from app.services.structures import StructureProcessor
-from app.settings import PRESETS_DIR, MAX_FILE_UPLOAD_SIZE, TEMPLATES
+from app.settings import BYTES_PER_MIB, MAX_FILE_UPLOAD_SIZE, PRESETS_DIR, TEMPLATES
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
@@ -46,23 +46,35 @@ async def save_structures(
     file_format: SupportedFormats,
     coarse_structure: Structure,
 ) -> None:
-    JobManager.setup_job_dir(job_id)
-
     original_format = file_format.normalize_format()
 
     original_content = StructureProcessor.structure_to_cif_string(original_structure)
+
     cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
+
+    pdb_content: str | None = None
+
     if StructureProcessor.get_structure_atom_count(coarse_structure) <= 99999:
         pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
-        await JobManager.create_file(job_id, pdb_content, f"coarse.{SupportedFormats.PDB.value}")
 
-    await JobManager.create_file(
-        job_id, original_content, f"reference.{original_format.value}"
-    )
-    await JobManager.create_file(
-        job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
-    )
+    JobManager.setup_job_dir(job_id)
 
+    try:
+        if pdb_content is not None:
+            await JobManager.create_file(
+                job_id,
+                pdb_content,
+                f"coarse.{SupportedFormats.PDB.value}",
+            )
+        await JobManager.create_file(
+            job_id, original_content, f"reference.{original_format.value}"
+        )
+        await JobManager.create_file(
+            job_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
+        )
+    except Exception:
+        JobManager.cleanup_job(job_id)
+        raise
 
 
 async def handle_request_and_render(
@@ -125,8 +137,9 @@ async def upload_file(
     if upload_req.file.size is None:
         raise FileProcessingError("Uploaded file is empty.")
     elif upload_req.file.size > MAX_FILE_UPLOAD_SIZE:
+        max_size_mib = MAX_FILE_UPLOAD_SIZE / BYTES_PER_MIB
         raise FileProcessingError(
-            f"File size exceeds maximum file upload size of: {MAX_FILE_UPLOAD_SIZE / 1024} KB." #TODO: MB
+            f"File size exceeds maximum file upload size of: {max_size_mib:g} MiB."
         )
 
     try:
@@ -206,9 +219,7 @@ async def upload_preset(
         models=models,
         chains=chains,
     )  # type: ignore
-    preset_path= (
-        PRESETS_DIR / f"{preset_req.preset_id}.{SupportedFormats.CIF.value}"
-    )
+    preset_path = PRESETS_DIR / f"{preset_req.preset_id}.{SupportedFormats.CIF.value}"
 
     if not preset_path.exists():
         raise FileProcessingError(

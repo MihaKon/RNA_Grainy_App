@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Query
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Query, status
+from fastapi.responses import FileResponse, Response
 
 from app.exceptions import InvalidRequestError
 from app.models.form import SupportedFormats
@@ -28,3 +28,12 @@ async def get_job_file(
     file_path = JobManager.get_file_path(job_id, filename)
 
     return FileResponse(path=file_path, media_type="application/octet-stream")
+
+
+@router.post(
+    "/{job_id}/consumed",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def mark_job_as_consumed(job_id: str) -> Response:
+    JobManager.cleanup_job(job_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
