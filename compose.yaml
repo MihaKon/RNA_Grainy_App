@@ -4,6 +4,8 @@ services:
       context: .
     init: true
     restart: unless-stopped
+    environment:
+      WEB_CONCURRENCY: "3"
     ports:
       - "127.0.0.1:5050:5050"
     volumes:
