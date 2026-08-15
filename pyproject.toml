@@ -1,0 +1,7 @@
+[tool.mypy]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[tool.isort]
+line_length = 88
+profile = "ruff"

@@ -1,0 +1,26 @@
+{
+  "model_name": "<img src=\"x\" onerror=\"document.body.innerHTML = '<h1>TEST HALTED BY INJECTION</h1>';\">",
+  "description": "<img src=\"x\" onerror=\"document.body.innerHTML = '<h1>TEST HALTED BY INJECTION</h1>';\">",
+  "default_mapping": {
+    "residues": ["A", "G", "C", "U"],
+    "config": {
+      "bead_names": {
+        "A1": "P"
+      },
+      "atom_centers": {
+        "A1": ["P"]
+      },
+      "description": {
+        "A1": "<img src=\"x\" onerror=\"document.body.innerHTML = '<h1>TEST HALTED BY INJECTION</h1>';\">"
+      },
+      "strategies": {
+        "A1": "direct"
+      }
+    }
+  },
+  "mapping": [],
+  "connectivity": {
+    "intra_residue": [],
+    "inter_residue": []
+  }
+}

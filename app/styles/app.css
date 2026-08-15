@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@source "../templates";
+@source "../static/js";
+
+
+@theme {
+    --color-primary: #212D40;
+    --color-secondary: #11151C;
+    --color-accent: #155DFC;
+    --color-accent-light: #EFF6FF;
+    --color-danger: #E02424; 
+    --color-danger-light: #FECACA;
+    --color-focus: #B182E3; 
+    --color-tertiary: #6A7282;
+    --color-tertiary-light: #E5E7EB;
+}

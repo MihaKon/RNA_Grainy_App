@@ -1,0 +1,29 @@
+<div x-show="selectedModel === 'custom'"
+     x-transition
+     class="border border-primary/10 rounded-xl p-3 flex gap-3">
+    <button type="button"
+            @click="$store.openCreator.open()"
+            class="cursor-pointer flex-1 py-2 px-3 bg-white border border-primary/10 rounded-lg text-sm font-medium text-primary hover:border-accent hover:text-accent transition shadow-sm flex flex-col items-center gap-1 group">
+        <i class="fa-solid fa-pen-to-square text-lg text-primary group-hover:text-accent transition"></i>
+        Create Model
+    </button>
+    <div class="flex-1 relative">
+        <input type="file"
+               accept=".json"
+               class="hidden"
+               x-ref="jsonUpload"
+               @change="readJsonFile($event)">
+        <button type="button"
+                @click="uploadJson()"
+                name="jsonUpload"
+                class="cursor-pointer w-full h-full py-2 px-3 bg-white border border-primary/10 rounded-lg text-sm font-medium text-primary hover:border-accent hover:text-accent transition shadow-sm flex flex-col items-center gap-1 group">
+            <i class="fa-solid fa-file-arrow-up text-lg text-primary group-hover:text-accent transition"></i>
+            Upload JSON
+        </button>
+    </div>
+</div>
+<div x-show="selectedModel === 'custom' && customModelLoaded"
+     x-transition
+     class="text-xs text-center text-accent font-medium flex items-center justify-center gap-1">
+    <i class="fa-solid fa-circle-check"></i> Custom model configuration loaded.
+</div>

@@ -1,0 +1,26 @@
+{% macro primary_button(id='', variant='primary', text='', classes='', button_type='button', download=None, href=None) %}
+  {% set base_classes = "py-3 hover:cursor-pointer text-white font-semibold rounded-xl shadow-lg shadow-accent/20 hover:shadow-accent/40 transition transform duration-300 ease-in-out hover:scale-[1.02] flex items-center justify-center text-center" %}
+  {% set variants = {"primary": "bg-primary hover:bg-secondary", "danger": "bg-red-500 hover:bg-red-700", "disabled": "bg-tertiary cursor-not-allowed"} %}
+  {% set all_classes = [
+      base_classes,
+      variants[variant] | default(variants['primary']),
+      classes
+    ] %}
+
+  {% if href %}
+    <a id="{{ id }}"
+      {% if variant != 'disabled' %}
+       href="{{ href }}"
+      {% endif %}
+       class="{{ all_classes | join(" ") }}"
+       {% if download %} download="{{ download }}" {% endif %}>
+      {{ text }}
+    </a>
+  {% else %}
+    <button id="{{ id }}"
+            type="{{ button_type }}"
+            class="{{ all_classes | join(" ") }}">
+      {{ text }}
+    </button>
+  {% endif %}
+{% endmacro %}

@@ -1,0 +1,138 @@
+<nav
+  x-data="{
+        mobileOpen: false, 
+        currentPath: window.location.pathname,
+        isActive(path) {
+            return this.currentPath === path || (path !== '/' && this.currentPath.startsWith(path));
+        }
+     }"
+  class="sticky top-0 z-50 w-full bg-primary"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 shrink-0">
+    <div class="relative flex h-16 items-center justify-between">
+      <div class="flex flex-1 items-center justify-start gap-8">
+        <a
+          href="/"
+          class="flex w-48 shrink-0 items-center gap-3 group outline-none"
+        >
+          <div
+            class="flex w-10 h-10 shrink-0 items-center justify-center transition-transform duration-100 group-hover:scale-[1.2]"
+          >
+            <img
+              src="{{ url_for('static', path='/images/rna-grainy-logo.png') }}"
+              alt="RNAgrainy logo"
+              width="40"
+              height="40"
+              style="width: 40px; height: 40px; object-fit: contain"
+            />
+          </div>
+
+          <span class="whitespace-nowrap text-white text-xl font-bold tracking-wider">
+            RNAgrainy
+          </span>
+        </a>
+
+        <div class="hidden md:block ml-4">
+          <div class="flex space-x-1">
+            <a
+              href="/"
+              class="w-16 px-3 py-2 rounded-lg text-sm text-center transition-colors"
+              :class="isActive('/')
+                ? 'text-white font-bold'
+                : 'text-white font-normal hover:font-semibold'"
+            >
+              Home
+            </a>
+
+            <a
+              href="/documentation"
+              class="w-32 px-3 py-2 rounded-lg text-sm text-center transition-colors"
+              :class="isActive('/documentation')
+                ? 'text-white font-bold'
+                : 'text-white font-normal hover:font-semibold'"
+            >
+              Documentation
+            </a>
+
+            <a
+              href="/about"
+              class="w-16 px-3 py-2 rounded-lg text-sm text-center transition-colors"
+              :class="isActive('/about')
+                ? 'text-white font-bold'
+                : 'text-white font-normal hover:font-semibold'"
+            >
+              About
+            </a>
+          </div>
+        </div>
+
+      <div class="absolute inset-y-0 right-0 flex items-center md:hidden">
+        <button
+          @click="mobileOpen = !mobileOpen"
+          type="button"
+          class="relative inline-flex items-center justify-center rounded-md p-2 text-tertiary-light hover:bg-tertiary hover:text-white"
+          aria-controls="mobile-menu"
+          :aria-expanded="mobileOpen.toString()"
+        >
+          <span class="sr-only">Open main menu</span>
+
+          <i
+            class="fa-solid fa-bars fa-lg transition-all duration-200"
+            x-show="!mobileOpen"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-90"
+            x-transition:enter-end="opacity-100 scale-100"
+          ></i>
+
+          <i
+            class="fa-solid fa-xmark fa-lg transition-all duration-200"
+            x-show="mobileOpen"
+            x-cloak
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-90 rotate-90"
+            x-transition:enter-end="opacity-100 scale-100 rotate-0"
+          ></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    x-show="mobileOpen"
+    x-cloak
+    class="md:hidden border-t border-primary/10 bg-primary"
+    id="mobile-menu"
+  >
+    <div class="space-y-1 px-2 pb-4 pt-3">
+      <a
+        href="/"
+        class="block rounded-md px-3 py-2.5 text-base font-medium transition-colors outline-none"
+        :class="isActive('/')
+            ? 'bg-accent text-white shadow-md shadow-accent/20' 
+            : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
+      >
+        Home
+      </a>
+
+      <a
+        href="/documentation"
+        class="block rounded-md px-3 py-2.5 text-base font-medium transition-colors outline-none"
+        :class="isActive('/documentation')
+            ? 'bg-accent text-white shadow-md shadow-accent/20' 
+            : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
+      >
+        Documentation
+      </a>
+
+      <a
+        href="/about"
+        class="block rounded-md px-3 py-2.5 text-base font-medium transition-colors outline-none"
+        :class="isActive('/about')
+            ? 'bg-accent text-white shadow-md shadow-accent/20'
+            : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
+      >
+        About
+      </a>
+    </div>
+  </div>
+</nav>

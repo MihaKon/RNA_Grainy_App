@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="w-full">
+  <div class="bg-white pt-8">
+    <div class="max-w-7xl mx-auto px-6">
+      <h1 class="text-3xl font-bold text-primary">About</h1>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8 flex flex-col gap-8">
+      <section
+        class="bg-white rounded-2xl shadow-sm border border-tertiary-light p-4"
+      >
+        <h2 class="text-2xl font-bold text-primary">About RNAgrainy</h2>
+
+        <p class="mt-4 text-secondary text-justify leading-relaxed ">
+          RNAgrainy is a web application for converting full-atom 3D RNA
+          structures into coarse-grained representations. It supports multiple
+          coarse-grained models with different atom mapping rules and levels of
+          structural detail. The application provides tools for uploading,
+          processing, visualizing, and downloading RNA structures. It also
+          facilitates the comparison of different coarse-grained
+          representations. RNAgrainy is intended to support research involving
+          RNA structure analysis, modelling, and simulation.
+        </p>
+      </section>
+
+    <section
+      class="bg-white rounded-2xl shadow-sm border border-tertiary-light p-4"
+    >
+      <h2 class="text-2xl font-bold text-primary">Authors</h2>
+
+      <div class="mt-2">
+        <h3
+          class="font-bold text-secondary mb-2 text-sm uppercase tracking-wider"
+        >
+          Development
+        </h3>
+
+        <p class="font-medium text-primary">
+          Sergiusz Urbaniak<sup>1</sup>, Michał Konon<sup>1</sup>
+        </p>
+      </div>
+
+      <div class="mt-2">
+        <h3
+          class="font-bold text-secondary mb-2   text-sm uppercase tracking-wider"
+        >
+          Supervision
+        </h3>
+
+        <p class="font-medium text-primary">
+          Marta Szachniuk<sup>1, 2</sup>
+        </p>
+      </div>
+
+        <div class="mt-2 pt-4 border-t border-tertiary-light">
+        <div class="flex flex-col gap-2 text-sm text-secondary">
+            <p>
+            <sup>1</sup> Institute of Computing Science, Poznan University of
+            Technology, Poland
+            </p>
+            <p>
+            <sup>2</sup> Institute of Bioorganic Chemistry, Polish Academy of
+            Sciences, Poznan, Poland
+            </p>
+        </div>
+        </div>
+        </section>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %} {% from "components/primary_button.html" import
+primary_button %} {% block content %}
+<div
+  id="upload-container"
+  class="flex w-full items-center justify-center min-h-[500px] m-2"
+  x-cloak
+>
+  <form
+    x-data="uploadForm"
+    @htmx:config-request="submitForm($event)"
+    hx-post="/upload/file/"
+    hx-target="#upload-container"
+    hx-swap="innerHTML"
+    hx-encoding="multipart/form-data"
+    hx-target-error="#errors"
+    hx-indicator="#loading-spinner"
+    class="bg-white rounded-2xl shadow-xl border border-primary/10 py-4 px-6 flex flex-col gap-1 w-full max-w-md relative"
+    novalidate
+  >
+    <div
+      id="loading-spinner"
+      class="htmx-indicator absolute inset-0 bg-transparent z-50 flex items-center justify-center rounded-2xl backdrop-blur-sm"
+    >
+      <div class="flex flex-col items-center gap-3">
+        <i class="fa-solid fa-circle-notch fa-spin fa-2xl text-accent"></i>
+        <span class="text-sm font-semibold text-primary">Processing...</span>
+      </div>
+    </div>
+
+    <div class="text-center space-y-1">
+      <h2 class="text-2xl font-bold text-secondary">Upload Structure</h2>
+      <p class="text-xs text-tertiary uppercase tracking-wide font-medium">
+        Supported formats: {% for file_format in supported_file_formats %}{{
+        file_format|upper }}{{ ', ' if not loop.last else '' }}{% endfor %}
+      </p>
+    </div>
+
+    <div id="errors">
+      {% if error %} {% include "components/error_alert.html" %} {% endif %}
+    </div>
+
+    {% include "components/upload/file_input.html" %} {% include
+    "components/upload/model_selector.html" %} {% include
+    "components/upload/custom_model_actions.html" %}
+
+    <input type="hidden" name="custom_model_data" x-ref="customModelInput" />
+
+    {% include "components/upload/processing_options.html" %}
+
+    <div class="pt-2">
+      {{ primary_button(text='Process Structure', button_type="submit",
+      classes='w-full') }}
+    </div>
+  </form>
+</div>
+
+{% include "components/creator/layout.html" %} {% endblock %} {% block scripts
+%}
+<script src="{{ url_for('static', path='/js/store.js') }}"></script>
+<script src="{{ url_for('static', path='/js/config.js') }}"></script>
+<script src="{{ url_for('static', path='/js/creator/json_builder.js') }}"></script>
+<script src="{{ url_for('static', path='/js/creator/creator_controller.js') }}"></script>
+<script src="{{ url_for('static', path='/js/upload/upload_controller.js') }}"></script>
+{% endblock %}

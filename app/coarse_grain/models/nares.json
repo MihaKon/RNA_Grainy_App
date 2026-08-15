@@ -1,0 +1,124 @@
+{
+  "model_name": "NARES-2P",
+  "beads_per_residue": [
+    2
+  ],
+  "description": "NARES-2P [1] is a model that reduces the geometry of nucleic acids (both DNA and RNA) to two beads per nucleotide: a bead corresponding to the phosphate group - placed halfway between consecutive sugar rings, and a bead representing the nitrogenous base - located at the geometric center of the base. To faithfully reproduce the backbone geometry, the model defines an additional, third bead (also called virtual), positioned at the geometric center of the ribose. It does not participate in physical interactions; therefore, the authors present NARES-2P as a two-point model (2P in the model name stands for 2-point model). This approach is based on a bottom-up strategy and aims to reproduce the actual forces acting within the molecule, rather than relying solely on the statistics of known structures [1]. This model combines elements based on knowledge and physical theory. The energy function is divided into local interactions, which enforce faithful bond and angle geometry within the nucleotide (KBP), and non-local interactions, including - among others - dipole interactions between bases (TBP) that are crucial for helix stability [2][3]. To search the conformational space, the model utilizes a global optimization algorithm (Conformational Space Annealing - CSA). This model is particularly effective in reproducing the thermodynamics of folding and double helix formation from unpaired strands [2].",
+  "citations": {
+    "1": "he2015optimization",
+    "2": "cragnolini2015ab",
+    "3": "dawson2016coarse"
+  },
+  "default_mapping": {
+    "residues": [
+      "A",
+      "G",
+      "C",
+      "U"
+    ],
+    "config": {
+      "bead_names": {
+        "A1": "P",
+        "A2": "S"
+      },
+      "atom_centers": {
+        "A1": [
+          "P",
+          "OP1",
+          "OP2",
+          "O1P",
+          "O2P"
+        ],
+        "A2": [
+          "C1'",
+          "C2'",
+          "C3'",
+          "C4'",
+          "C5'",
+          "O2'",
+          "O3'",
+          "O4'",
+          "O5'"
+        ]
+      },
+      "description": {
+        "A1": "Phosphate group geometric center of mass",
+        "A2": "Sugar ring geometric center of mass"
+      }
+    }
+  },
+  "mapping": [
+    {
+      "residues": [
+        "A",
+        "G"
+      ],
+      "config": {
+        "bead_names": {
+          "A3": "B"
+        },
+        "atom_centers": {
+          "A3": [
+            "N1",
+            "C2",
+            "N3",
+            "C4",
+            "C5",
+            "C6",
+            "N7",
+            "C8",
+            "N9"
+          ]
+        },
+        "description": {
+          "A3": "Base geometric center of mass (Purine)"
+        }
+      }
+    },
+    {
+      "residues": [
+        "C",
+        "U"
+      ],
+      "config": {
+        "bead_names": {
+          "A3": "B"
+        },
+        "atom_centers": {
+          "A3": [
+            "N1",
+            "C2",
+            "O2",
+            "N3",
+            "C4",
+            "N4",
+            "O4",
+            "C5",
+            "C6"
+          ]
+        },
+        "description": {
+          "A3": "Base geometric center of mass (Pyrimidine)"
+        }
+      }
+    }
+  ],
+  "connectivity": {
+    "intra_residue": [
+      [
+        "A2",
+        "A3"
+      ],
+      [
+        "A1",
+        "A2"
+      ]
+    ],
+    "inter_residue": [
+      {
+        "source": "A2",
+        "target": "A1"
+      }
+    ]
+  }
+}

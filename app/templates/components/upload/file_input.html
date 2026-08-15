@@ -1,0 +1,112 @@
+{% from 'components/macros/input_field.html' import input_field %}
+
+<div class="space-y-2">
+  <div class="relative group">
+    <input
+      type="file"
+      id="file"
+      name="file"
+      x-ref="fileInput"
+      @change="handleFileSelect($event)"
+      accept="{% for file_format in supported_file_formats %}{{ '.'~file_format~',' }}{% endfor %}"
+      class="hidden"
+    />
+
+    <label
+      x-show="!file"
+      for="file"
+      class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 group-hover:bg-accent-light"
+      :class="errors.file ? 'border-danger' : 'border-primary/10 hover:border-accent'"
+    >
+      <div
+        class="flex flex-col items-center justify-center text-primary/60 group-hover:text-accent transition-colors"
+      >
+        <i class="fa-solid fa-cloud-arrow-up text-2xl mb-2"></i>
+        <p class="text-sm">
+          <span class="font-semibold">Click to upload</span>
+        </p>
+      </div>
+    </label>
+
+    <div
+      x-show="file"
+      class="flex items-center justify-between w-full p-3 border rounded-xl bg-accent-light border-accent"
+    >
+      <div class="flex items-center gap-3 overflow-hidden">
+        <div
+          class="w-8 h-8 rounded-lg bg-accent text-white flex items-center justify-center shrink-0 shadow-sm shadow-accent/20"
+        >
+          <i class="fa-solid fa-file"></i>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span
+            class="text-sm font-bold text-secondary truncate"
+            x-text="file?.name"
+          ></span>
+          <span
+            class="text-xs text-primary/70"
+            x-text="(file?.size / 1024 / 1024).toFixed(2) + ' MB'"
+          ></span>
+        </div>
+      </div>
+      <button
+        type="button"
+        @click="removeFile"
+        class="p-2 text-tertiary hover:text-danger transition-colors cursor-pointer"
+      >
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="relative flex py-2 items-center">
+    <div class="flex-grow border-t border-primary/10"></div>
+    <span
+      class="flex-shrink-0 mx-4 text-primary/40 text-xs font-bold uppercase tracking-wider"
+      >OR USE PDB ID</span
+    >
+    <div class="flex-grow border-t border-primary/10"></div>
+  </div>
+
+  <div>
+    <div class="relative">
+      {{ input_field(model="rcsbId", label="", placeholder="Enter PDB ID (e.g. 1RNA)", type="validated", error_condition="errors.file", icon="fa-solid fa-dna", name="rcsb_id") }}
+
+      <input type="hidden" name="preset_id" :value="presetId" />
+
+      <div
+        class="mt-2 flex items-center justify-end gap-2 text-xs text-primary/40"
+      >
+        <span>Or try example:</span>
+        <template
+          x-for="([id, name], index) in Object.entries(PRESETS)"
+          :key="id"
+        >
+          <span class="inline-flex items-center gap-1">
+            <button
+              type="button"
+              @click="setPreset(name)"
+              class="font-medium hover:text-accent hover:underline underline-offset-2 transition-colors cursor-pointer"
+              :class="presetId === name ? 'text-accent underline' : ''"
+            >
+              <span x-text="name"></span>
+            </button>
+
+            <span
+              x-show="index < Object.entries(PRESETS).length - 1"
+              class="select-none"
+              >•</span
+            >
+          </span>
+        </template>
+      </div>
+      <p
+        x-show="errors.file"
+        x-transition
+        class="mt-1 text-xs text-danger font-medium ml-1"
+      >
+        Please upload a file or enter a PDB ID.
+      </p>
+    </div>
+  </div>
+</div>
