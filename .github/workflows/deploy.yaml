@@ -30,4 +30,4 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_ed25519 \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            'bash /srv/rna-grainy/deploy.sh'
+            'bash /srv/RNA_Grainy_App/deploy.sh'
