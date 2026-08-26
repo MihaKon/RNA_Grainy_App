@@ -2,8 +2,9 @@
 "components/molstar_viewer.html" import molstar_viewer %} {% from
 "components/macros/info_text.html" import info_text %} {% from
 "components/macros/docs_macros.html" import render_model_image,
-render_citations, render_mapping_comparison, collapse_header %} {% block content
-%}
+render_citations, render_mapping_comparison, collapse_header %} 
+
+{% block content %}
 <div
   id="comparison-view"
   data-reference-url="{{ reference_url }}"
@@ -16,9 +17,9 @@ render_citations, render_mapping_comparison, collapse_header %} {% block content
   class="flex items-center justify-center px-6 py-8 overflow-hidden"
 >
   <div
-    class="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 py-8 px-6 h-[75dvh] w-full overflow-y-hidden border-2 border-tertiary-light rounded-2xl shadow-sm"
+    class="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 h-[75dvh] w-full overflow-y-hidden"
   >
-    <aside class="flex flex-col gap-6 h-full overflow-y-auto pr-2 pb-2">
+    <aside class="flex flex-col gap-6 h-full overflow-y-auto px-8 py-6 border-2 border-tertiary-light rounded-2xl shadow-sm">
       <section
         class="bg-white rounded-2xl shadow border border-tertiary-light p-6 shrink-0"
       >
@@ -98,10 +99,9 @@ render_citations, render_mapping_comparison, collapse_header %} {% block content
           {% endif %} {{ render_mapping_comparison(model.mapping) }}
         </div>
       </section>
-      <div class="h-4 shrink-0"></div>
     </aside>
     <section
-      class="z-40 relative overflow-hidden w-full min-w-0 h-[33dvh] min-h-[360px] lg:h-full lg:min-h-0 bg-white rounded-2xl shadow border border-tertiary-light"
+      class="flex flex-col z-40 relative overflow-hidden w-full min-w-0 h-[33dvh] min-h-[360px] lg:h-full lg:min-h-0 bg-white rounded-2xl shadow border border-tertiary-light"
     >
       <div
         id="comparison-loading-error"
@@ -111,7 +111,10 @@ render_citations, render_mapping_comparison, collapse_header %} {% block content
       </div>
 
       {{ molstar_viewer(container_id='molstar-container') }}
+      
+      {{ primary_button(id='vis-cg',
+          text='Coarse', variant='primary', classes='w-1/2', href='#') }} 
     </section>
   </div>
 </div>
-{% endblock %}
+{% endblock content %}
