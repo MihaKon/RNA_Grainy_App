@@ -1,8 +1,10 @@
-{% extends "base.html" %} {% from "components/primary_button.html" import
-primary_button %} {% block content %}
+{% extends "base.html" %}
+{% from "components/primary_button.html" import primary_button %} 
+
+{% block content %}
 <div
   id="upload-container"
-  class="flex w-full items-center justify-center min-h-[500px] p-2 max-h-dvh overflow-hidden"
+  class="flex items-center w-full justify-center py-8 overflow-hidden"
   x-cloak
 >
   <form
@@ -10,7 +12,7 @@ primary_button %} {% block content %}
     @htmx:config-request="submitForm($event)"
     hx-post="/upload/file/"
     hx-target="#upload-container"
-    hx-swap="innerHTML"
+    hx-swap="outerHTML"
     hx-encoding="multipart/form-data"
     hx-target-error="#errors"
     hx-indicator="#loading-spinner"
@@ -54,8 +56,9 @@ primary_button %} {% block content %}
   </form>
 </div>
 
-{% include "components/creator/layout.html" %} {% endblock %} {% block scripts
-%}
+{% include "components/creator/layout.html" %} 
+{% endblock %} 
+{% block scripts %}
 <script src="{{ url_for('static', path='/js/store.js') }}"></script>
 <script src="{{ url_for('static', path='/js/config.js') }}"></script>
 <script src="{{ url_for('static', path='/js/creator/json_builder.js') }}"></script>
