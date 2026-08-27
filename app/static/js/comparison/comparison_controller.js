@@ -106,7 +106,6 @@
     }
 
     button.addEventListener("click", async () => {
-      button.disabled = true;
 
       try {
         await controller.setStructureRepresentation(
@@ -123,8 +122,6 @@
           "Could not change Mol* representation:",
           error,
         );
-      } finally {
-        button.disabled = false;
       }
     });
   }
@@ -132,31 +129,31 @@
   function configureVisualizationControls(controller) {
     configureVisibilityButton(
       "vis-cg",
-      molstarController,
+      controller,
       "coarse",
     );
 
     configureVisibilityButton(
       "vis-aa",
-      molstarController,
+      controller,
       "reference",
     );
 
     configureRepresentationButton(
       "b-and-s",
-      molstarController,
+      controller,
       "ball-and-stick",
     );
 
     configureRepresentationButton(
       "cartoon",
-      molstarController,
+      controller,
       "cartoon",
     );
 
     configureRepresentationButton(
       "backbone",
-      molstarController,
+      controller,
       "backbone",
     );
 
@@ -166,8 +163,6 @@
     if (container.dataset.initialized === "true") {
       return;
     }
-
-    container.dataset.initialized = "true";
 
     const config = getComparisonConfig(container);
 
@@ -221,6 +216,8 @@
         error,
       );
     }
+    
+    container.dataset.initialized = "true";
   }
 
   function startComparisonIfPresent() {
@@ -238,6 +235,8 @@
 
       if (errorElement) {
         errorElement.classList.remove("hidden");
+      }
+      if (molDiv){
         molDiv.classList.remove("flex");
         molDiv.classList.add("hidden");
       }
@@ -248,5 +247,6 @@
   document.body.addEventListener("htmx:afterSwap", startComparisonIfPresent);
 
   window.addEventListener("pagehide", revokeBlobUrls);
+  window.addEventListener("pagehide", molstarController.dispose());
   
 })();

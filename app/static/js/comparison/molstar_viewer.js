@@ -169,5 +169,10 @@ window.createMolstarViewer = async function (containerId, structures) {
       return [...structureEntries.keys()];
     },
 
+    dispose() {
+      structureEntries.clear();
+      viewer.dispose();
+    },
+
   });
 };
