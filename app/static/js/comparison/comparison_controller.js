@@ -1,4 +1,5 @@
 (() => {
+  let molstarController = null;
   let activeBlobUrls = [];
 
   function revokeBlobUrls() {
@@ -70,6 +71,97 @@
     };
   }
 
+  function configureVisibilityButton(buttonId, controller, structureId) {
+    const button = document.getElementById(buttonId);
+
+    if (!button) {
+      return;
+    }
+
+    let visible = controller.isStructureVisible(structureId);
+
+    button.setAttribute("aria-pressed", String(visible));
+
+    button.addEventListener("click", () => {
+      visible = !visible;
+
+      controller.setStructureVisibility(
+        structureId,
+        visible,
+      );
+
+      button.setAttribute(
+        "aria-pressed",
+        String(visible),
+      );
+    });
+  }
+
+  function configureRepresentationButton(buttonId, controller, representationType,
+  ) {
+    const button = document.getElementById(buttonId);
+
+    if (!button) {
+      return;
+    }
+
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+
+      try {
+        await controller.setStructureRepresentation(
+          "reference",
+          representationType,
+        );
+
+        await controller.setStructureRepresentation(
+          "coarse",
+          representationType,
+        );
+      } catch (error) {
+        console.error(
+          "Could not change Mol* representation:",
+          error,
+        );
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+
+  function configureVisualizationControls(controller) {
+    configureVisibilityButton(
+      "vis-cg",
+      molstarController,
+      "coarse",
+    );
+
+    configureVisibilityButton(
+      "vis-aa",
+      molstarController,
+      "reference",
+    );
+
+    configureRepresentationButton(
+      "b-and-s",
+      molstarController,
+      "ball-and-stick",
+    );
+
+    configureRepresentationButton(
+      "cartoon",
+      molstarController,
+      "cartoon",
+    );
+
+    configureRepresentationButton(
+      "backbone",
+      molstarController,
+      "backbone",
+    );
+
+  }
+
   async function initializeComparison(container) {
     if (container.dataset.initialized === "true") {
       return;
@@ -104,18 +196,22 @@
       configureDownloadButton("download-pdb", coarsePdbBlobUrl, "PDB");
     }
 
-    await window.createMolstarViewer("molstar-container", [
+    molstarController = await window.createMolstarViewer("molstar-container", [
       {
+        id: "reference",
         url: referenceBlobUrl,
         format: config.referenceFormat,
         isCoarse: false,
       },
       {
+        id: "coarse",
         url: coarseCifBlobUrl,
         format: config.coarseFormat,
         isCoarse: true,
       },
     ]);
+
+    configureVisualizationControls(molstarController);
 
     try {
       await confirmResultConsumption(config.consumedUrl);
@@ -148,7 +244,9 @@
     });
   }
 
+
   document.body.addEventListener("htmx:afterSwap", startComparisonIfPresent);
 
   window.addEventListener("pagehide", revokeBlobUrls);
+  
 })();
