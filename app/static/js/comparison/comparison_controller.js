@@ -138,9 +138,12 @@
       console.error("Could not initialize comparison:", error);
 
       const errorElement = document.getElementById("comparison-loading-error");
+      const molDiv = document.getElementById("mol-div")
 
       if (errorElement) {
         errorElement.classList.remove("hidden");
+        molDiv.classList.remove("flex");
+        molDiv.classList.add("hidden");
       }
     });
   }

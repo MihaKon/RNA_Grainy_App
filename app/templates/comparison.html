@@ -14,12 +14,12 @@ render_citations, render_mapping_comparison, collapse_header %}
   data-reference-format="{{ file_format[0] }}"
   data-coarse-format="{{ file_format[1] }}"
   data-pdb-available="{{ 'true' if is_pdb_available else 'false' }}"
-  class="flex items-center justify-center px-6 py-8 overflow-hidden"
+  class="flex items-center justify-center px-6 py-8"
 >
   <div
-    class="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 h-[75dvh] w-full overflow-y-hidden"
+    class="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 h-auto lg:h-[75dvh] w-full lg:overflow-y-hidden border-2 border-tertiary-light rounded-2xl shadow-sm"
   >
-    <aside class="flex flex-col gap-6 h-full overflow-y-auto px-8 py-6 border-2 border-tertiary-light rounded-2xl shadow-sm">
+    <aside class="flex flex-col gap-6 lg:h-full lg:overflow-y-auto px-8 py-6 ">
       <section
         class="bg-white rounded-2xl shadow border border-tertiary-light p-6 shrink-0"
       >
@@ -43,16 +43,16 @@ render_citations, render_mapping_comparison, collapse_header %}
           <p class="text-sm text-tertiary mb-2">Download as</p>
           <div class="flex gap-3">
             {% if not is_pdb_available %} {{ primary_button(id='download-pdb',
-            text='PDB', variant='disabled', classes='w-1/2', href='#',
+            text='PDB', variant='disabled', classes='flex-1', href='#',
             download=filename ~ '_' ~ model.name ~ '.pdb') }} {% else %} {{
             primary_button(id='download-pdb', text='Loading PDB...',
-            classes='w-1/2', href='#', variant='disabled', download=filename ~
+            classes='flex-1', href='#', variant='disabled', download=filename ~
             '_' ~ model.name ~ '.pdb') }} {% endif %} {{
             primary_button(id='download-cif', text='Loading CIF...',
-            classes='w-1/2', href='#', variant='disabled', download=filename ~
+            classes='flex-1', href='#', variant='disabled', download=filename ~
             '_' ~ model.name ~ '.cif') }}
           </div>
-          <div class="mt-2 gap-2">
+          <div class="mt-2 flex flex-col gap-2">
             {{ info_text('true', 'Reference atoms are taken from the first model
             and all chains unless specified otherwise.', icon='fa-circle-info',
             type='info') }} {{ info_text('true', 'If you parse large structures,
@@ -72,7 +72,7 @@ render_citations, render_mapping_comparison, collapse_header %}
         {{ collapse_header('Model description', variant='comparison') }}
         <div x-show="open" class="mt-4 text-sm text-secondary">
           <div class="mb-4">{{ render_model_image(model.image_url) }}</div>
-          <div class="text-sm text-secondary text-justify">
+          <div class="text-justify">
             {{ model.description }}
           </div>
           <div class="mt-4 text-xs text-tertiary">
@@ -100,20 +100,38 @@ render_citations, render_mapping_comparison, collapse_header %}
         </div>
       </section>
     </aside>
-    <section
-      class="flex flex-col z-40 relative overflow-hidden w-full min-w-0 h-[33dvh] min-h-[360px] lg:h-full lg:min-h-0 bg-white rounded-2xl shadow border border-tertiary-light"
-    >
+    <section class="flex justify-center items-center h-full w-full">
       <div
         id="comparison-loading-error"
-        class="hidden absolute inset-4 z-40 rounded-lg border border-danger bg-danger-light p-4 text-sm text-danger"
+        class="hidden z-50 rounded-lg border border-danger bg-danger-light p-4 text-sm text-danger"
       >
         The result could not be loaded. Please process the structure again.
       </div>
 
-      {{ molstar_viewer(container_id='molstar-container') }}
-      
-      {{ primary_button(id='vis-cg',
-          text='Coarse', variant='primary', classes='w-1/2', href='#') }} 
+      <div id="mol-div" class="flex flex-col h-full w-full">
+        <div class="relative z-40 h-[33dvh] lg:h-auto lg:flex-1 lg:min-h-0 w-full overflow-hidden rounded-2xl border border-mol bg-white shadow-sm">
+          {{ molstar_viewer(container_id='molstar-container') }}
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 p-2 w-full">
+            {{ primary_button(id='vis-cg',
+            text='coarse', variant='primary', classes='', href='#') }} 
+
+            {{ primary_button(id='vis-aa',
+            text='all-atom', variant='primary', classes='', href='#') }} 
+
+            {{ primary_button(id='b-and-s',
+            text='ball & stick', variant='transparent', classes='', href='#') }} 
+
+            {{ primary_button(id='cartoon',
+            text='cartoon', variant='transparent', classes='', href='#') }} 
+
+            {{ primary_button(id='backbone',
+            text='backbone', variant='transparent', classes='', href='#') }} 
+
+        </div>
+      </div>
+
     </section>
   </div>
 </div>
