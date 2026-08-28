@@ -97,6 +97,26 @@
     });
   }
 
+  function setActiveRepresentationButton(activeButtonId) {
+    const representationButtonIds = [
+      "b-and-s",
+      "cartoon",
+      "backbone",
+    ];
+
+
+    for (const buttonId of representationButtonIds) {
+      const button = document.getElementById(buttonId);
+
+      if(button){
+        button.setAttribute(
+          "aria-pressed",
+          String(buttonId === activeButtonId),
+        );
+      }
+    }
+  }
+
   function configureRepresentationButton(buttonId, controller, representationType,
   ) {
     const button = document.getElementById(buttonId);
@@ -106,7 +126,6 @@
     }
 
     button.addEventListener("click", async () => {
-
       try {
         await controller.setStructureRepresentation(
           "reference",
@@ -117,6 +136,9 @@
           "coarse",
           representationType,
         );
+
+        setActiveRepresentationButton(buttonId);
+
       } catch (error) {
         console.error(
           "Could not change Mol* representation:",
@@ -157,6 +179,7 @@
       "backbone",
     );
 
+    setActiveRepresentationButton("b-and-s");
   }
 
   async function initializeComparison(container) {
@@ -246,7 +269,10 @@
 
   document.body.addEventListener("htmx:afterSwap", startComparisonIfPresent);
 
-  window.addEventListener("pagehide", revokeBlobUrls);
-  window.addEventListener("pagehide", molstarController.dispose());
+  window.addEventListener("pagehide", () => {
+    revokeBlobUrls();
+    molstarController?.dispose();
+    molstarController = null;
+  });
   
 })();
