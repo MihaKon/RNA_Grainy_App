@@ -1,6 +1,6 @@
 {% from 'components/macros/input_field.html' import input_field %}
 
-<div class="space-y-2">
+<div>
   <div class="relative group">
     <input
       type="file"
@@ -15,13 +15,13 @@
     <label
       x-show="!file"
       for="file"
-      class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 group-hover:bg-accent-light"
+      class="flex flex-col items-center justify-center w-full h-16 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 group-hover:bg-accent-light"
       :class="errors.file ? 'border-danger' : 'border-primary/10 hover:border-accent'"
     >
       <div
         class="flex flex-col items-center justify-center text-primary/60 group-hover:text-accent transition-colors"
       >
-        <i class="fa-solid fa-cloud-arrow-up text-2xl mb-2"></i>
+        <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
         <p class="text-sm">
           <span class="font-semibold">Click to upload</span>
         </p>
@@ -30,7 +30,7 @@
 
     <div
       x-show="file"
-      class="flex items-center justify-between w-full p-3 border rounded-xl bg-accent-light border-accent"
+      class="flex items-center justify-between w-full h-16 p-3 border rounded-xl bg-accent-light border-accent"
     >
       <div class="flex items-center gap-3 overflow-hidden">
         <div

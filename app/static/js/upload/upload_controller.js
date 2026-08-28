@@ -162,7 +162,7 @@ document.addEventListener("alpine:init", () => {
     checkPosition() {
       const buttonRect = this.$refs.dropdownButton.getBoundingClientRect();
       const spaceBelow = window.innerHeight - buttonRect.bottom;
-      this.openUp = spaceBelow < 250;
+      this.openUp = spaceBelow < 150;
     },
   }));
 });

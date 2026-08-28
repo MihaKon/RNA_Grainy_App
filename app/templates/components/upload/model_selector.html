@@ -1,9 +1,8 @@
 <div class="space-y-1">
-  <label class="block text-sm font-medium text-primary ml-1"
-    >Coarse-Grain Model</label
-  >
+  <p class="block text-sm font-medium text-primary"
+    >Coarse-Grain Model</p>
   <div
-    class="relative z-20"
+    class="relative"
     x-ref="dropdownContainer"
     @click.outside="dropdownOpen = false"
   >
@@ -29,7 +28,7 @@
 
     <div
       x-show="dropdownOpen"
-      class="absolute z-50 left-0 right-0 w-full bg-white shadow-xl shadow-primary/20 max-h-60 rounded-xl py-1 text-base overflow-auto focus:outline-none sm:text-sm border border-primary/10"
+      class="absolute z-50 left-0 right-0 w-full bg-white shadow-xl shadow-primary/20 max-h-50 rounded-xl py-1 text-base overflow-auto focus:outline-none sm:text-sm border border-primary/10"
       :class="openUp ? 'bottom-full mb-2 origin-bottom' : 'top-full mt-2 origin-top'"
     >
       {% for model_id, model_name in coarse_grain_models %}

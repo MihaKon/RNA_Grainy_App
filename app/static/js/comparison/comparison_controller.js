@@ -1,4 +1,5 @@
 (() => {
+  let molstarController = null;
   let activeBlobUrls = [];
 
   function revokeBlobUrls() {
@@ -70,12 +71,121 @@
     };
   }
 
+  function configureVisibilityButton(buttonId, controller, structureId) {
+    const button = document.getElementById(buttonId);
+
+    if (!button) {
+      return;
+    }
+
+    let visible = controller.isStructureVisible(structureId);
+
+    button.setAttribute("aria-pressed", String(visible));
+
+    button.addEventListener("click", () => {
+      visible = !visible;
+
+      controller.setStructureVisibility(
+        structureId,
+        visible,
+      );
+
+      button.setAttribute(
+        "aria-pressed",
+        String(visible),
+      );
+    });
+  }
+
+  function setActiveRepresentationButton(activeButtonId) {
+    const representationButtonIds = [
+      "b-and-s",
+      "cartoon",
+      "backbone",
+    ];
+
+
+    for (const buttonId of representationButtonIds) {
+      const button = document.getElementById(buttonId);
+
+      if(button){
+        button.setAttribute(
+          "aria-pressed",
+          String(buttonId === activeButtonId),
+        );
+      }
+    }
+  }
+
+  function configureRepresentationButton(buttonId, controller, representationType,
+  ) {
+    const button = document.getElementById(buttonId);
+
+    if (!button) {
+      return;
+    }
+
+    button.addEventListener("click", async () => {
+      try {
+        await controller.setStructureRepresentation(
+          "reference",
+          representationType,
+        );
+
+        await controller.setStructureRepresentation(
+          "coarse",
+          representationType,
+        );
+
+        setActiveRepresentationButton(buttonId);
+
+      } catch (error) {
+        console.error(
+          "Could not change Mol* representation:",
+          error,
+        );
+      }
+    });
+  }
+
+  function configureVisualizationControls(controller) {
+    configureVisibilityButton(
+      "vis-cg",
+      controller,
+      "coarse",
+    );
+
+    configureVisibilityButton(
+      "vis-aa",
+      controller,
+      "reference",
+    );
+
+    configureRepresentationButton(
+      "b-and-s",
+      controller,
+      "ball-and-stick",
+    );
+
+    configureRepresentationButton(
+      "cartoon",
+      controller,
+      "cartoon",
+    );
+
+    configureRepresentationButton(
+      "backbone",
+      controller,
+      "backbone",
+    );
+
+    setActiveRepresentationButton("b-and-s");
+  }
+
   async function initializeComparison(container) {
     if (container.dataset.initialized === "true") {
       return;
     }
-
-    container.dataset.initialized = "true";
 
     const config = getComparisonConfig(container);
 
@@ -104,18 +214,22 @@
       configureDownloadButton("download-pdb", coarsePdbBlobUrl, "PDB");
     }
 
-    await window.createMolstarViewer("molstar-container", [
+    molstarController = await window.createMolstarViewer("molstar-container", [
       {
+        id: "reference",
         url: referenceBlobUrl,
         format: config.referenceFormat,
         isCoarse: false,
       },
       {
+        id: "coarse",
         url: coarseCifBlobUrl,
         format: config.coarseFormat,
         isCoarse: true,
       },
     ]);
+
+    configureVisualizationControls(molstarController);
 
     try {
       await confirmResultConsumption(config.consumedUrl);
@@ -125,6 +239,8 @@
         error,
       );
     }
+    
+    container.dataset.initialized = "true";
   }
 
   function startComparisonIfPresent() {
@@ -138,14 +254,25 @@
       console.error("Could not initialize comparison:", error);
 
       const errorElement = document.getElementById("comparison-loading-error");
+      const molDiv = document.getElementById("mol-div")
 
       if (errorElement) {
         errorElement.classList.remove("hidden");
       }
+      if (molDiv){
+        molDiv.classList.remove("flex");
+        molDiv.classList.add("hidden");
+      }
     });
   }
 
+
   document.body.addEventListener("htmx:afterSwap", startComparisonIfPresent);
 
-  window.addEventListener("pagehide", revokeBlobUrls);
+  window.addEventListener("pagehide", () => {
+    revokeBlobUrls();
+    molstarController?.dispose();
+    molstarController = null;
+  });
+  
 })();
