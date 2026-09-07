@@ -1,0 +1,55 @@
+default_install_hook_types: [pre-commit, pre-push]
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+        stages: [pre-commit]
+
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+        stages: [pre-commit]
+
+      - id: end-of-file-fixer
+        stages: [pre-commit]
+
+      - id: check-merge-conflict
+        stages: [pre-commit]
+
+      - id: detect-private-key
+        stages: [pre-commit]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.6
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        stages: [pre-commit]
+
+      - id: ruff-format
+        stages: [pre-commit]
+
+  - repo: local
+    hooks:
+      - id: djlint
+        name: Check Jinja formatting
+        entry: pipenv run djlint app/templates --check
+        language: system
+        pass_filenames: false
+        files: ^(app/templates/.*\.html|pyproject\.toml)$
+        stages: [pre-commit]
+
+      - id: mypy
+        name: Run mypy
+        entry: pipenv run mypy
+        language: system
+        pass_filenames: false
+        files: '^((app|tests)/.*\.py|pyproject\.toml|Pipfile(\.lock)?)$'
+        stages: [pre-commit]
+
+      - id: pytest
+        name: Run unit and integration tests
+        entry: pipenv run pytest tests/unit tests/integration
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
