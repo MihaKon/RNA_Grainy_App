@@ -1,0 +1,18 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:pipenv",
+    "files.associations": {
+        "*.html": "jinja-html"
+    },
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+        }
+    },
+    "[jinja-html]": {
+        "editor.defaultFormatter": "monosans.djlint",
+        "editor.formatOnSave": true
+    },
+}
