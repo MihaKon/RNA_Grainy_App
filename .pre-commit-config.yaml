@@ -32,11 +32,10 @@ repos:
   - repo: local
     hooks:
       - id: djlint
-        name: Check Jinja formatting
-        entry: pipenv run djlint app/templates --check
+        name: Check changed Jinja templates
+        entry: pipenv run djlint --check
         language: system
-        pass_filenames: false
-        files: ^(app/templates/.*\.html|pyproject\.toml)$
+        files: ^app/templates/.*\.html$
         stages: [pre-commit]
 
       - id: mypy
