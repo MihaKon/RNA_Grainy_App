@@ -1,7 +1,7 @@
 name: Deploy
 
 on:
-  # Automatic depyloment is temporarily disabled.
+  # Automatic deployment is temporarily disabled.
   # workflow_run:
   #   workflows: ["Build and Test"]
   #   types: [completed]

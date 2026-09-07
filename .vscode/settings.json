@@ -3,6 +3,8 @@
     "files.associations": {
         "*.html": "jinja-html"
     },
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
     "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.formatOnSave": true,
@@ -14,5 +16,5 @@
     "[jinja-html]": {
         "editor.defaultFormatter": "monosans.djlint",
         "editor.formatOnSave": true
-    },
+    }
 }
