@@ -3,6 +3,7 @@
     "files.associations": {
         "*.html": "jinja-html"
     },
+    "djlint.useVenv": true,
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
     "[python]": {

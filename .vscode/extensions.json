@@ -1,6 +1,7 @@
 {
     "recommendations": [
         "charliermarsh.ruff",
-        "monosans.djlint"
+        "monosans.djlint",
+        "samuelcolvin.jinjahtml"
     ]
 }
