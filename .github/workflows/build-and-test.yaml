@@ -51,15 +51,18 @@ jobs:
       - name: Build Tailwind CSS
         run: npm run build
 
+      - name: Validate pre-commit configuration
+        run: pipenv run pre-commit validate-config
+
       - name: Run Ruff
         run: pipenv run ruff check .
 
       - name: Run mypy
-        run: pipenv run mypy .
+        run: pipenv run mypy
 
       - name: Run unit tests
         run: pipenv run pytest tests/unit
-        
+
       - name: Run integration tests
         run: pipenv run pytest tests/integration
 
