@@ -7,7 +7,6 @@ import httpx
 import pytest
 from playwright.sync_api import Page
 
-
 PORT = 8000
 BASE_URL = f"http://127.0.0.1:{PORT}"
 
