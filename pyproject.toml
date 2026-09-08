@@ -3,7 +3,7 @@ target-version = "py312"
 line-length = 88
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F"]
+select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -26,11 +26,3 @@ pretty = true
 testpaths = ["tests"]
 addopts = "-ra --strict-config"
 xfail_strict = true
-
-[tool.djlint]
-profile = "jinja"
-max_line_length = 120
-no_function_formatting = true
-format_css = false
-format_js = false
-preserve_leading_space = true
