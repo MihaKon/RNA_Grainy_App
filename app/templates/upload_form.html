@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "components/primary_button.html" import primary_button %} 
+{% from "components/primary_button.html" import primary_button %}
 
 {% block content %}
 <div
@@ -56,8 +56,8 @@
   </form>
 </div>
 
-{% include "components/creator/layout.html" %} 
-{% endblock %} 
+{% include "components/creator/layout.html" %}
+{% endblock %}
 {% block scripts %}
 <script src="{{ url_for('static', path='/js/store.js') }}"></script>
 <script src="{{ url_for('static', path='/js/config.js') }}"></script>

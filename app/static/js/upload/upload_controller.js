@@ -11,8 +11,8 @@ document.addEventListener("alpine:init", () => {
 
       this.$watch('rcsbId', (value) => {
         if (value && value.trim().length > 0) {
-            this.removeFile(); 
-            this.presetId = ""; 
+            this.removeFile();
+            this.presetId = "";
             this.errors.file = false;
         }
     });

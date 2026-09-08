@@ -2,7 +2,7 @@
 "components/molstar_viewer.html" import molstar_viewer %} {% from
 "components/macros/info_text.html" import info_text %} {% from
 "components/macros/docs_macros.html" import render_model_image,
-render_citations, render_mapping_comparison, collapse_header %} 
+render_citations, render_mapping_comparison, collapse_header %}
 
 {% block content %}
 <div
@@ -115,19 +115,19 @@ render_citations, render_mapping_comparison, collapse_header %}
 
         <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 p-2 w-full">
             {{ primary_button(id='vis-cg',
-            text='Coarse', variant='secondary', classes='') }} 
+            text='Coarse', variant='secondary', classes='') }}
 
             {{ primary_button(id='vis-aa',
-            text='All-atom', variant='secondary', classes='') }} 
+            text='All-atom', variant='secondary', classes='') }}
 
             {{ primary_button(id='b-and-s',
-            text='Ball & Stick', variant='mol', classes='') }} 
+            text='Ball & Stick', variant='mol', classes='') }}
 
             {{ primary_button(id='cartoon',
-            text='Cartoon', variant='mol', classes='') }} 
+            text='Cartoon', variant='mol', classes='') }}
 
             {{ primary_button(id='backbone',
-            text='Backbone', variant='mol', classes='') }} 
+            text='Backbone', variant='mol', classes='') }}
 
         </div>
       </div>

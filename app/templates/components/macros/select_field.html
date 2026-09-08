@@ -3,13 +3,13 @@
 {% macro select_field(model, options_var, label, on_change="") %}
 <div
   class="space-y-1"
-  x-data="{ 
-     open: false, 
+  x-data="{
+     open: false,
      selectedLabel: '',
      init() {
       const initial = {{ options_var }}.find(o => o.value === {{ model }});
       this.selectedLabel = initial ? initial.label : 'Select...';
-      
+
       this.$watch('{{ model }}', (val) => {
        const found = {{ options_var }}.find(o => o.value === val);
        this.selectedLabel = found ? found.label : 'Select...';
@@ -54,9 +54,9 @@
     >
       <template x-for="option in {{ options_var }}" :key="option.value">
         <div
-          @click="{{ model }} = option.value; 
-             selectedLabel = option.label; 
-             open = false; 
+          @click="{{ model }} = option.value;
+             selectedLabel = option.label;
+             open = false;
              {{ on_change }}"
           class="cursor-pointer select-none relative py-2.5 px-4 text-sm transition-colors hover:bg-accent-light flex items-center justify-between group font-medium text-primary hover:text-accent"
         >

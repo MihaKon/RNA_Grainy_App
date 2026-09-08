@@ -1,10 +1,10 @@
-{% from 'components/macros/select_field.html' import select_field %} 
+{% from 'components/macros/select_field.html' import select_field %}
 {% from 'components/macros/info_text.html' import info_text %}
 {% from 'components/macros/input_field.html' import input_field %}
 
 <div x-show="activeTab === 'beads'" class="space-y-6">
-  {% include 'components/creator/infobox.html' %} 
-  {{ input_field('modelName','Model Name') }} 
+  {% include 'components/creator/infobox.html' %}
+  {{ input_field('modelName','Model Name') }}
   {{ input_field('modelDescription', 'Model Description') }}
 
   <div class="space-y-4">
@@ -33,7 +33,7 @@
 
         <div class="grid grid-cols-2 gap-4">
           <div class="space-y-4">
-            {{ input_field('bead.beadID', 'Bead ID') }} 
+            {{ input_field('bead.beadID', 'Bead ID') }}
             {{ input_field('bead.name', 'Bead Name') }}
           </div>
           <div>
@@ -56,7 +56,7 @@
                 @click="bead.scope = scope.value; bead.atoms = []"
                 :class="bead.scope === scope.value ? 'bg-accent/10 border-accent text-accent font-bold' : 'bg-white border-tertiary-light text-primary hover:bg-accent-light'"
                 class="cursor-pointer px-2 py-1 rounded border transition-colors select-none text-xs"
-              > 
+              >
                 <span x-text="scope.label"></span>
               </button>
             </template>

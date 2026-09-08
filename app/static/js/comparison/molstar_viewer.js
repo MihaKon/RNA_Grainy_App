@@ -34,13 +34,13 @@ window.createMolstarViewer = async function (containerId, structures) {
     if (entry.isCoarse) {
       typeParams.excludeTypes = ["computed"]
     }
-  
+
     return {
       type: representationType,
       typeParams
     };
   }
-  
+
   function getStructureEntry(structureId) {
     const structure = structureEntries.get(structureId)
     if (!structure) {

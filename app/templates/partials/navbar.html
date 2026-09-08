@@ -1,6 +1,6 @@
 <nav
   x-data="{
-        mobileOpen: false, 
+        mobileOpen: false,
         currentPath: window.location.pathname,
         isActive(path) {
             return this.currentPath === path || (path !== '/' && this.currentPath.startsWith(path));
@@ -107,7 +107,7 @@
         href="/"
         class="block rounded-md px-3 py-2.5 text-base font-medium transition-colors outline-none"
         :class="isActive('/')
-            ? 'bg-accent text-white shadow-md shadow-accent/20' 
+            ? 'bg-accent text-white shadow-md shadow-accent/20'
             : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
       >
         Home
@@ -117,7 +117,7 @@
         href="/documentation"
         class="block rounded-md px-3 py-2.5 text-base font-medium transition-colors outline-none"
         :class="isActive('/documentation')
-            ? 'bg-accent text-white shadow-md shadow-accent/20' 
+            ? 'bg-accent text-white shadow-md shadow-accent/20'
             : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
       >
         Documentation
