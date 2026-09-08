@@ -6,6 +6,7 @@ temp
 .ruff_cache
 .pytest_cache
 .mypy_cache
+.vscode
 
 !app/static/images
 !app/static/presets
