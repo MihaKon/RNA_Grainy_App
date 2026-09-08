@@ -179,7 +179,7 @@ def test_consumed_removes_workspace(
     client: TestClient,
     result_workspace: ResultWorkspace,
 ) -> None:
-    response = client.post((f"/api/results/{result_workspace.workspace_id}/consumed"))
+    response = client.post(f"/api/results/{result_workspace.workspace_id}/consumed")
 
     assert response.status_code == 204
     assert len(response.content) == 0
@@ -191,10 +191,10 @@ def test_consumed_is_idempotent(
     result_workspace: ResultWorkspace,
 ) -> None:
     first_response = client.post(
-        (f"/api/results/{result_workspace.workspace_id}/consumed")
+        f"/api/results/{result_workspace.workspace_id}/consumed"
     )
     second_response = client.post(
-        (f"/api/results/{result_workspace.workspace_id}/consumed")
+        f"/api/results/{result_workspace.workspace_id}/consumed"
     )
 
     assert first_response.status_code == 204
@@ -219,7 +219,7 @@ def test_consumed_makes_download_unavailable(
     filename: str,
 ) -> None:
     first_response = client.post(
-        (f"/api/results/{result_workspace.workspace_id}/consumed")
+        f"/api/results/{result_workspace.workspace_id}/consumed"
     )
     assert first_response.status_code == 204
 

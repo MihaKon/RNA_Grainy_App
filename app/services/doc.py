@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import Any, Tuple, TypedDict
+from typing import Any, TypedDict
 
 from markupsafe import Markup, escape
 
@@ -88,7 +88,7 @@ class DocsContextBuilder:
     @classmethod
     def load_model_config(
         cls, model_name: str, custom_model_data: dict[str, Any] | None = None
-    ) -> Tuple[BaseCoarseGrainModel, dict[str, Any]]:  # type: ignore
+    ) -> tuple[BaseCoarseGrainModel, dict[str, Any]]:  # type: ignore
         if model_name == "custom":
             if custom_model_data is None:
                 raise ValueError("Custom model selected but no data provided.")
@@ -146,7 +146,7 @@ class DocsContextBuilder:
         citations = cls._citations_cache
 
         if citations is None:
-            with open(CITATIONS_DIR, "r", encoding="utf-8") as file:
+            with open(CITATIONS_DIR, encoding="utf-8") as file:
                 citations = json.load(file)
 
             cls._citations_cache = citations

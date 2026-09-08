@@ -3,7 +3,7 @@ target-version = "py312"
 line-length = 88
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "I"]
+select = ["E4", "E7", "E9", "F", "I", "UP"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -13,12 +13,10 @@ line-ending = "auto"
 [tool.mypy]
 python_version = "3.12"
 files = ["app", "tests"]
-
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
-
+disallow_any_unimported = true
 warn_unused_configs = true
-
 show_error_codes = true
 pretty = true
 
