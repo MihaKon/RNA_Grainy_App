@@ -151,7 +151,7 @@
       <section class="flex justify-center items-center h-full w-full">
         <div
           id="comparison-loading-error"
-          class="hidden z-50 rounded-lg border border-danger bg-danger-light p-4 text-sm text-danger"
+          class="hidden z-50 rounded-lg border border-danger bg-danger-light p-4 text-sm text-danger "
         >
           The result could not be loaded. Please process the structure again.
         </div>
@@ -164,7 +164,7 @@
           </div>
 
           <div
-            class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 p-2 w-full"
+            class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 p-2 w-full"
           >
             {{
               primary_button(
@@ -187,7 +187,7 @@
                 id="b-and-s",
                 text="Ball & Stick",
                 variant="mol",
-                classes=""
+                classes="xl:ms-2"
               )
             }}
             {{
@@ -204,6 +204,14 @@
                 text="Backbone",
                 variant="mol",
                 classes=""
+              )
+            }}
+            {{
+              primary_button(
+                id="color-by-element",
+                text="Color by Element",
+                variant="mol",
+                classes="xl:ms-2"
               )
             }}
           </div>
