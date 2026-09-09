@@ -6,7 +6,7 @@ const JsonBuilder = {
   copy(obj){
     return JSON.parse(JSON.stringify(obj));
   },
-  
+
  inferScope(residues, atoms = []) {
     const resScope = this.determineScopeByResidues(residues);
 

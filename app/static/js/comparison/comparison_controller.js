@@ -239,7 +239,7 @@
         error,
       );
     }
-    
+
     container.dataset.initialized = "true";
   }
 
@@ -274,5 +274,5 @@
     molstarController?.dispose();
     molstarController = null;
   });
-  
+
 })();

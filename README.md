@@ -59,6 +59,69 @@ Detailed descriptions, mapping rules, and references are available in the
 
 <img width="1535" height="862" alt="RNAgrainy model documentation" src="https://github.com/user-attachments/assets/77a9fbe3-e0b3-4cce-8305-33a4074c5e01" />
 
+## Local Development
+
+### Requirements
+
+Install the following tools:
+
+- Python 3.12
+- Pipenv
+- Node.js 24 with npm
+- Docker with Docker Compose
+
+### Install dependencies
+
+Install Pipenv:
+
+```bash
+python -m pip install pipenv==2026.6.2
+```
+
+Install Python dependencies, including development tools:
+
+```bash
+pipenv sync --dev
+```
+
+Install frontend build dependencies:
+
+```bash
+npm ci
+```
+
+Install the Git hooks configured by the project:
+
+```bash
+pipenv run pre-commit install
+```
+
+### Start the development environment
+
+Start the Tailwind CSS watcher in the first terminal:
+
+```bash
+npm run dev
+```
+
+For the first run, build the Docker image and start the application in a second terminal:
+
+```bash
+docker compose -f compose.yaml -f compose.dev.yaml up --build app
+```
+
+For subsequent runs, if the dependencies and Dockerfile have not changed, rebuilding is not required:
+
+```bash
+docker compose -f compose.yaml -f compose.dev.yaml up app
+```
+
+The application is available at:
+
+```text
+http://127.0.0.1:5050
+```
+
 ## Authors
 
 ### Development

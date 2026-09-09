@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from enum import Enum
+from enum import StrEnum
 
 from fastapi import UploadFile
 from pydantic import BaseModel, field_validator
@@ -11,7 +11,7 @@ from app.models.custom_model import CustomModelDefinition
 from app.settings import ALLOWED_PRESET_IDS, JSON_MAX_CHARS, JSON_MAX_UPLOAD_SIZE
 
 
-class SupportedFormats(str, Enum):
+class SupportedFormats(StrEnum):
     PDB = "pdb"
     CIF = "cif"
     MMCIF = "mmcif"

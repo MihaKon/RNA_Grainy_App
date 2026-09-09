@@ -15,7 +15,6 @@ from app.models.form import SupportedFormats
 from app.routes import about, docs, results, uploads
 from app.settings import STATIC_DIR, TEMPLATES
 
-
 app = FastAPI(title="RNA Coarse Grain App", version="0.1.0")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.add_middleware(GZipMiddleware)

@@ -2,11 +2,12 @@ import uuid
 from pathlib import Path
 
 import pytest
+
 from app.exceptions import InvalidRequestError
 from app.services.workspaces.paths import (
-    is_valid_uuid,
     get_workspace_dir,
     get_workspace_file_path,
+    is_valid_uuid,
 )
 
 

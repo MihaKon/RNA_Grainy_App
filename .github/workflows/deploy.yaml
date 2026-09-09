@@ -1,10 +1,12 @@
 name: Deploy
 
 on:
-  workflow_run:
-    workflows: ["Build and Test"]
-    types: [completed]
-    branches: [main]
+  # Automatic deployment is temporarily disabled.
+  # workflow_run:
+  #   workflows: ["Build and Test"]
+  #   types: [completed]
+  #   branches: [main]
+
   workflow_dispatch:
 
 permissions:
@@ -17,7 +19,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    # if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Configure SSH
         run: |

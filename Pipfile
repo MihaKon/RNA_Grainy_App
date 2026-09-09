@@ -4,7 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-fastapi = {extras = ["standard"], version = "*"}
+fastapi = "*"
+uvicorn = "*"
+python-multipart = "*"
 jinja2 = "==3.1.6"
 httpx = "*"
 gemmi = "*"
@@ -12,13 +14,11 @@ gemmi = "*"
 [dev-packages]
 playwright = "*"
 pytest = "==8.3.5"
-djlint = "*"
 ruff = "*"
 mypy = "*"
 pytest-playwright = "*"
-isort = "*"
 pytest-httpx = "*"
-uvicorn = "*"
+pre-commit = "*"
 
 [requires]
 python_version = "3.12"
