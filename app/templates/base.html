@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RNAgrainy</title>
-    <meta name="description" content="RNAgrainy - A framework for coarse-graining RNA structures" />
+    <meta
+      name="description"
+      content="RNAgrainy - A framework for coarse-graining RNA structures"
+    />
     <meta name="keywords" content="RNA, Coarse Grain, Simulation, Analysis" />
     <link
       rel="icon"
@@ -15,7 +18,10 @@
       src="https://kit.fontawesome.com/5ad53bb2b8.js"
       crossorigin="anonymous"
     ></script>
-    <link href="{{ url_for('static',path='/css/app.css') }}" rel="stylesheet" />
+    <link
+      href="{{ url_for('static', path='/css/app.css') }}"
+      rel="stylesheet"
+    />
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
@@ -32,14 +38,13 @@
     ></script>
     <script src="https://cdn.jsdelivr.net/npm/molstar@latest/build/viewer/molstar.js"></script>
     <script
-    defer
-    src="{{ url_for('static', path='/js/comparison/molstar_viewer.js') }}"
-  ></script>
-
-  <script
-    defer
-    src="{{ url_for('static', path='/js/comparison/comparison_controller.js') }}"
-  ></script>
+      defer
+      src="{{ url_for('static', path='/js/comparison/molstar_viewer.js') }}"
+    ></script>
+    <script
+      defer
+      src="{{ url_for('static', path='/js/comparison/comparison_controller.js') }}"
+    ></script>
     <link
       rel="stylesheet"
       type="text/css"
@@ -49,11 +54,9 @@
   <body class="min-h-screen flex flex-col" hx-ext="response-targets">
     {% include "partials/navbar.html" %}
     <main class="flex flex-1 justify-center relative">
-      {% block content %}
-      {% endblock content %}
+      {% block content %}{% endblock content %}
     </main>
     {% include "partials/footer.html" %}
-    {% block scripts %}
-    {% endblock scripts %}
+    {% block scripts %}{% endblock scripts %}
   </body>
 </html>
