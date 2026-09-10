@@ -54,6 +54,32 @@ class Issues(Enum):
         IssueTypes.ERROR,
     )
 
+    INVALID_NUMBER_OF_CHAINS = (
+        "invalid_number_of_chains",
+        "The number of coarse-grained chains is not consistent wit the number of reference structure chains",
+        IssueTypes.ERROR,
+    )
+
+    EMPTY_CHAIN = (
+        "empty_chain",
+        "There is empty chain in the coarse-grained structure",
+        IssueTypes.ERROR,
+    )
+
+    EMPTY_MODEL = (
+        "empty_model",
+        "There is empty model in the coarse-grained structure",
+        IssueTypes.ERROR,
+    )
+
+    # NMR ISSUES #
+
+    MERGED_NMR_MODELS = (
+        "merged_nmr_models",
+        "Multiple NMR models merged to one model in coarse structure",
+        IssueTypes.ERROR,
+    )
+
     # Missing, wrong or incomplete residues in the structure #
 
     MISSING_MODIFIED_RESIDUE = (
@@ -112,9 +138,51 @@ class Issues(Enum):
         IssueTypes.ERROR,
     )
 
-    # ALT LOCS #
+    CONNECTIVITY_BETWEEN_INVALID_BEADS = (
+        "connectivity_between_invalid_beads",
+        "The algorithm created connectivity between two beads that should not be connected, e.g because of lack of some bead",
+        IssueTypes.ERROR,
+    )
 
-    # NMR ISSUES #
+    DUPLICATED_CONNECTIVITY = (
+        "duplicated_connectivity",
+        "The connectivity of the coarse-grained structure is duplicated",
+        IssueTypes.ERROR,
+    )
+
+    CONNECTIVITY_WITH_NOT_EXISTENT_BEAD = (
+        "connectivity_with_not_existent_bead",
+        "There is connectivity with bead thad does not exist in the coarse-grained structure",
+        IssueTypes.ERROR,
+    )
+
+    WRONG_CONNECTIVITY_TYPE = (
+        "wrong_connectivity_type",
+        "The connectivity of the coarse-grained structure is not 'covalent' as expected",
+        IssueTypes.WARNING,
+    )
+
+    # ALT LOCS ISSUES #
+
+    ALT_LOC_PRESENT = (
+        "alt_loc_present",
+        "The structure contains alternative locations for some atoms",
+        IssueTypes.INFO,
+    )
+
+    ALT_LOC_B_OCCUPANCY_IS_HIGHER_THAN_A = (
+        "alt_loc_b_occupancy_is_higher_than_a",
+        "The algorithm chose A although B alt loc has higher occupancy",
+        IssueTypes.WARNING,
+    )
+
+    A_ALT_LOC_NOT_FOUND = (
+        "a_alt_loc_not_found",
+        "Structure contains different alt locs than A",
+        IssueTypes.WARNING,
+    )
+
+    # STRESS TESTS #
 
     def __init__(self, code: str, message: str, issue_type: IssueTypes):
         self.code = code
