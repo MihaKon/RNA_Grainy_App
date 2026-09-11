@@ -1,10 +1,7 @@
 import argparse
+from pathlib import Path
 
-RCSB_SEARCH_URL = "https://search.rcsb.org/rcsbsearch/v2/query"
-RCSB_FILE_URL = "https://files.rcsb.org/download/{pdb_id}.cif"
-
-DEFAULT_DOWNLOAD_LIMIT_BYTES = 512 * 1024 * 1024
-DEFAULT_PAGE_SIZE = 1_000
+from pdb_audit.client import RcsbClient
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -29,3 +26,17 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     return parser.parse_args()
+
+
+def main() -> None:
+    arguments = parse_arguments()
+    with RcsbClient() as client:
+        for pdb_id in arguments.ids:
+            structure_content = client.download_structure(pdb_id)
+            if structure_content:
+                file_path = Path(client.cache_directory) / f"{pdb_id}.cif"
+                file_path.write_text(structure_content, encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()
