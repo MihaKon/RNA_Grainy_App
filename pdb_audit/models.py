@@ -38,7 +38,7 @@ class Issues(Enum):
 
     INVALID_NUMBER_OF_BEADS = (
         "invalid_number_of_beads",
-        "The number of beads in the structure is not consistent with the number of RNA residues",
+        "The number of expected beads in the structure is not consistent with the number of actual number of coarse-grained beads.",
         Severity.ERROR,
     )
 
@@ -50,7 +50,7 @@ class Issues(Enum):
 
     INVALID_NUMBER_OF_CHAINS = (
         "invalid_number_of_chains",
-        "The number of coarse-grained chains is not consistent wit the number of reference structure chains",
+        "The number of coarse-grained chains is not consistent wit the number of reference structure RNA chains",
         Severity.ERROR,
     )
 
@@ -84,7 +84,7 @@ class Issues(Enum):
 
     INCOMPLETE_RESIDUE_REMOVED = (
         "incomplete_residue_removed",
-        "A bead has been removed from the structure because",
+        "A bead has been removed from the structure because it couldn't be calculated from incomplete atom set",
         Severity.WARNING,
     )
 
@@ -97,7 +97,7 @@ class Issues(Enum):
     IONS_OR_LIGANDS_IN_COARSE_STRUCTURE = (
         "ions_or_ligands_in_coarse_structure",
         "Ions, water or ligands are present in the coarse-grained structure",
-        Severity.WARNING,
+        Severity.ERROR,
     )
 
     PROTEIN_RESIDUE_IN_COARSE_STRUCTURE = (
