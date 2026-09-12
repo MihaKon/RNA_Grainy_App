@@ -5,8 +5,6 @@ import httpx
 RCSB_SEARCH_URL = "https://search.rcsb.org/rcsbsearch/v2/query"
 RCSB_URL = "https://files.rcsb.org/download/{pdb_id}.cif"
 
-DEFAULT_DOWNLOAD_LIMIT_BYTES = 512 * 1024 * 1024
-DEFAULT_PAGE_SIZE = 1_000
 PDB_AUDIT_DIRECTORY = Path(__file__).resolve().parent
 CACHE_DIRECTORY = PDB_AUDIT_DIRECTORY / "cache" / "structures"
 
@@ -34,9 +32,34 @@ class RcsbClient:
     def __exit__(self, *_: object) -> None:
         self.close()
 
-    def get_rna_structure_ids(self) -> list[str]:
-        #
-        return []
+    def get_all_rna_structure_ids(self) -> list[str]:
+        query = {
+            "query": {
+                "type": "terminal",
+                "service": "text",
+                "parameters": {
+                    "attribute": ("rcsb_entry_info.polymer_entity_count_RNA"),
+                    "operator": "greater",
+                    "value": 0,
+                },
+            },
+            "return_type": "entry",
+            "request_options": {
+                "return_all_hits": True,
+                "results_verbosity": "compact",
+            },
+        }
+
+        response = self.client.post(
+            RCSB_SEARCH_URL,
+            json=query,
+        )
+
+        response.raise_for_status()
+        response_data = response.json()
+        results = response_data.get("result_set", [])
+
+        return [str(pdb_id.upper()) for pdb_id in results]
 
     def download_structure(self, pdb_id: str) -> str | None:
         url = RCSB_URL.format(pdb_id=pdb_id)

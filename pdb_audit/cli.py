@@ -28,14 +28,30 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def select_structure_ids(
+    arguments: argparse.Namespace,
+    client: RcsbClient,
+) -> list[str]:
+    if arguments.ids is not None:
+        return [pdb_id.strip().upper() for pdb_id in arguments.ids]
+
+    pdb_ids = client.get_all_rna_structure_ids()
+    if arguments.all:
+        return pdb_ids
+
+    return pdb_ids[: int(arguments.number)]
+
+
 def main() -> None:
     arguments = parse_arguments()
     with RcsbClient() as client:
-        for pdb_id in arguments.ids:
+        pdb_ids = select_structure_ids(arguments, client)
+        for pdb_id in pdb_ids:
             structure_content = client.download_structure(pdb_id)
             if structure_content:
                 file_path = Path(client.cache_directory) / f"{pdb_id}.cif"
-                file_path.write_text(structure_content, encoding="utf-8")
+                if not file_path.exists():
+                    file_path.write_text(structure_content, encoding="utf-8")
 
 
 if __name__ == "__main__":
