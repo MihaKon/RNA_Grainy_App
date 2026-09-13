@@ -85,6 +85,7 @@ def main() -> None:
             file_paths.append(client.cache_directory / f"{pdb_id}.cif")
 
     validator = Validator.parse_files(file_paths, SupportedFormats.CIF, None, [], [])
+    validator.validate()
     for item in validator.structures:
         print_structure_report(item)
 

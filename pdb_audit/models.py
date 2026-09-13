@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, StrEnum
 
 
@@ -13,17 +13,11 @@ class Severity(StrEnum):
 @dataclass
 class IssueContent:
     code: str
-    message: str
+    message: str | None = None
     model_index: int | None = None
     chain_name: str | None = None
     seq_id: int | None = None
     res_name: str | None = None
-
-
-@dataclass
-class Result:
-    pdb_id: str
-    issues: list[IssueContent] = field(default_factory=list)
 
 
 class Issues(Enum):

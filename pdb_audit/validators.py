@@ -9,6 +9,7 @@ from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.exceptions import FileProcessingError
 from app.models.form import SupportedFormats
 from app.services.structures import StructureProcessor
+from pdb_audit.checks import ValidationContext, run_checks
 from pdb_audit.models import IssueContent
 
 
@@ -39,6 +40,19 @@ class Validator:
         self.file_format = file_format
         self.models = models
         self.chains = chains
+
+    def validate(self) -> None:
+        for item in self.structures:
+            for model_name, result in item.coarse_grain_results.items():
+                model_class = CoarseGrainModelRegistry.get_model(model_name)
+                model = model_class()
+
+                context = ValidationContext(
+                    reference_structure=item.reference_structure,
+                    coarse_grain_structure=result.structure,
+                    coarse_grain_model=model,
+                )
+                result.issues.extend(run_checks(context))
 
     @classmethod
     def read_files(cls, structures_paths: list[Path]) -> list[str]:
