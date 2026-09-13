@@ -30,16 +30,18 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def select_structure_ids(
-    arguments: argparse.Namespace,
-    client: RcsbClient,
-) -> list[str]:
-    if arguments.ids is not None:
-        return [pdb_id.strip().upper() for pdb_id in arguments.ids]
+def get_structure_ids_from_cli(arguments: argparse.Namespace) -> list[str]:
+    return [pdb_id.strip().upper() for pdb_id in arguments.ids]
 
-    pdb_ids = client.get_all_rna_structure_ids()
-    if arguments.all:
-        return pdb_ids
+
+def get_structure_ids_from_pdb(
+    arguments: argparse.Namespace, client: RcsbClient | None = None
+) -> list[str]:
+    pdb_ids: list[str] = []
+    if client:
+        pdb_ids = client.get_all_rna_structure_ids()
+        if arguments.all:
+            return pdb_ids
 
     return pdb_ids[: int(arguments.number)]
 
@@ -60,15 +62,22 @@ def read(cache_directory: Path, pdb_ids: list[str]) -> None:
 
 def main() -> None:
     arguments = parse_arguments()
+    pdb_ids = []
+    if arguments.ids:
+        pdb_ids = get_structure_ids_from_cli(arguments)
+
     with RcsbClient() as client:
-        pdb_ids = select_structure_ids(arguments, client)
+        if not pdb_ids:
+            pdb_ids = get_structure_ids_from_pdb(arguments, client)
+        cache_dir = Path(client.cache_directory)
+
         for pdb_id in pdb_ids:
-            structure_content = client.download_structure(pdb_id)
-            if structure_content:
-                file_path = Path(client.cache_directory) / f"{pdb_id}.cif"
-                if not file_path.exists():
+            file_path = cache_dir / f"{pdb_id}.cif"
+            if not file_path.exists():
+                structure_content = client.download_structure(pdb_id)
+                if structure_content:
                     file_path.write_text(structure_content, encoding="utf-8")
-    read(Path(client.cache_directory), pdb_ids)
+        read(cache_dir, pdb_ids)
 
 
 if __name__ == "__main__":
