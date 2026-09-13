@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from gemmi import (
@@ -9,13 +9,20 @@ from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.exceptions import FileProcessingError
 from app.models.form import SupportedFormats
 from app.services.structures import StructureProcessor
+from pdb_audit.models import IssueContent
+
+
+@dataclass
+class CoarseGrainStructureValidation:
+    structure: Structure
+    issues: list[IssueContent] = field(default_factory=list)
 
 
 @dataclass
 class ValidatedStructure:
     file_name: str
     reference_structure: Structure
-    coarse_grain_structures: dict[str, Structure]
+    coarse_grain_results: dict[str, CoarseGrainStructureValidation]
 
 
 class Validator:
@@ -87,7 +94,7 @@ class Validator:
         chains: list[str],
     ) -> "Validator":
         structures_contents = cls.read_files(structures_paths)
-        validated_structures = []
+        validated_structures: list[ValidatedStructure] = []
 
         for path, content in zip(structures_paths, structures_contents):
             reference_structure = cls.get_reference_structure(
@@ -96,11 +103,18 @@ class Validator:
             coarse_grain_structures = cls.get_coarse_grain_structures(
                 reference_structure, coarse_grain_model
             )
+
+            coarse_grain_results: dict[str, CoarseGrainStructureValidation] = {}
+            for model_name, structure in coarse_grain_structures.items():
+                coarse_grain_results[model_name] = CoarseGrainStructureValidation(
+                    structure=structure,
+                )
+
             validated_structures.append(
                 ValidatedStructure(
                     file_name=path.stem,
                     reference_structure=reference_structure,
-                    coarse_grain_structures=coarse_grain_structures,
+                    coarse_grain_results=coarse_grain_results,
                 )
             )
 

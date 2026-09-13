@@ -6,7 +6,7 @@ RCSB_SEARCH_URL = "https://search.rcsb.org/rcsbsearch/v2/query"
 RCSB_URL = "https://files.rcsb.org/download/{pdb_id}.cif"
 
 PDB_AUDIT_DIRECTORY = Path(__file__).resolve().parent
-CACHE_DIRECTORY = PDB_AUDIT_DIRECTORY / "cache" / "structures"
+CACHE_DIRECTORY = Path(PDB_AUDIT_DIRECTORY / "cache" / "structures")
 
 
 class RcsbClient:

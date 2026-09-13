@@ -3,7 +3,7 @@ from pathlib import Path
 
 from app.models.form import SupportedFormats
 from pdb_audit.client import RcsbClient
-from pdb_audit.validators import Validator
+from pdb_audit.validators import ValidatedStructure, Validator
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -35,49 +35,58 @@ def get_structure_ids_from_cli(arguments: argparse.Namespace) -> list[str]:
 
 
 def get_structure_ids_from_pdb(
-    arguments: argparse.Namespace, client: RcsbClient | None = None
+    arguments: argparse.Namespace, client: RcsbClient
 ) -> list[str]:
     pdb_ids: list[str] = []
-    if client:
-        pdb_ids = client.get_all_rna_structure_ids()
-        if arguments.all:
-            return pdb_ids
+    pdb_ids = client.get_all_rna_structure_ids()
+    if arguments.all:
+        return pdb_ids
 
     return pdb_ids[: int(arguments.number)]
 
 
-def read(cache_directory: Path, pdb_ids: list[str]) -> None:
-    file_paths: list[Path] = []
-    for pdb_id in pdb_ids:
-        file_paths.append(cache_directory / f"{pdb_id}.cif")
-    validator = Validator.parse_files(file_paths, SupportedFormats.CIF, None, [], [])
-    for item in validator.structures:
-        print(f"{item.file_name}")
-        print(f"  reference: {item.reference_structure}")
+def save_structure(pdb_id: str, client: RcsbClient) -> None:
+    file_path = client.cache_directory / f"{pdb_id}.cif"
+    if not file_path.exists():
+        structure_content = client.download_structure(pdb_id)
+        if structure_content:
+            file_path.write_text(structure_content, encoding="utf-8")
 
-        for model_name, cg_structure in item.coarse_grain_structures.items():
-            print(f"  {model_name}: {cg_structure}")
-        print("-" * 20)
+
+def print_structure_report(item: ValidatedStructure) -> None:
+    lines = [
+        item.file_name,
+        f"  reference: {item.reference_structure}",
+    ]
+
+    for model_name, result in item.coarse_grain_results.items():
+        lines.append(f"  {model_name}: {result.structure}")
+
+        for issue in result.issues:
+            lines.append(f"    - {issue.code}: {issue.message}")
+
+    lines.append("-" * 20)
+    print("\n".join(lines))
 
 
 def main() -> None:
     arguments = parse_arguments()
-    pdb_ids = []
+    pdb_ids: list[str] = []
+    file_paths: list[Path] = []
     if arguments.ids:
         pdb_ids = get_structure_ids_from_cli(arguments)
 
     with RcsbClient() as client:
         if not pdb_ids:
             pdb_ids = get_structure_ids_from_pdb(arguments, client)
-        cache_dir = Path(client.cache_directory)
 
         for pdb_id in pdb_ids:
-            file_path = cache_dir / f"{pdb_id}.cif"
-            if not file_path.exists():
-                structure_content = client.download_structure(pdb_id)
-                if structure_content:
-                    file_path.write_text(structure_content, encoding="utf-8")
-        read(cache_dir, pdb_ids)
+            save_structure(pdb_id, client)
+            file_paths.append(client.cache_directory / f"{pdb_id}.cif")
+
+    validator = Validator.parse_files(file_paths, SupportedFormats.CIF, None, [], [])
+    for item in validator.structures:
+        print_structure_report(item)
 
 
 if __name__ == "__main__":
