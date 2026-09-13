@@ -1,7 +1,9 @@
 import argparse
 from pathlib import Path
 
+from app.models.form import SupportedFormats
 from pdb_audit.client import RcsbClient
+from pdb_audit.validators import Validator
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -42,6 +44,20 @@ def select_structure_ids(
     return pdb_ids[: int(arguments.number)]
 
 
+def read(cache_directory: Path, pdb_ids: list[str]) -> None:
+    file_paths: list[Path] = []
+    for pdb_id in pdb_ids:
+        file_paths.append(cache_directory / f"{pdb_id}.cif")
+    validator = Validator.parse_files(file_paths, SupportedFormats.CIF, None, [], [])
+    for item in validator.structures:
+        print(f"{item.file_name}")
+        print(f"  reference: {item.reference_structure}")
+
+        for model_name, cg_structure in item.coarse_grain_structures.items():
+            print(f"  {model_name}: {cg_structure}")
+        print("-" * 20)
+
+
 def main() -> None:
     arguments = parse_arguments()
     with RcsbClient() as client:
@@ -52,6 +68,7 @@ def main() -> None:
                 file_path = Path(client.cache_directory) / f"{pdb_id}.cif"
                 if not file_path.exists():
                     file_path.write_text(structure_content, encoding="utf-8")
+    read(Path(client.cache_directory), pdb_ids)
 
 
 if __name__ == "__main__":
