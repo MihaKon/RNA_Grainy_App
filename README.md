@@ -41,6 +41,24 @@ RNAgrainy currently supports the following predefined coarse-grained RNA models:
 Detailed descriptions, mapping rules, and references are available in the
 [model documentation](https://rnagrainy.cs.put.poznan.pl/documentation/).
 
+## Application Preview
+
+### Main page
+
+<img width="1535" height="863" alt="RNAgrainy main page" src="https://github.com/user-attachments/assets/e4b52f6a-f9f5-48b8-8177-77c652d099fc" />
+
+### Coarse-grained structure comparison
+
+<img width="1535" height="862" alt="RNAgrainy coarse-grained structure comparison" src="https://github.com/user-attachments/assets/2780ac8f-f267-4bbd-8927-4eb9bd0799bf" />
+
+### Custom coarse-grained model creator
+
+<img width="1535" height="862" alt="RNAgrainy custom coarse-grained model creator" src="https://github.com/user-attachments/assets/f293bfd9-343f-4b37-8785-d395826ae667" />
+
+### Model documentation
+
+<img width="1535" height="862" alt="RNAgrainy model documentation" src="https://github.com/user-attachments/assets/77a9fbe3-e0b3-4cce-8305-33a4074c5e01" />
+
 ## Local Development
 
 ### Requirements
@@ -103,24 +121,6 @@ The application is available at:
 ```text
 http://127.0.0.1:5050
 ```
-
-## Application Preview
-
-### Main page
-
-<img width="1535" height="863" alt="RNAgrainy main page" src="https://github.com/user-attachments/assets/e4b52f6a-f9f5-48b8-8177-77c652d099fc" />
-
-### Coarse-grained structure comparison
-
-<img width="1535" height="862" alt="RNAgrainy coarse-grained structure comparison" src="https://github.com/user-attachments/assets/2780ac8f-f267-4bbd-8927-4eb9bd0799bf" />
-
-### Custom coarse-grained model creator
-
-<img width="1535" height="862" alt="RNAgrainy custom coarse-grained model creator" src="https://github.com/user-attachments/assets/f293bfd9-343f-4b37-8785-d395826ae667" />
-
-### Model documentation
-
-<img width="1535" height="862" alt="RNAgrainy model documentation" src="https://github.com/user-attachments/assets/77a9fbe3-e0b3-4cce-8305-33a4074c5e01" />
 
 ## Authors
 

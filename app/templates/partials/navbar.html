@@ -1,12 +1,13 @@
 <nav
   x-data="{
-        mobileOpen: false, 
-        currentPath: window.location.pathname,
-        isActive(path) {
-            return this.currentPath === path || (path !== '/' && this.currentPath.startsWith(path));
-        }
-     }"
-  class="sticky top-0 z-40 w-full bg-primary">
+    mobileOpen: false,
+    currentPath: window.location.pathname,
+    isActive(path) {
+      return this.currentPath === path || (path !== '/' && this.currentPath.startsWith(path));
+    }
+  }"
+  class="sticky top-0 z-40 w-full bg-primary"
+>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 shrink-0">
     <div class="relative flex h-16 items-center justify-between">
       <div class="flex flex-1 items-center justify-start gap-8">
@@ -26,7 +27,9 @@
             />
           </div>
 
-          <span class="whitespace-nowrap text-white text-xl font-bold tracking-wider">
+          <span
+            class="whitespace-nowrap text-white text-xl font-bold tracking-wider"
+          >
             RNAgrainy
           </span>
         </a>
@@ -64,11 +67,12 @@
             </a>
           </div>
         </div>
+      </div>
 
       <div class="absolute inset-y-0 right-0 flex items-center md:hidden">
         <button
-          @click="mobileOpen = !mobileOpen"
           type="button"
+          @click="mobileOpen = !mobileOpen"
           class="relative inline-flex items-center justify-center rounded-md p-2 text-tertiary-light hover:bg-tertiary hover:text-white"
           aria-controls="mobile-menu"
           :aria-expanded="mobileOpen.toString()"
@@ -97,18 +101,18 @@
   </div>
 
   <div
+    id="mobile-menu"
     x-show="mobileOpen"
     x-cloak
     class="md:hidden border-t border-primary/10 bg-primary"
-    id="mobile-menu"
   >
     <div class="space-y-1 px-2 pb-4 pt-3">
       <a
         href="/"
         class="block rounded-md px-3 py-2.5 text-base font-medium transition-colors outline-none"
         :class="isActive('/')
-            ? 'bg-accent text-white shadow-md shadow-accent/20' 
-            : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
+          ? 'bg-accent text-white shadow-md shadow-accent/20'
+          : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
       >
         Home
       </a>
@@ -117,8 +121,8 @@
         href="/documentation"
         class="block rounded-md px-3 py-2.5 text-base font-medium transition-colors outline-none"
         :class="isActive('/documentation')
-            ? 'bg-accent text-white shadow-md shadow-accent/20' 
-            : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
+          ? 'bg-accent text-white shadow-md shadow-accent/20'
+          : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
       >
         Documentation
       </a>
@@ -127,8 +131,8 @@
         href="/about"
         class="block rounded-md px-3 py-2.5 text-base font-medium transition-colors outline-none"
         :class="isActive('/about')
-            ? 'bg-accent text-white shadow-md shadow-accent/20'
-            : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
+          ? 'bg-accent text-white shadow-md shadow-accent/20'
+          : 'text-tertiary-light hover:bg-tertiary hover:text-white'"
       >
         About
       </a>
