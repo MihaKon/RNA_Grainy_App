@@ -1,6 +1,9 @@
+import os
 import pathlib
 
 from fastapi.templating import Jinja2Templates
+
+APP_VERSION = os.getenv("APP_VERSION", "dev").removeprefix("v")
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 COARSE_GRAIN_MODELS_DIR = BASE_DIR / "coarse_grain" / "models"

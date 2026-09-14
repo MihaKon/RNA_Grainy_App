@@ -6,10 +6,23 @@ BRANCH=main
 cd "$APP_DIR"
 
 echo "==> Fetching origin/$BRANCH"
-git fetch --prune origin
+git fetch --prune --tags origin
+
 PREV=$(git rev-parse --short HEAD)
 git reset --hard "origin/$BRANCH"
+
 echo "==> $PREV -> $(git rev-parse --short HEAD)"
+
+echo "==> Determining application version"
+
+GIT_VERSION=$(
+  git describe --tags --exact-match HEAD 2>/dev/null \
+    || printf 'dev-%s' "$(git rev-parse --short HEAD)"
+)
+
+export APP_VERSION="${GIT_VERSION#v}"
+
+echo "==> Deploying RNAgrainy ${APP_VERSION}"
 
 echo "==> Building and starting containers"
 docker compose up -d --build
