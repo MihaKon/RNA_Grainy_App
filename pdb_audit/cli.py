@@ -1,12 +1,11 @@
 import argparse
 from pathlib import Path
 
-from gemmi import Structure
-
+from app.exceptions import FileProcessingError
 from app.models.form import SupportedFormats
-from app.services.structures import StructureProcessor
+from pdb_audit import output
 from pdb_audit.client import RcsbClient
-from pdb_audit.validators import ValidatedStructure, Validator
+from pdb_audit.validators import Validator
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -53,81 +52,53 @@ def get_or_download_reference_structure(pdb_id: str, client: RcsbClient) -> Path
     structure_directory.mkdir(parents=True, exist_ok=True)
     file_path = structure_directory / f"{pdb_id}.cif"
 
-    if not file_path.exists():
-        structure_content = client.download_structure(pdb_id)
-        if structure_content:
-            file_path.write_text(structure_content, encoding="utf-8")
+    if file_path.exists():
+        return file_path
+
+    structure_content = client.download_structure(pdb_id)
+    if not structure_content:
+        raise FileProcessingError(f"Downloaded structure `{pdb_id}` is empty.")
+
+    file_path.write_text(structure_content, encoding="utf-8")
     return file_path
-
-
-def save_structure_as_cif(structure: Structure, file_path: Path) -> None:
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-    content = StructureProcessor.structure_to_cif_string(structure)
-    file_path.write_text(content, encoding="utf-8")
-
-
-def save_validated_structures(item: ValidatedStructure, cache_directory: Path) -> None:
-    structure_directory = cache_directory / item.file_name
-    save_structure_as_cif(
-        structure=item.reference_structure,
-        file_path=structure_directory / f"{item.file_name}_reference.cif",
-    )
-
-    for model_name, result in item.coarse_grain_results.items():
-        save_structure_as_cif(
-            structure=result.structure,
-            file_path=structure_directory / f"{item.file_name}_{model_name}.cif",
-        )
-
-
-def save_structure_report(item: ValidatedStructure, cache_directory: Path) -> None:
-    structure_directory = cache_directory / item.file_name
-    structure_directory.mkdir(parents=True, exist_ok=True)
-
-    file_path = structure_directory / f"{item.file_name}_report.txt"
-
-    lines = [
-        item.file_name,
-        f"  reference: {item.reference_structure}",
-    ]
-
-    for model_name, result in item.coarse_grain_results.items():
-        lines.append(f"  {model_name}: {result.structure}")
-
-        for issue in result.issues:
-            lines.append(f"    - {issue.code}: {issue.message}")
-
-    lines.append("-" * 20)
-    content = "\n".join(lines)
-    print(content)
-    file_path.write_text(content, encoding="utf-8")
 
 
 def main() -> None:
     arguments = parse_arguments()
     pdb_ids: list[str] = []
-    file_paths: list[Path] = []
     if arguments.ids:
         pdb_ids = get_structure_ids_from_cli(arguments)
 
     with RcsbClient() as client:
         cache_directory = client.cache_directory
+        report_path = output.initialize_audit_report(cache_directory)
         if not pdb_ids:
             pdb_ids = get_structure_ids_from_pdb(arguments, client)
 
         for pdb_id in pdb_ids:
-            file_path = get_or_download_reference_structure(pdb_id, client)
-            file_paths.append(file_path)
+            try:
+                file_path = get_or_download_reference_structure(pdb_id, client)
 
-    validator = Validator.parse_files(file_paths, SupportedFormats.CIF, None, [], [])
-    validator.validate()
+                validator = Validator.parse_files(
+                    [file_path], SupportedFormats.CIF, None, [], []
+                )
+                validator.validate()
 
-    for item in validator.validated_structures:
-        save_validated_structures(
-            item=item,
-            cache_directory=cache_directory,
-        )
-        save_structure_report(item, cache_directory)
+                for item in validator.validated_structures:
+                    output.save_validated_structures(
+                        item=item,
+                        cache_directory=cache_directory,
+                    )
+                    output.append_structure_to_report(
+                        item=item, report_path=report_path
+                    )
+            except Exception as error:
+                print(f"Failed to process {pdb_id}: {error}")
+                output.append_error_to_report(
+                    pdb_id=pdb_id, error=error, report_path=report_path
+                )
+
+                continue
 
 
 if __name__ == "__main__":
