@@ -36,13 +36,13 @@ class Validator:
         chains: list[str],
     ) -> None:
         self.structures_paths: list[Path] = structures_paths
-        self.structures = validated_structures
+        self.validated_structures = validated_structures
         self.file_format = file_format
         self.models = models
         self.chains = chains
 
     def validate(self) -> None:
-        for item in self.structures:
+        for item in self.validated_structures:
             for model_name, result in item.coarse_grain_results.items():
                 model_class = CoarseGrainModelRegistry.get_model(model_name)
                 model = model_class()

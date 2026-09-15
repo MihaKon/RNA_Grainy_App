@@ -1,6 +1,8 @@
 import argparse
 from pathlib import Path
 
+from gemmi import Structure
+
 from app.models.form import SupportedFormats
 from app.services.structures import StructureProcessor
 from pdb_audit.client import RcsbClient
@@ -46,7 +48,7 @@ def get_structure_ids_from_pdb(
     return pdb_ids[: int(arguments.number)]
 
 
-def save_reference_structure(pdb_id: str, client: RcsbClient) -> Path:
+def get_or_download_reference_structure(pdb_id: str, client: RcsbClient) -> Path:
     structure_directory = client.cache_directory / pdb_id
     structure_directory.mkdir(parents=True, exist_ok=True)
     file_path = structure_directory / f"{pdb_id}.cif"
@@ -58,16 +60,24 @@ def save_reference_structure(pdb_id: str, client: RcsbClient) -> Path:
     return file_path
 
 
-def save_coarse_grain_structures(
-    item: ValidatedStructure, cache_directory: Path
-) -> None:
+def save_structure_as_cif(structure: Structure, file_path: Path) -> None:
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    content = StructureProcessor.structure_to_cif_string(structure)
+    file_path.write_text(content, encoding="utf-8")
+
+
+def save_validated_structures(item: ValidatedStructure, cache_directory: Path) -> None:
     structure_directory = cache_directory / item.file_name
-    structure_directory.mkdir(parents=True, exist_ok=True)
+    save_structure_as_cif(
+        structure=item.reference_structure,
+        file_path=structure_directory / f"{item.file_name}_reference.cif",
+    )
 
     for model_name, result in item.coarse_grain_results.items():
-        file_path = structure_directory / f"{item.file_name}_{model_name}.cif"
-        content = StructureProcessor.structure_to_cif_string(result.structure)
-        file_path.write_text(content, encoding="utf-8")
+        save_structure_as_cif(
+            structure=result.structure,
+            file_path=structure_directory / f"{item.file_name}_{model_name}.cif",
+        )
 
 
 def save_structure_report(item: ValidatedStructure, cache_directory: Path) -> None:
@@ -106,15 +116,16 @@ def main() -> None:
             pdb_ids = get_structure_ids_from_pdb(arguments, client)
 
         for pdb_id in pdb_ids:
-            file_path = save_reference_structure(pdb_id, client)
+            file_path = get_or_download_reference_structure(pdb_id, client)
             file_paths.append(file_path)
 
     validator = Validator.parse_files(file_paths, SupportedFormats.CIF, None, [], [])
     validator.validate()
-    for item in validator.structures:
-        save_coarse_grain_structures(
-            item,
-            cache_directory,
+
+    for item in validator.validated_structures:
+        save_validated_structures(
+            item=item,
+            cache_directory=cache_directory,
         )
         save_structure_report(item, cache_directory)
 
