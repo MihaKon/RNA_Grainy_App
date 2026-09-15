@@ -5,9 +5,9 @@ from enum import Enum, StrEnum
 
 
 class Severity(StrEnum):
-    INFO = "info"  # Informational issues that do not affect the structure
-    WARNING = "warning"  # Issues that affect the structure but are caused by algorithm limitations of parsing diversity of structures
-    ERROR = "error"  # Critical issues that prevent the structure from being used in simulations or analyses
+    INFO = "INFO"  # Informational issues that do not affect the structure
+    WARNING = "WARNING"  # Issues that affect the structure but are caused by algorithm limitations of parsing diversity of structures
+    ERROR = "ERROR"  # Critical issues that prevent the structure from being used in simulations or analyses
 
 
 class Issues(Enum):

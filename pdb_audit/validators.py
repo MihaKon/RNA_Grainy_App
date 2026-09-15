@@ -25,6 +25,10 @@ class ValidatedStructure:
     reference_structure: Structure
     coarse_grain_results: dict[str, CoarseGrainStructureValidation]
 
+    @property
+    def has_issues(self) -> bool:
+        return any(result.issues for result in self.coarse_grain_results.values())
+
 
 class Validator:
     def __init__(

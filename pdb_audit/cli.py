@@ -71,7 +71,7 @@ def main() -> None:
 
     with RcsbClient() as client:
         cache_directory = client.cache_directory
-        report_path = output.initialize_audit_report(cache_directory)
+        report_path = output.initialize_audit_report(cache_directory.parent)
         if not pdb_ids:
             pdb_ids = get_structure_ids_from_pdb(arguments, client)
 
@@ -85,7 +85,7 @@ def main() -> None:
                 validator.validate()
 
                 for item in validator.validated_structures:
-                    output.save_validated_structures(
+                    output.save_issue_artifacts(
                         item=item,
                         cache_directory=cache_directory,
                     )

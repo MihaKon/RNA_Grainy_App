@@ -3,6 +3,7 @@ from pathlib import Path
 from gemmi import Structure
 
 from app.services.structures import StructureProcessor
+from pdb_audit.models import IssueContent
 from pdb_audit.validators import ValidatedStructure
 
 
@@ -12,14 +13,20 @@ def save_structure_as_cif(structure: Structure, file_path: Path) -> None:
     file_path.write_text(content, encoding="utf-8")
 
 
-def save_validated_structures(item: ValidatedStructure, cache_directory: Path) -> None:
+def save_issue_artifacts(item: ValidatedStructure, cache_directory: Path) -> None:
+    if not item.has_issues:
+        return
+
     structure_directory = cache_directory / item.file_name
+
     save_structure_as_cif(
         structure=item.reference_structure,
         file_path=structure_directory / f"{item.file_name}_reference.cif",
     )
 
     for model_name, result in item.coarse_grain_results.items():
+        if not result.issues:
+            continue
         save_structure_as_cif(
             structure=result.structure,
             file_path=structure_directory / f"{item.file_name}_{model_name}.cif",
@@ -37,19 +44,49 @@ def initialize_audit_report(cache_directory: Path) -> Path:
     return report_path
 
 
+def format_issue_location(issue: IssueContent) -> str:
+    parts: list[str] = []
+
+    if issue.model_index is not None:
+        parts.append(f"model={issue.model_index}")
+
+    if issue.chain_name is not None:
+        parts.append(f"chain={issue.chain_name}")
+
+    if issue.seq_id is not None:
+        parts.append(f"residue={issue.seq_id}")
+
+    if issue.res_name is not None:
+        parts.append(f"res_name={issue.res_name}")
+
+    if not parts:
+        return ""
+
+    return f" ({', '.join(parts)})"
+
+
 def format_structure_report(item: ValidatedStructure) -> str:
-    lines = [
-        item.file_name,
-        f"  reference: {item.reference_structure}",
-    ]
+    if item.has_issues:
+        lines = [
+            f"{item.file_name} ISSUES",
+            f"  reference: {item.reference_structure}",
+        ]
 
-    for model_name, result in item.coarse_grain_results.items():
-        lines.append(f"  {model_name}: {result.structure}")
+        for model_name, result in item.coarse_grain_results.items():
+            lines.append(f"  {model_name}: {result.structure}")
 
-        for issue in result.issues:
-            lines.append(f"    - [{issue.severity}] {issue.code}: {issue.message}")
+            for issue in result.issues:
+                location = format_issue_location(issue)
+                lines.append(
+                    f"    - [{issue.severity}] {issue.code}{location}: {issue.message}"
+                )
 
-    lines.append("-" * 20)
+        lines.append("-" * 20)
+    else:
+        lines = [
+            f"{item.file_name} PASSED",
+        ]
+
     return "\n".join(lines)
 
 
@@ -69,4 +106,4 @@ def append_structure_to_report(item: ValidatedStructure, report_path: Path) -> N
     print(content)
     with report_path.open("a", encoding="utf-8") as report:
         report.write(content)
-        report.write("\n\n")
+        report.write("\n")
