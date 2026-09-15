@@ -43,9 +43,10 @@ def check_ions_or_ligands_in_coarse_grain_structure(
     issues = []
     for model, chain, residue in iter_residues(context.coarse_grain_structure):
         if residue.entity_type == EntityType.NonPolymer or residue.is_water():
+            issue = Issues.IONS_OR_LIGANDS_IN_COARSE_STRUCTURE
             issues.append(
-                IssueContent(
-                    code=Issues.IONS_OR_LIGANDS_IN_COARSE_STRUCTURE.code,
+                IssueContent.from_issue(
+                    issue=issue,
                     model_index=model.num,
                     chain_name=chain.name,
                     seq_id=residue.seqid.num,

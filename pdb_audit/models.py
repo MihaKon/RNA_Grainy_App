@@ -10,17 +10,15 @@ class Severity(StrEnum):
     ERROR = "error"  # Critical issues that prevent the structure from being used in simulations or analyses
 
 
-@dataclass
-class IssueContent:
-    code: str
-    message: str | None = None
-    model_index: int | None = None
-    chain_name: str | None = None
-    seq_id: int | None = None
-    res_name: str | None = None
-
-
 class Issues(Enum):
+    def __init__(self, code: str, message: str, severity: Severity):
+        self.code = code
+        self.message = message
+        self.severity = severity
+
+    def __str__(self) -> str:
+        return f"{self.code}: {self.message} ({self.severity.value})"
+
     # RCSB ISSUES #
 
     # GENERAL ISSUES #
@@ -172,10 +170,32 @@ class Issues(Enum):
 
     # STRESS TESTS #
 
-    def __init__(self, code: str, message: str, severity: Severity):
-        self.code = code
-        self.message = message
-        self.severity = severity
 
-    def __str__(self) -> str:
-        return f"{self.code}: {self.message} ({self.severity.value})"
+@dataclass
+class IssueContent:
+    code: str
+    message: str | None = None
+    severity: Severity | None = None
+    model_index: int | None = None
+    chain_name: str | None = None
+    seq_id: int | None = None
+    res_name: str | None = None
+
+    @classmethod
+    def from_issue(
+        cls,
+        issue: Issues,
+        model_index: int | None = None,
+        chain_name: str | None = None,
+        seq_id: int | None = None,
+        res_name: str | None = None,
+    ) -> IssueContent:
+        return cls(
+            code=issue.code,
+            message=issue.message,
+            severity=issue.severity,
+            model_index=model_index,
+            chain_name=chain_name,
+            seq_id=seq_id,
+            res_name=res_name,
+        )
