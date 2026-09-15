@@ -52,7 +52,7 @@ class Validator:
                     coarse_grain_structure=result.structure,
                     coarse_grain_model=model,
                 )
-                result.issues.extend(run_checks(context))
+                result.issues = run_checks(context)
 
     @classmethod
     def read_files(cls, structures_paths: list[Path]) -> list[str]:

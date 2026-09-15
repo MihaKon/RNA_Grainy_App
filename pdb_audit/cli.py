@@ -70,7 +70,12 @@ def save_coarse_grain_structures(
         file_path.write_text(content, encoding="utf-8")
 
 
-def print_structure_report(item: ValidatedStructure) -> None:
+def save_structure_report(item: ValidatedStructure, cache_directory: Path) -> None:
+    structure_directory = cache_directory / item.file_name
+    structure_directory.mkdir(parents=True, exist_ok=True)
+
+    file_path = structure_directory / f"{item.file_name}_report.txt"
+
     lines = [
         item.file_name,
         f"  reference: {item.reference_structure}",
@@ -83,7 +88,9 @@ def print_structure_report(item: ValidatedStructure) -> None:
             lines.append(f"    - {issue.code}: {issue.message}")
 
     lines.append("-" * 20)
-    print("\n".join(lines))
+    content = "\n".join(lines)
+    print(content)
+    file_path.write_text(content, encoding="utf-8")
 
 
 def main() -> None:
@@ -94,6 +101,7 @@ def main() -> None:
         pdb_ids = get_structure_ids_from_cli(arguments)
 
     with RcsbClient() as client:
+        cache_directory = client.cache_directory
         if not pdb_ids:
             pdb_ids = get_structure_ids_from_pdb(arguments, client)
 
@@ -106,9 +114,9 @@ def main() -> None:
     for item in validator.structures:
         save_coarse_grain_structures(
             item,
-            client.cache_directory,
+            cache_directory,
         )
-        print_structure_report(item)
+        save_structure_report(item, cache_directory)
 
 
 if __name__ == "__main__":
