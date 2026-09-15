@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 
 from app.models.form import SupportedFormats
+from app.services.structures import StructureProcessor
 from pdb_audit.client import RcsbClient
 from pdb_audit.validators import ValidatedStructure, Validator
 
@@ -45,12 +46,28 @@ def get_structure_ids_from_pdb(
     return pdb_ids[: int(arguments.number)]
 
 
-def save_structure(pdb_id: str, client: RcsbClient) -> None:
-    file_path = client.cache_directory / f"{pdb_id}.cif"
+def save_reference_structure(pdb_id: str, client: RcsbClient) -> Path:
+    structure_directory = client.cache_directory / pdb_id
+    structure_directory.mkdir(parents=True, exist_ok=True)
+    file_path = structure_directory / f"{pdb_id}.cif"
+
     if not file_path.exists():
         structure_content = client.download_structure(pdb_id)
         if structure_content:
             file_path.write_text(structure_content, encoding="utf-8")
+    return file_path
+
+
+def save_coarse_grain_structures(
+    item: ValidatedStructure, cache_directory: Path
+) -> None:
+    structure_directory = cache_directory / item.file_name
+    structure_directory.mkdir(parents=True, exist_ok=True)
+
+    for model_name, result in item.coarse_grain_results.items():
+        file_path = structure_directory / f"{item.file_name}_{model_name}.cif"
+        content = StructureProcessor.structure_to_cif_string(result.structure)
+        file_path.write_text(content, encoding="utf-8")
 
 
 def print_structure_report(item: ValidatedStructure) -> None:
@@ -81,12 +98,16 @@ def main() -> None:
             pdb_ids = get_structure_ids_from_pdb(arguments, client)
 
         for pdb_id in pdb_ids:
-            save_structure(pdb_id, client)
-            file_paths.append(client.cache_directory / f"{pdb_id}.cif")
+            file_path = save_reference_structure(pdb_id, client)
+            file_paths.append(file_path)
 
     validator = Validator.parse_files(file_paths, SupportedFormats.CIF, None, [], [])
     validator.validate()
     for item in validator.structures:
+        save_coarse_grain_structures(
+            item,
+            client.cache_directory,
+        )
         print_structure_report(item)
 
 
