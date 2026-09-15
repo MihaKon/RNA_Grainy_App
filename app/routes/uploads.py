@@ -11,8 +11,8 @@ from app.models.form import (
     SupportedFormats,
 )
 from app.rcsb import fetch_rcsb_file
-from app.services.workspaces import WorkspaceManager
 from app.services.structures import StructureProcessor
+from app.services.workspaces import WorkspaceManager
 from app.settings import BYTES_PER_MIB, MAX_FILE_UPLOAD_SIZE, PRESETS_DIR, TEMPLATES
 
 router = APIRouter(prefix="/upload", tags=["upload"])

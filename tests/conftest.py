@@ -1,5 +1,4 @@
 import pathlib
-
 from io import BytesIO
 from pathlib import Path
 
@@ -7,12 +6,11 @@ import pytest
 from fastapi.testclient import TestClient
 from gemmi import Structure, cif, make_structure_from_block
 
-from app.main import app as fastapi_app
-import app.services.workspaces.manager
 import app.services.workspaces.cleaner
+import app.services.workspaces.manager
 import app.services.workspaces.paths
 import app.settings
-
+from app.main import app as fastapi_app
 
 TEST_DATA_DIR = pathlib.Path(__file__).parent / "data"
 

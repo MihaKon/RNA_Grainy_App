@@ -6,6 +6,7 @@ services:
     restart: unless-stopped
     environment:
       WEB_CONCURRENCY: "4"
+      APP_VERSION: ${APP_VERSION:-dev}
     ports:
       - "127.0.0.1:5050:5050"
     volumes:

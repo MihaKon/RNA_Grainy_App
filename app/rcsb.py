@@ -4,7 +4,6 @@ from httpx import HTTPStatusError
 from app.exceptions import FileProcessingError
 from app.settings import BYTES_PER_MIB, MAX_RCSB_DOWNLOAD_SIZE, RCSB_URL
 
-
 client = httpx.AsyncClient()
 
 

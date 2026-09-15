@@ -12,7 +12,7 @@ document.addEventListener("alpine:init", () => {
 
     Alpine.store("openCreator", {
         isOpen: false,
-        
+
         open() {
             this.isOpen = true;
         },

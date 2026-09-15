@@ -1,9 +1,10 @@
 from pathlib import Path
 
 import pytest
-from app.exceptions import InvalidRequestError, FileProcessingError
-from app.settings import MIN_FREE_DISK_SIZE
+
+from app.exceptions import FileProcessingError, InvalidRequestError
 from app.services.workspaces.manager import WorkspaceManager
+from app.settings import MIN_FREE_DISK_SIZE
 
 
 def test_setup_workspace_dir_creates_directory(

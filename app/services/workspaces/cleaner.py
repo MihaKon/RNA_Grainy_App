@@ -6,8 +6,8 @@ from pathlib import Path
 
 from app.services.workspaces.paths import is_valid_uuid
 from app.settings import (
-    WORKSPACE_STORAGE_DIR,
     WORKSPACE_MAX_LIFETIME,
+    WORKSPACE_STORAGE_DIR,
     WORKSPACE_STORAGE_MAX_SIZE,
 )
 

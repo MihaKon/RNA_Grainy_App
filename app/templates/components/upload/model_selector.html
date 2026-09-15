@@ -1,6 +1,6 @@
 <div class="space-y-1">
-  <p class="block text-sm font-medium text-primary"
-    >Coarse-Grain Model</p>
+  <p class="block text-sm font-medium text-primary">Coarse-Grain Model</p>
+
   <div
     class="relative"
     x-ref="dropdownContainer"
@@ -13,7 +13,7 @@
       x-ref="dropdownButton"
       @click="checkPosition(); dropdownOpen = !dropdownOpen"
       class="w-full bg-white border rounded-xl py-2.5 px-4 text-left cursor-pointer shadow-sm outline-none flex justify-between items-center transition-all"
-      :class="errors.model ? 'border-danger' : 'border-primary/20 focus:border-accent '"
+      :class="errors.model ? 'border-danger' : 'border-primary/20 focus:border-accent'"
     >
       <span
         class="block truncate text-sm"
@@ -32,23 +32,23 @@
       :class="openUp ? 'bottom-full mb-2 origin-bottom' : 'top-full mt-2 origin-top'"
     >
       {% for model_id, model_name in coarse_grain_models %}
-      <div
-        @click="selectModel('{{ model_id }}', '{{ model_name }}')"
-        class="cursor-pointer select-none relative py-2.5 pl-3 pr-9 transition-colors hover:bg-accent-light group border-b border-primary/10"
-      >
-        <span
-          class="block truncate font-medium text-primary group-hover:text-accent"
-          :class="{ 'text-accent font-bold': selectedModel === '{{ model_id }}' }"
+        <div
+          @click="selectModel('{{ model_id }}', '{{ model_name }}')"
+          class="cursor-pointer select-none relative py-2.5 pl-3 pr-9 transition-colors hover:bg-accent-light group border-b border-primary/10"
         >
-          {{ model_name }}
-        </span>
-        <span
-          x-show="selectedModel === '{{ model_id }}'"
-          class="absolute inset-y-0 right-0 flex items-center pr-4 text-accent"
-        >
-          <i class="fa-solid fa-check"></i>
-        </span>
-      </div>
+          <span
+            class="block truncate font-medium text-primary group-hover:text-accent"
+            :class="{ 'text-accent font-bold': selectedModel === '{{ model_id }}' }"
+          >
+            {{ model_name }}
+          </span>
+          <span
+            x-show="selectedModel === '{{ model_id }}'"
+            class="absolute inset-y-0 right-0 flex items-center pr-4 text-accent"
+          >
+            <i class="fa-solid fa-check"></i>
+          </span>
+        </div>
       {% endfor %}
 
       <div

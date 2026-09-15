@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, DefaultDict
+from typing import Any
 
 from fastapi import Request
 from gemmi import (
@@ -95,7 +95,7 @@ class StructureProcessor:
         selected_models: list[int],
         selected_chains: list[str],
         custom_model_data: dict | None = None,
-    ) -> DefaultDict[str, Any]:
+    ) -> defaultdict[str, Any]:
         original_format = file_format.normalize_format()
 
         model_data = DocsContextBuilder.get_model(selected_model, custom_model_data)
@@ -151,5 +151,5 @@ class StructureProcessor:
             "is_pdb_available": is_pdb_available,
         }
 
-        context: DefaultDict[str, Any] = defaultdict(list, initial_data)
+        context: defaultdict[str, Any] = defaultdict(list, initial_data)
         return context

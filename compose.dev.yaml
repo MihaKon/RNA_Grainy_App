@@ -1,0 +1,14 @@
+services:
+  app:
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5050"
+      - --reload
+      - --reload-dir
+      - /app/app
+    volumes:
+      - ./app:/app/app:ro
