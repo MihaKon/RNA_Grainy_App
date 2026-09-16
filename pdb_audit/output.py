@@ -72,6 +72,11 @@ def format_structure_report(item: ValidatedStructure) -> str:
             f"  reference: {item.reference_structure}",
         ]
 
+        for issue in item.reference_issues:
+            location = format_issue_location(issue)
+            lines.append(
+                f"    - [{issue.severity}] {issue.code}{location}: {issue.message}"
+            )
         for model_name, result in item.coarse_grain_results.items():
             lines.append(f"  {model_name}: {result.structure}")
 

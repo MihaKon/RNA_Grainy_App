@@ -79,8 +79,8 @@ def main() -> None:
             try:
                 file_path = get_or_download_reference_structure(pdb_id, client)
 
-                validator = Validator.parse_files(
-                    [file_path], SupportedFormats.CIF, None, [], []
+                validator = Validator.parse_file(
+                    file_path, SupportedFormats.CIF, None, [], []
                 )
                 validator.validate()
 

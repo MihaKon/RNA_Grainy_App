@@ -9,12 +9,16 @@ from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.exceptions import FileProcessingError
 from app.models.form import SupportedFormats
 from app.services.structures import StructureProcessor
-from pdb_audit.checks import ValidationContext, run_checks
+from pdb_audit.checks import (
+    ValidationContext,
+    run_coarse_grain_checks,
+    run_reference_checks,
+)
 from pdb_audit.models import IssueContent
 
 
 @dataclass
-class CoarseGrainStructureValidation:
+class ValidatedCoarseGrainedStructure:
     structure: Structure
     issues: list[IssueContent] = field(default_factory=list)
 
@@ -22,24 +26,28 @@ class CoarseGrainStructureValidation:
 @dataclass
 class ValidatedStructure:
     file_name: str
+    original_reference_cif: str
     reference_structure: Structure
-    coarse_grain_results: dict[str, CoarseGrainStructureValidation]
+    coarse_grain_results: dict[str, ValidatedCoarseGrainedStructure]
+    reference_issues: list[IssueContent] = field(default_factory=list)
 
     @property
     def has_issues(self) -> bool:
-        return any(result.issues for result in self.coarse_grain_results.values())
+        return bool(self.reference_issues) or any(
+            result.issues for result in self.coarse_grain_results.values()
+        )
 
 
 class Validator:
     def __init__(
         self,
-        structures_paths: list[Path],
+        structures_path: Path,
         validated_structures: list[ValidatedStructure],
         file_format: SupportedFormats,
         models: list[int],
         chains: list[str],
     ) -> None:
-        self.structures_paths: list[Path] = structures_paths
+        self.structures_path: Path = structures_path
         self.validated_structures = validated_structures
         self.file_format = file_format
         self.models = models
@@ -47,27 +55,29 @@ class Validator:
 
     def validate(self) -> None:
         for item in self.validated_structures:
+            reference_checked = False
             for model_name, result in item.coarse_grain_results.items():
                 model_class = CoarseGrainModelRegistry.get_model(model_name)
                 model = model_class()
 
                 context = ValidationContext(
+                    original_reference_cif=item.original_reference_cif,
                     reference_structure=item.reference_structure,
                     coarse_grain_structure=result.structure,
                     coarse_grain_model=model,
                 )
-                result.issues = run_checks(context)
+                if not reference_checked:
+                    item.reference_issues = run_reference_checks(context)
+                    reference_checked = True
+                result.issues = run_coarse_grain_checks(context)
 
     @classmethod
-    def read_files(cls, structures_paths: list[Path]) -> list[str]:
-        contents = []
-        for path in structures_paths:
-            try:
-                file_content = path.read_text(encoding="utf-8")
-                contents.append(file_content)
-            except UnicodeDecodeError as e:
-                raise FileProcessingError(f"Error reading preset file: {e}")
-        return contents
+    def read_file(cls, structures_path: Path) -> str:
+        try:
+            file_content = structures_path.read_text(encoding="utf-8")
+        except UnicodeDecodeError as e:
+            raise FileProcessingError(f"Error reading preset file: {e}")
+        return file_content
 
     @classmethod
     def get_reference_structure(
@@ -103,41 +113,41 @@ class Validator:
         return cg_models
 
     @classmethod
-    def parse_files(
+    def parse_file(
         cls,
-        structures_paths: list[Path],
+        structures_path: Path,
         file_format: SupportedFormats,
         coarse_grain_model: str | None,
         models: list[int],
         chains: list[str],
     ) -> "Validator":
-        structures_contents = cls.read_files(structures_paths)
+        original_reference_cif = cls.read_file(structures_path)
         validated_structures: list[ValidatedStructure] = []
 
-        for path, content in zip(structures_paths, structures_contents):
-            reference_structure = cls.get_reference_structure(
-                content, file_format, models, chains
-            )
-            coarse_grain_structures = cls.get_coarse_grain_structures(
-                reference_structure, coarse_grain_model
+        reference_structure = cls.get_reference_structure(
+            original_reference_cif, file_format, models, chains
+        )
+        coarse_grain_structures = cls.get_coarse_grain_structures(
+            reference_structure, coarse_grain_model
+        )
+
+        coarse_grain_results: dict[str, ValidatedCoarseGrainedStructure] = {}
+        for model_name, structure in coarse_grain_structures.items():
+            coarse_grain_results[model_name] = ValidatedCoarseGrainedStructure(
+                structure=structure,
             )
 
-            coarse_grain_results: dict[str, CoarseGrainStructureValidation] = {}
-            for model_name, structure in coarse_grain_structures.items():
-                coarse_grain_results[model_name] = CoarseGrainStructureValidation(
-                    structure=structure,
-                )
-
-            validated_structures.append(
-                ValidatedStructure(
-                    file_name=path.stem,
-                    reference_structure=reference_structure,
-                    coarse_grain_results=coarse_grain_results,
-                )
+        validated_structures.append(
+            ValidatedStructure(
+                file_name=structures_path.stem,
+                original_reference_cif=original_reference_cif,
+                reference_structure=reference_structure,
+                coarse_grain_results=coarse_grain_results,
             )
+        )
 
         return cls(
-            structures_paths=structures_paths,
+            structures_path=structures_path,
             validated_structures=validated_structures,
             file_format=file_format,
             models=models,

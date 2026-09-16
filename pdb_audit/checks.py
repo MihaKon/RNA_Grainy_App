@@ -9,15 +9,10 @@ from pdb_audit.models import IssueContent, Issues
 
 @dataclass
 class ValidationContext:
+    original_reference_cif: str
     reference_structure: Structure
     coarse_grain_structure: Structure
     coarse_grain_model: BaseCoarseGrainModel
-
-
-CheckFunction = Callable[
-    [ValidationContext],
-    list[IssueContent],
-]
 
 
 def iter_models(structure: Structure) -> Iterator[Model]:
@@ -56,14 +51,38 @@ def check_ions_or_ligands_in_coarse_grain_structure(
     return issues
 
 
-CHECKS: list[CheckFunction] = [
-    check_ions_or_ligands_in_coarse_grain_structure,
+CheckFunction = Callable[
+    [ValidationContext],
+    list[IssueContent],
 ]
 
 
-def run_checks(context: ValidationContext) -> list[IssueContent]:
+COARSE_GRAIN_CHECKS: list[CheckFunction] = [
+    check_ions_or_ligands_in_coarse_grain_structure,
+]
+
+REFERENCE_CHECKS: list[CheckFunction] = []
+
+
+def run_checks(
+    context: ValidationContext,
+    checks: list[CheckFunction],
+) -> list[IssueContent]:
     issues = []
-    for check in CHECKS:
+
+    for check in checks:
         issues.extend(check(context))
 
     return issues
+
+
+def run_reference_checks(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    return run_checks(context, REFERENCE_CHECKS)
+
+
+def run_coarse_grain_checks(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    return run_checks(context, COARSE_GRAIN_CHECKS)
