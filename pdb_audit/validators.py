@@ -1,20 +1,18 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from gemmi import (
-    Structure,
-)
+from gemmi import Structure
 
 from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.exceptions import FileProcessingError
 from app.models.form import SupportedFormats
 from app.services.structures import StructureProcessor
-from pdb_audit.checks import (
-    ValidationContext,
+from pdb_audit.issues import IssueContent
+from pdb_audit.validation.context import ValidationContext
+from pdb_audit.validation.runner import (
     run_coarse_grain_checks,
     run_reference_checks,
 )
-from pdb_audit.models import IssueContent
 
 
 @dataclass
