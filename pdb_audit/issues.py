@@ -19,12 +19,16 @@ class Issues(Enum):
     def __str__(self) -> str:
         return f"{self.code}: {self.message} ({self.severity.value})"
 
-    # RCSB ISSUES #
-
     # GENERAL ISSUES #
     INVALID_NUMBER_OF_AA_ATOMS = (
         "invalid_number_of_aa_atoms",
         "The number of atoms in the parsed AA structure is not consistent with the number of atoms in the downloaded structure",
+        Severity.ERROR,
+    )
+
+    INVALID_NUMBER_OF_AA_ATOMS_BY_ENTITY_TYPE = (
+        "invalid_aa_atoms_by_entity_type",
+        "Atom counts grouped by entity type do not match the downloaded CIF",
         Severity.ERROR,
     )
 
@@ -55,6 +59,14 @@ class Issues(Enum):
     EMPTY_MODEL = (
         "empty_model",
         "There is empty model in the coarse-grained structure",
+        Severity.ERROR,
+    )
+
+    # METADATA ISSUES #
+
+    REFERENCE_CIF_ENTITY_METADATA_LOST = (
+        "reference_cif_entity_metadata_lost",
+        "Entity metadata was lost while serializing the reference structure",
         Severity.ERROR,
     )
 

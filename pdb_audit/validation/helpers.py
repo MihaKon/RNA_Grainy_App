@@ -1,6 +1,7 @@
+from collections import Counter
 from collections.abc import Iterator
 
-from gemmi import Chain, Model, Residue, Structure
+from gemmi import Chain, EntityType, Model, Residue, Structure, cif
 
 from pdb_audit.issues import IssueContent, Issues
 
@@ -24,6 +25,39 @@ def iter_residues(structure: Structure) -> Iterator[tuple[Model, Chain, Residue]
 
 def get_structure_atom_count(structure: Structure) -> int:
     return sum(model.count_atom_sites() for model in structure)
+
+
+def get_original_atom_counts_by_entity_type(content: str) -> Counter[str]:
+    document = cif.read_string(content)
+    block = document.sole_block()
+
+    entity_types = {row[0]: row[1] for row in block.find("_entity.", ["id", "type"])}
+    counts: Counter[str] = Counter()
+
+    for row in block.find(
+        "_atom_site.",
+        ["label_entity_id"],
+    ):
+        entity_id = row[0]
+        entity_type = entity_types.get(entity_id, "unknown")
+        counts[entity_type] += 1
+
+    return counts
+
+
+def get_parsed_atom_counts_by_entity_type(structure: Structure) -> Counter[str]:
+    counts: Counter[str] = Counter()
+    for model, chain, residue in iter_residues(structure):
+        atom_count = len(residue)
+        if residue.is_water():
+            counts["water"] += atom_count
+        elif residue.entity_type == EntityType.Polymer:
+            counts["polymer"] += atom_count
+        elif residue.entity_type == EntityType.NonPolymer:
+            counts["non-polymer"] += atom_count
+        else:
+            counts["unknown"] += atom_count
+    return counts
 
 
 def make_issue(

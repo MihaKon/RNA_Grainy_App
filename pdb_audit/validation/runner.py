@@ -3,7 +3,9 @@ from collections.abc import Callable
 from pdb_audit.issues import IssueContent
 from pdb_audit.validation.checks import (
     check_invalid_number_of_aa_atoms,
+    check_invalid_number_of_aa_atoms_by_entity_type,
     check_ions_or_ligands_in_coarse_grain_structure,
+    check_reference_cif_entity_metadata_lost,
 )
 from pdb_audit.validation.context import ValidationContext
 
@@ -17,7 +19,11 @@ COARSE_GRAIN_CHECKS: list[CheckFunction] = [
     check_ions_or_ligands_in_coarse_grain_structure,
 ]
 
-REFERENCE_CHECKS: list[CheckFunction] = [check_invalid_number_of_aa_atoms]
+REFERENCE_CHECKS: list[CheckFunction] = [
+    check_invalid_number_of_aa_atoms,
+    check_invalid_number_of_aa_atoms_by_entity_type,
+    check_reference_cif_entity_metadata_lost,
+]
 
 
 def run_checks(
