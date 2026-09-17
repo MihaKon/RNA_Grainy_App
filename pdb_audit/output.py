@@ -3,7 +3,7 @@ from pathlib import Path
 from gemmi import Structure
 
 from app.services.structures import StructureProcessor
-from pdb_audit.models import IssueContent
+from pdb_audit.checks import IssueContent
 from pdb_audit.validators import ValidatedStructure
 
 
