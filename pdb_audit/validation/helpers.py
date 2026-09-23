@@ -76,25 +76,6 @@ def get_residue_entity_category(residue: Residue) -> EntityCategory:
     return "unknown"
 
 
-def classify_nonpolymer_residue(
-    residue: Residue,
-) -> Literal["water", "nucleotide", "ligand", "other"]:
-    category = get_residue_entity_category(residue)
-
-    if category == "water":
-        return "water"
-
-    if category != "non-polymer":
-        return "other"
-
-    residue_name = residue.name.upper()
-
-    if residue_name in (CANONICAL_RNA_RESIDUES | CANONICAL_DNA_RESIDUES):
-        return "nucleotide"
-
-    return "ligand"
-
-
 def is_supported_polymer_residue(
     context: ValidationContext,
     residue: Residue,

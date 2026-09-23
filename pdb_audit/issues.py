@@ -116,15 +116,15 @@ class Issues(Enum):
         Severity.ERROR,
     )
 
-    LIGAND_IN_COARSE_STRUCTURE = (
-        "ligand_in_coarse_structure",
-        "A ligand is present in the coarse-grained structure",
+    LIGAND_OR_ION_IN_COARSE_STRUCTURE = (
+        "ligand_or_ion_in_coarse_structure",
+        "A ligand or ion is present in the coarse-grained structure",
         Severity.ERROR,
     )
 
-    NONPOLYMER_NUCLEOTIDE_IN_COARSE_STRUCTURE = (
-        "nonpolymer_nucleotide_in_coarse_structure",
-        "A non-polymer nucleotide is present in the coarse-grained structure",
+    NUCLEOTIDE_NOT_MARKED_AS_POLYMER = (
+        "nucleotide_not_marked_as_polymer",
+        "A coarse-grained nucleotide is not marked as a polymer residue",
         Severity.ERROR,
     )
 
@@ -134,15 +134,15 @@ class Issues(Enum):
         Severity.WARNING,
     )
 
-    GAP_IN_COARSE_STRUCTURE = (
-        "gap_in_coarse_structure",
-        "There is a gap in the coarse-grained structure",
-        Severity.WARNING,
-    )
-
     DNA_RESIDUE_IN_COARSE_STRUCTURE = (
         "dna_residue_in_coarse_structure",
         "A DNA residue is present in the coarse-grained structure",
+        Severity.WARNING,
+    )
+
+    GAP_IN_COARSE_STRUCTURE = (
+        "gap_in_coarse_structure",
+        "There is a gap in the coarse-grained structure",
         Severity.WARNING,
     )
 

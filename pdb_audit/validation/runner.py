@@ -5,8 +5,8 @@ from pdb_audit.validation.checks import (
     check_empty_models,
     check_invalid_number_of_aa_atoms,
     check_invalid_number_of_aa_atoms_by_entity_type,
-    check_ligands_in_coarse_structure,
-    check_nonpolymer_nucleotides_in_coarse_structure,
+    check_ligands_and_ions_in_coarse_structure,
+    check_nucleotides_are_marked_as_polymer,
     check_protein_residues_in_coarse_structure,
     check_reference_cif_entity_metadata_lost,
     check_water_in_coarse_structure,
@@ -22,9 +22,9 @@ CheckFunction = Callable[
 COARSE_GRAIN_CHECKS: list[CheckFunction] = [
     check_protein_residues_in_coarse_structure,
     check_empty_models,
-    check_ligands_in_coarse_structure,
+    check_ligands_and_ions_in_coarse_structure,
     check_water_in_coarse_structure,
-    check_nonpolymer_nucleotides_in_coarse_structure,
+    check_nucleotides_are_marked_as_polymer,
 ]
 
 REFERENCE_CHECKS: list[CheckFunction] = [

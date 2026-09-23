@@ -1,10 +1,9 @@
-from gemmi import PolymerType, cif, find_tabulated_residue
+from gemmi import EntityType, PolymerType, cif, find_tabulated_residue
 
 from app.services.structures import StructureProcessor
 from pdb_audit.issues import IssueContent, Issues
 from pdb_audit.validation.context import ValidationContext
 from pdb_audit.validation.helpers import (
-    classify_nonpolymer_residue,
     get_original_atom_counts_by_entity_type,
     get_parsed_atom_counts_by_entity_type,
     get_residue_entity_category,
@@ -129,50 +128,72 @@ def check_water_in_coarse_structure(
     context: ValidationContext,
 ) -> list[IssueContent]:
     issues = []
+
     for model, chain, residue in iter_residues(context.coarse_grain_structure):
-        if classify_nonpolymer_residue(residue) == "water":
-            issues.append(
-                make_issue(
-                    issue=Issues.WATER_IN_COARSE_STRUCTURE,
-                    model=model,
-                    chain=chain,
-                    residue=residue,
-                )
+        if get_residue_entity_category(residue) != "water":
+            continue
+
+        issues.append(
+            make_issue(
+                issue=Issues.WATER_IN_COARSE_STRUCTURE,
+                model=model,
+                chain=chain,
+                residue=residue,
             )
+        )
+
     return issues
 
 
-def check_ligands_in_coarse_structure(
+def check_ligands_and_ions_in_coarse_structure(
     context: ValidationContext,
 ) -> list[IssueContent]:
     issues = []
+    supported_residues = context.coarse_grain_model.nucleotides_config
+
     for model, chain, residue in iter_residues(context.coarse_grain_structure):
-        if classify_nonpolymer_residue(residue) == "ligand":
-            issues.append(
-                make_issue(
-                    issue=Issues.LIGAND_IN_COARSE_STRUCTURE,
-                    model=model,
-                    chain=chain,
-                    residue=residue,
-                )
+        category = get_residue_entity_category(residue)
+
+        if category != "non-polymer":
+            continue
+
+        if residue.name in supported_residues:
+            continue
+
+        issues.append(
+            make_issue(
+                issue=Issues.LIGAND_OR_ION_IN_COARSE_STRUCTURE,
+                model=model,
+                chain=chain,
+                residue=residue,
             )
+        )
+
     return issues
 
 
-def check_nonpolymer_nucleotides_in_coarse_structure(
+def check_nucleotides_are_marked_as_polymer(
     context: ValidationContext,
 ) -> list[IssueContent]:
     issues = []
+
+    supported_residues = context.coarse_grain_model.nucleotides_config
+
     for model, chain, residue in iter_residues(context.coarse_grain_structure):
-        if classify_nonpolymer_residue(residue) == "nucleotide":
+        if (
+            residue.name in supported_residues
+            and residue.entity_type != EntityType.Polymer
+        ):
             issues.append(
                 make_issue(
-                    issue=Issues.NONPOLYMER_NUCLEOTIDE_IN_COARSE_STRUCTURE,
+                    issue=Issues.NUCLEOTIDE_NOT_MARKED_AS_POLYMER,
                     model=model,
                     chain=chain,
                     residue=residue,
+                    details=(f"Entity type: {residue.entity_type.name}"),
                 )
             )
+
     return issues
 
 
