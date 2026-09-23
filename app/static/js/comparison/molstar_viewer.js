@@ -16,6 +16,15 @@ window.createMolstarViewer = async function (containerId, structures) {
   const plugin = viewer.plugin;
   const structureEntries = new Map();
 
+  const componentTypes = [
+    "polymer",
+    "ligand",
+    "non-standard",
+    "branched",
+    "water",
+    "ion",
+  ];
+
   const representationTypes = new Set([
     "ball-and-stick",
     "cartoon",
@@ -32,7 +41,7 @@ window.createMolstarViewer = async function (containerId, structures) {
     const typeParams = {};
 
     if (entry.isCoarse) {
-      typeParams.excludeTypes = ["computed"]
+      typeParams.excludeTypes = ["computed"];
     }
 
     return {
@@ -49,54 +58,78 @@ window.createMolstarViewer = async function (containerId, structures) {
     return structure;
   }
 
-  function setStructureVisibility(structureId, visible){
+  function setStructureVisibility(structureId, visible) {
     if (typeof visible !== "boolean") {
       throw new TypeError("visible must be a boolean");
     }
 
     const entry = getStructureEntry(structureId);
     entry.visible = visible;
-    plugin.state.data.updateCellState(
-      entry.representation.ref,
-      {
-        isHidden: !visible,
-      },
-    );
+
+    for (const component of entry.components) {
+      plugin.state.data.updateCellState(
+        component.representation.ref,
+        {
+          isHidden: !visible,
+        },
+      );
+    }
   }
 
-  async function setStructureRepresentation(structureId, representationType,){
+  async function setStructureRepresentation(
+    structureId,
+    representationType,
+  ) {
     const entry = getStructureEntry(structureId);
-    if (entry.representationType === representationType){
+
+    if (entry.representationType === representationType) {
       return;
     }
 
-    const representation = await plugin.builders.structure.representation.addRepresentation(
-        entry.structure,
+    const polymerComponent = entry.components.find(
+      component => component.type === "polymer",
+    );
+
+    if (!polymerComponent) {
+      throw new Error(
+        `Polymer component not found for ${structureId}`,
+      );
+    }
+
+    const newRepresentation =
+      await plugin.builders.structure.representation.addRepresentation(
+        polymerComponent.selector,
         createRepresentationConfig(
           entry,
           representationType,
         ),
         {
-          tag: entry.representationTag,
+          tag:
+            `rnagrainy-${structureId}-polymer-` +
+            `${representationType}`,
         },
       );
 
-    if (!representation) {
+    if (!newRepresentation) {
       throw new Error(
         `Could not create ${representationType} representation ` +
           `for ${structureId}`,
       );
     }
 
-    entry.representation = representation;
-    entry.representationType = representationType;
-
     plugin.state.data.updateCellState(
-      representation.ref,
+      newRepresentation.ref,
       {
         isHidden: !entry.visible,
       },
     );
+
+    const update = plugin.state.data.build();
+    update.delete(polymerComponent.representation.ref);
+    await update.commit();
+
+    polymerComponent.representation = newRepresentation;
+    entry.representationType = representationType;
   }
 
   for (const structureData of structures) {
@@ -130,21 +163,48 @@ window.createMolstarViewer = async function (containerId, structures) {
 
     const entry = {
       structure,
-      representation: null,
-      representationTag: `rnagrainy-${structureData.id}-representation`,
-      representationType: null,
+      components: [],
+      representationType: "ball-and-stick",
       isCoarse: structureData.isCoarse,
       visible: true,
     };
 
-    entry.representation = await plugin.builders.structure.representation.addRepresentation(
-      structure,
-      createRepresentationConfig(entry, 'ball-and-stick'),
-      {
-        tag: entry.representationTag,
-      },
-    );
-    entry.representationType = "ball-and-stick";
+    for (const componentType of componentTypes) {
+      const component =
+        await plugin.builders.structure.tryCreateComponentStatic(
+          structure,
+          componentType,
+        );
+
+      if (!component) {
+        continue;
+      }
+
+      const representation =
+        await plugin.builders.structure.representation.addRepresentation(
+          component,
+          createRepresentationConfig(
+            entry,
+            "ball-and-stick",
+          ),
+          {
+            tag:
+              `rnagrainy-${structureData.id}-` +
+              `${componentType}-representation`,
+          },
+        );
+
+      if (!representation) {
+        continue;
+      }
+
+      entry.components.push({
+        type: componentType,
+        selector: component,
+        representation
+      });
+
+    }
 
     structureEntries.set(structureData.id, entry);
   }

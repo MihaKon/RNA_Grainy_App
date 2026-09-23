@@ -16,6 +16,25 @@ from app.exceptions import AppException
 from app.models.form import COARSE_FILE_FORMAT, SupportedFormats
 from app.services.doc import DocsContextBuilder
 
+_REFERENCE_MMCIF_CATEGORIES = (
+    "_entity.",
+    "_chem_comp.",
+    "_pdbx_struct_mod_residue.",
+)
+
+
+def _base_mmcif_groups() -> MmcifOutputGroups:
+    groups = MmcifOutputGroups(False)
+    groups.entry = True
+    groups.title_keywords = True
+    groups.conn = True
+    groups.cell = True
+    groups.atoms = True
+    groups.entity = True
+    groups.entity_poly = True
+    groups.struct_asym = True
+    return groups
+
 
 def filter_structure_inplace(
     structure: Structure, models: list[int], chains: list[str]
@@ -67,22 +86,42 @@ class StructureProcessor:
 
     @staticmethod
     def structure_to_pdb_string(structure: Structure) -> str:
+        pdb_structure = structure.clone()
         write_options = PdbWriteOptions(preserve_serial=True, conect_records=True)
         write_options.link_records = False
-        structure.shorten_chain_names()
-        return structure.make_pdb_string(options=write_options)
+        pdb_structure.shorten_chain_names()
+        return pdb_structure.make_pdb_string(options=write_options)
 
     @staticmethod
-    def structure_to_cif_string(structure: Structure) -> str:
-        groups = MmcifOutputGroups(False)
-        groups.entry = True
-        groups.title_keywords = True
-        groups.conn = True
-        groups.cell = True
-        groups.atoms = True
+    def coarse_structure_to_cif_string(structure: Structure) -> str:
+        groups = _base_mmcif_groups()
+        document = structure.make_mmcif_document(groups=groups)
+        return document.as_string()
+
+    @staticmethod
+    def reference_structure_to_cif_string(
+        structure: Structure,
+        source_content: str,
+    ) -> str:
+        groups = _base_mmcif_groups()
         groups.assembly = True
-        cif_doc = structure.make_mmcif_document(groups=groups)
-        return cif_doc.as_string()
+        groups.entity_poly_seq = True
+        groups.chem_comp = True
+
+        document = structure.make_mmcif_document(groups=groups)
+        target_block = document.sole_block()
+        source_block = cif.read_string(source_content).sole_block()
+
+        for category in _REFERENCE_MMCIF_CATEGORIES:
+            source_data = source_block.get_mmcif_category(category, raw=True)
+            if source_data:
+                target_block.set_mmcif_category(
+                    category,
+                    source_data,
+                    raw=True,
+                )
+
+        return document.as_string()
 
     @staticmethod
     def build_comparison_context(

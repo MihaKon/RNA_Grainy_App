@@ -143,7 +143,9 @@ class BaseCoarseGrainModel(ABC):
         self._filter_atoms(coarse_structure)
         self._rebuild_connectivity(coarse_structure)
 
+        coarse_structure.entities.clear()
         coarse_structure.setup_entities()
+        coarse_structure.assign_label_seq_id()
         return coarse_structure
 
     def _get_bead_name_for_bead_id(self, res_name: str, bead_id: str) -> str:

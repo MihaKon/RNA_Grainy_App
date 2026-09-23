@@ -45,6 +45,7 @@ async def save_structures(
     original_structure: Structure,
     file_format: SupportedFormats,
     coarse_structure: Structure,
+    source_content: str,
 ) -> None:
     original_format = file_format.normalize_format()
 
@@ -53,11 +54,13 @@ async def save_structures(
             original_structure
         )
     else:
-        original_content = StructureProcessor.structure_to_cif_string(
-            original_structure
+        original_content = StructureProcessor.reference_structure_to_cif_string(
+            original_structure, source_content
         )
 
-    coarse_mmcif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
+    coarse_mmcif_content = StructureProcessor.coarse_structure_to_cif_string(
+        coarse_structure
+    )
 
     coarse_pdb_content: str | None = None
 
@@ -108,7 +111,7 @@ async def handle_request_and_render(
         )
     )
     await save_structures(
-        workspace_id, original_structure, file_format, coarse_structure
+        workspace_id, original_structure, file_format, coarse_structure, file_content
     )
 
     context = StructureProcessor.build_comparison_context(
