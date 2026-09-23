@@ -20,7 +20,6 @@ CheckFunction = Callable[
 
 
 COARSE_GRAIN_CHECKS: list[CheckFunction] = [
-    check_invalid_number_of_aa_atoms_by_entity_type,
     check_protein_residues_in_coarse_structure,
     check_empty_models,
     check_ligands_in_coarse_structure,

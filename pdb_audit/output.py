@@ -1,19 +1,12 @@
 from pathlib import Path
 
-from gemmi import Structure
-
 from app.services.structures import StructureProcessor
 from pdb_audit.issues import IssueContent
 from pdb_audit.validators import ValidatedStructure
 
 
-def save_structure_as_cif(
-    structure: Structure, file_path: Path, original_reference_cif: str
-) -> None:
+def save_structure_as_cif(content: str, file_path: Path) -> None:
     file_path.parent.mkdir(parents=True, exist_ok=True)
-    content = StructureProcessor.reference_structure_to_cif_string(
-        structure, original_reference_cif
-    )
     file_path.write_text(content, encoding="utf-8")
 
 
@@ -23,19 +16,23 @@ def save_issue_artifacts(item: ValidatedStructure, cache_directory: Path) -> Non
 
     structure_directory = cache_directory / item.file_name
 
+    reference_content = StructureProcessor.reference_structure_to_cif_string(
+        item.reference_structure, item.original_reference_cif
+    )
     save_structure_as_cif(
-        structure=item.reference_structure,
+        content=reference_content,
         file_path=structure_directory / f"{item.file_name}_reference.cif",
-        original_reference_cif=item.original_reference_cif,
     )
 
     for model_name, result in item.coarse_grain_results.items():
         if not result.issues:
             continue
+        coarse_content = StructureProcessor.coarse_structure_to_cif_string(
+            result.structure
+        )
         save_structure_as_cif(
-            structure=result.structure,
+            content=coarse_content,
             file_path=structure_directory / f"{item.file_name}_{model_name}.cif",
-            original_reference_cif=item.original_reference_cif,
         )
 
 
