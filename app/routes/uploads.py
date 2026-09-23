@@ -48,29 +48,38 @@ async def save_structures(
 ) -> None:
     original_format = file_format.normalize_format()
 
-    original_content = StructureProcessor.structure_to_cif_string(original_structure)
+    if original_format == SupportedFormats.PDB:
+        original_content = StructureProcessor.structure_to_pdb_string(
+            original_structure
+        )
+    else:
+        original_content = StructureProcessor.structure_to_cif_string(
+            original_structure
+        )
 
-    cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
+    coarse_mmcif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
 
-    pdb_content: str | None = None
+    coarse_pdb_content: str | None = None
 
     if StructureProcessor.get_structure_atom_count(coarse_structure) <= 99999:
-        pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
+        coarse_pdb_content = StructureProcessor.structure_to_pdb_string(
+            coarse_structure
+        )
 
     WorkspaceManager.setup_workspace_dir(workspace_id)
 
     try:
-        if pdb_content is not None:
+        if coarse_pdb_content is not None:
             await WorkspaceManager.create_file(
                 workspace_id,
-                pdb_content,
+                coarse_pdb_content,
                 f"coarse.{SupportedFormats.PDB.value}",
             )
         await WorkspaceManager.create_file(
             workspace_id, original_content, f"reference.{original_format.value}"
         )
         await WorkspaceManager.create_file(
-            workspace_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
+            workspace_id, coarse_mmcif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
         )
     except Exception:
         WorkspaceManager.cleanup_workspace(workspace_id)
