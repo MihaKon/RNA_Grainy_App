@@ -2,10 +2,14 @@ from collections.abc import Callable
 
 from pdb_audit.issues import IssueContent
 from pdb_audit.validation.checks import (
+    check_empty_models,
     check_invalid_number_of_aa_atoms,
     check_invalid_number_of_aa_atoms_by_entity_type,
-    check_ions_or_ligands_in_coarse_grain_structure,
+    check_ligands_in_coarse_structure,
+    check_nonpolymer_nucleotides_in_coarse_structure,
+    check_protein_residues_in_coarse_structure,
     check_reference_cif_entity_metadata_lost,
+    check_water_in_coarse_structure,
 )
 from pdb_audit.validation.context import ValidationContext
 
@@ -16,7 +20,12 @@ CheckFunction = Callable[
 
 
 COARSE_GRAIN_CHECKS: list[CheckFunction] = [
-    check_ions_or_ligands_in_coarse_grain_structure,
+    check_invalid_number_of_aa_atoms_by_entity_type,
+    check_protein_residues_in_coarse_structure,
+    check_empty_models,
+    check_ligands_in_coarse_structure,
+    check_water_in_coarse_structure,
+    check_nonpolymer_nucleotides_in_coarse_structure,
 ]
 
 REFERENCE_CHECKS: list[CheckFunction] = [

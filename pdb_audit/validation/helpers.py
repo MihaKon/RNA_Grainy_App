@@ -1,9 +1,24 @@
 from collections import Counter
 from collections.abc import Iterator
+from typing import Literal
 
 from gemmi import Chain, EntityType, Model, Residue, Structure, cif
 
 from pdb_audit.issues import IssueContent, Issues
+from pdb_audit.validation.context import ValidationContext
+
+CANONICAL_RNA_RESIDUES = {"A", "C", "G", "U"}
+CANONICAL_DNA_RESIDUES = {"DA", "DC", "DG", "DT"}
+
+
+ResidueKey = tuple[int, str, str, str]
+EntityCategory = Literal[
+    "polymer",
+    "non-polymer",
+    "branched",
+    "water",
+    "unknown",
+]
 
 
 def iter_models(structure: Structure) -> Iterator[Model]:
@@ -45,19 +60,87 @@ def get_original_atom_counts_by_entity_type(content: str) -> Counter[str]:
     return counts
 
 
-def get_parsed_atom_counts_by_entity_type(structure: Structure) -> Counter[str]:
+def get_residue_entity_category(residue: Residue) -> EntityCategory:
+    if residue.is_water() or residue.entity_type == EntityType.Water:
+        return "water"
+
+    if residue.entity_type == EntityType.Polymer:
+        return "polymer"
+
+    if residue.entity_type == EntityType.NonPolymer:
+        return "non-polymer"
+
+    if residue.entity_type == EntityType.Branched:
+        return "branched"
+
+    return "unknown"
+
+
+def classify_nonpolymer_residue(
+    residue: Residue,
+) -> Literal["water", "nucleotide", "ligand", "other"]:
+    category = get_residue_entity_category(residue)
+
+    if category == "water":
+        return "water"
+
+    if category != "non-polymer":
+        return "other"
+
+    residue_name = residue.name.upper()
+
+    if residue_name in (CANONICAL_RNA_RESIDUES | CANONICAL_DNA_RESIDUES):
+        return "nucleotide"
+
+    return "ligand"
+
+
+def is_supported_polymer_residue(
+    context: ValidationContext,
+    residue: Residue,
+) -> bool:
+    return (
+        residue.entity_type == EntityType.Polymer
+        and residue.name in context.coarse_grain_model.nucleotides_config
+    )
+
+
+def get_parsed_atom_counts_by_entity_type(
+    structure: Structure,
+) -> Counter[str]:
     counts: Counter[str] = Counter()
-    for model, chain, residue in iter_residues(structure):
-        atom_count = len(residue)
-        if residue.is_water():
-            counts["water"] += atom_count
-        elif residue.entity_type == EntityType.Polymer:
-            counts["polymer"] += atom_count
-        elif residue.entity_type == EntityType.NonPolymer:
-            counts["non-polymer"] += atom_count
-        else:
-            counts["unknown"] += atom_count
+
+    for _, _, residue in iter_residues(structure):
+        category = get_residue_entity_category(residue)
+        counts[category] += len(residue)
+
     return counts
+
+
+def get_residue_key(
+    model: Model,
+    chain: Chain,
+    residue: Residue,
+) -> ResidueKey:
+    return (
+        model.num,
+        chain.name,
+        str(residue.seqid),
+        residue.name,
+    )
+
+
+def get_coarse_residues(
+    context: ValidationContext,
+) -> dict[ResidueKey, tuple[Model, Chain, Residue]]:
+    return {
+        get_residue_key(model, chain, residue): (
+            model,
+            chain,
+            residue,
+        )
+        for model, chain, residue in iter_residues(context.coarse_grain_structure)
+    }
 
 
 def make_issue(

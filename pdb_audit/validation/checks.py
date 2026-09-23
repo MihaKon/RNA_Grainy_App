@@ -1,32 +1,19 @@
-from gemmi import EntityType, cif
+from gemmi import PolymerType, cif, find_tabulated_residue
 
 from app.services.structures import StructureProcessor
 from pdb_audit.issues import IssueContent, Issues
 from pdb_audit.validation.context import ValidationContext
 from pdb_audit.validation.helpers import (
+    classify_nonpolymer_residue,
     get_original_atom_counts_by_entity_type,
     get_parsed_atom_counts_by_entity_type,
+    get_residue_entity_category,
     get_structure_atom_count,
     iter_residues,
     make_issue,
 )
 
-
-def check_ions_or_ligands_in_coarse_grain_structure(
-    context: ValidationContext,
-) -> list[IssueContent]:
-    issues = []
-    for model, chain, residue in iter_residues(context.coarse_grain_structure):
-        if residue.entity_type == EntityType.NonPolymer or residue.is_water():
-            issues.append(
-                make_issue(
-                    issue=Issues.IONS_OR_LIGANDS_IN_COARSE_STRUCTURE,
-                    model=model,
-                    chain=chain,
-                    residue=residue,
-                )
-            )
-    return issues
+# GENERAL ISSUES #
 
 
 def check_invalid_number_of_aa_atoms(context: ValidationContext) -> list[IssueContent]:
@@ -42,7 +29,7 @@ def check_invalid_number_of_aa_atoms(context: ValidationContext) -> list[IssueCo
     return [
         make_issue(
             Issues.INVALID_NUMBER_OF_AA_ATOMS,
-            details=f"Raw CIF contains {original_atom_count} atoms. StructureProcessor returns {parsed_atom_count}. Skipped {original_atom_count - parsed_atom_count} atoms.",
+            details=f"raw={original_atom_count}, parsed={parsed_atom_count}, difference={parsed_atom_count - original_atom_count}.",
         )
     ]
 
@@ -75,6 +62,22 @@ def check_invalid_number_of_aa_atoms_by_entity_type(
             details=f"Differences by entity type: \n {differences}",
         )
     ]
+
+
+def check_empty_models(context: ValidationContext) -> list[IssueContent]:
+    if len(context.coarse_grain_structure) == 0:
+        return [make_issue(Issues.EMPTY_MODEL)]
+
+    issues = []
+
+    for model in context.coarse_grain_structure:
+        residue_count = sum(len(chain) for chain in model)
+        if residue_count == 0:
+            issues.append(make_issue(Issues.EMPTY_MODEL, model=model))
+    return issues
+
+
+# METADATA ISSUES #
 
 
 def check_reference_cif_entity_metadata_lost(
@@ -110,5 +113,110 @@ def check_reference_cif_entity_metadata_lost(
         make_issue(
             Issues.REFERENCE_CIF_ENTITY_METADATA_LOST,
             details=f"Missing mmCIF tags after serialization: {', '.join(missing_tags)}",
+        )
+    ]
+
+
+# MISSING, WRONG OR INCOMPLETE RESIDUES #
+
+
+def check_water_in_coarse_structure(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    issues = []
+    for model, chain, residue in iter_residues(context.coarse_grain_structure):
+        if classify_nonpolymer_residue(residue) == "water":
+            issues.append(
+                make_issue(
+                    issue=Issues.WATER_IN_COARSE_STRUCTURE,
+                    model=model,
+                    chain=chain,
+                    residue=residue,
+                )
+            )
+    return issues
+
+
+def check_ligands_in_coarse_structure(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    issues = []
+    for model, chain, residue in iter_residues(context.coarse_grain_structure):
+        if classify_nonpolymer_residue(residue) == "ligand":
+            issues.append(
+                make_issue(
+                    issue=Issues.LIGAND_IN_COARSE_STRUCTURE,
+                    model=model,
+                    chain=chain,
+                    residue=residue,
+                )
+            )
+    return issues
+
+
+def check_nonpolymer_nucleotides_in_coarse_structure(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    issues = []
+    for model, chain, residue in iter_residues(context.coarse_grain_structure):
+        if classify_nonpolymer_residue(residue) == "nucleotide":
+            issues.append(
+                make_issue(
+                    issue=Issues.NONPOLYMER_NUCLEOTIDE_IN_COARSE_STRUCTURE,
+                    model=model,
+                    chain=chain,
+                    residue=residue,
+                )
+            )
+    return issues
+
+
+def check_protein_residues_in_coarse_structure(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    structure = context.coarse_grain_structure
+    peptide_types = {
+        PolymerType.PeptideL,
+        PolymerType.PeptideD,
+    }
+
+    protein_count = 0
+    examples: list[str] = []
+    example_limit = 5
+
+    for model, chain, residue in iter_residues(structure):
+        if get_residue_entity_category(residue) != "polymer":
+            continue
+
+        entity = structure.get_entity(residue.entity_id) if residue.entity_id else None
+
+        if entity is not None and entity.polymer_type != PolymerType.Unknown:
+            is_protein = entity.polymer_type in peptide_types
+        else:
+            is_protein = find_tabulated_residue(residue.name).is_amino_acid()
+
+        if not is_protein:
+            continue
+
+        protein_count += 1
+
+        if len(examples) < example_limit:
+            examples.append(
+                f"model={model.num}, "
+                f"chain={chain.name}, "
+                f"residue={residue.seqid}, "
+                f"res_name={residue.name}"
+            )
+
+    if protein_count == 0:
+        return []
+
+    return [
+        make_issue(
+            issue=Issues.PROTEIN_RESIDUE_IN_COARSE_STRUCTURE,
+            details=(
+                f"Protein residues: {protein_count}. "
+                f"First {len(examples)} examples: {'; '.join(examples)}"
+            ),
         )
     ]
