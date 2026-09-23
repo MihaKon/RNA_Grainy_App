@@ -85,19 +85,24 @@ def check_reference_cif_entity_metadata_lost(
 ) -> list[IssueContent]:
     original_block = cif.read_string(context.original_reference_cif).sole_block()
 
-    serialized_cif = StructureProcessor.structure_to_cif_string(
-        context.reference_structure
+    serialized_cif = StructureProcessor.reference_structure_to_cif_string(
+        context.reference_structure, context.original_reference_cif
     )
     serialized_block = cif.read_string(serialized_cif).sole_block()
 
     required_tags = (
         "_entity.id",
         "_entity.type",
+        "_entity.pdbx_description",
         "_entity_poly.entity_id",
         "_entity_poly.type",
         "_struct_asym.id",
         "_struct_asym.entity_id",
         "_atom_site.label_entity_id",
+        "_chem_comp.id",
+        "_chem_comp.type",
+        "_pdbx_struct_mod_residue.label_comp_id",
+        "_pdbx_struct_mod_residue.parent_comp_id",
     )
 
     missing_tags = []

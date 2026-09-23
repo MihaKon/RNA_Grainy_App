@@ -7,9 +7,13 @@ from pdb_audit.issues import IssueContent
 from pdb_audit.validators import ValidatedStructure
 
 
-def save_structure_as_cif(structure: Structure, file_path: Path) -> None:
+def save_structure_as_cif(
+    structure: Structure, file_path: Path, original_reference_cif: str
+) -> None:
     file_path.parent.mkdir(parents=True, exist_ok=True)
-    content = StructureProcessor.structure_to_cif_string(structure)
+    content = StructureProcessor.reference_structure_to_cif_string(
+        structure, original_reference_cif
+    )
     file_path.write_text(content, encoding="utf-8")
 
 
@@ -22,6 +26,7 @@ def save_issue_artifacts(item: ValidatedStructure, cache_directory: Path) -> Non
     save_structure_as_cif(
         structure=item.reference_structure,
         file_path=structure_directory / f"{item.file_name}_reference.cif",
+        original_reference_cif=item.original_reference_cif,
     )
 
     for model_name, result in item.coarse_grain_results.items():
@@ -30,6 +35,7 @@ def save_issue_artifacts(item: ValidatedStructure, cache_directory: Path) -> Non
         save_structure_as_cif(
             structure=result.structure,
             file_path=structure_directory / f"{item.file_name}_{model_name}.cif",
+            original_reference_cif=item.original_reference_cif,
         )
 
 
