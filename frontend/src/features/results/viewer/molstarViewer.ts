@@ -55,6 +55,9 @@ export async function createMolstarViewer(
       layout: {
         initial: { isExpanded: false, showControls: false },
       },
+      canvas3d: {
+        renderer: { backgroundColor: Color(0xffffff) },
+      },
       config: [
         [PluginConfig.Viewport.ShowExpand, true],
         [PluginConfig.Viewport.ShowSelectionMode, true],

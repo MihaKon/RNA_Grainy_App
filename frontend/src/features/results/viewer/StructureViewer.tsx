@@ -130,7 +130,7 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
     <div className="flex flex-col gap-3">
       <div
         ref={containerRef}
-        className="relative h-[55dvh] min-h-80 overflow-hidden rounded-md bg-white"
+        className="relative h-[55dvh] min-h-80 overflow-hidden rounded-md border border-line-soft bg-white"
       >
         {status !== "ready" && (
           <p
