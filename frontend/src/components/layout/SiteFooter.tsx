@@ -8,20 +8,20 @@ export function SiteFooter() {
   return (
     <footer className="bg-blue-ink text-white/80">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 lg:grid-cols-[1fr_auto] lg:px-8">
-        <div className="max-w-md">
+        <div>
           <p className="eyebrow text-white/60">RNAgrainy is part of</p>
           <RnaPolisMark colorway="white" className="mt-3 h-14" />
-          <p className="mt-4 text-sm">
-            A platform of computational tools for RNA structure research, maintained at
-            the Institute of Computing Science, Poznan University of Technology, and the
-            Department of Structural Bioinformatics, IBCH PAS.
-          </p>
-          <div className="mt-6 flex items-center gap-6 border-t border-white/10 pt-6">
+          <div className="mt-4 flex items-center gap-6">
+            <p className="max-w-md text-sm">
+              A platform of computational tools for RNA structure research, maintained
+              at the Institute of Computing Science, Poznan University of Technology,
+              and the Department of Structural Bioinformatics, IBCH PAS.
+            </p>
             <a
               href="https://put.poznan.pl/en"
               target="_blank"
               rel="noopener noreferrer"
-              className="opacity-90 transition-opacity hover:opacity-100"
+              className="shrink-0 opacity-90 transition-opacity hover:opacity-100"
             >
               <img
                 src={putSignUrl}
