@@ -42,7 +42,7 @@ describe("ModelCreator", () => {
     expect(screen.getByText("Custom model loaded")).toBeInTheDocument();
     expect(screen.getByText("Model creator")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("tab", { name: "Example" }));
+    await user.click(screen.getByRole("tab", { name: "Use example" }));
     await user.click(screen.getByRole("radio", { name: "1EHZ" }));
     await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
 
