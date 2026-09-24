@@ -6,8 +6,8 @@ import { Link } from "react-router";
 import { resultStructuresQueryOptions } from "@/api/results";
 import type { CoarseGrainResult } from "@/api/types";
 import { Alert } from "@/components/ui/Alert";
-import { Button } from "@/components/ui/Button";
 import { Disclosure } from "@/components/ui/Disclosure";
+import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { AtomMappingTable } from "@/features/models/AtomMappingTable";
 import { ModelDescription } from "@/features/models/ModelDescription";
 import { downloadTextFile } from "@/lib/download";
@@ -53,31 +53,35 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
             {model.name} — {formatBeadsPerResidue(model.beads_per_residue)}
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          {pdbAvailable && (
-            <Button
-              disabled={!structures?.coarsePdb}
-              onClick={() => {
+        <DropdownMenu
+          label="Download"
+          disabled={!structures}
+          items={[
+            {
+              id: "pdb",
+              label: "PDB",
+              description: pdbAvailable
+                ? `${downloadName}.pdb`
+                : "Unavailable for 100,000+ atoms",
+              disabled: !structures?.coarsePdb,
+              onSelect: () => {
                 if (structures?.coarsePdb) {
                   downloadTextFile(structures.coarsePdb, `${downloadName}.pdb`);
                 }
-              }}
-            >
-              Download PDB
-            </Button>
-          )}
-          <Button
-            variant={pdbAvailable ? "ghost" : "primary"}
-            disabled={!structures}
-            onClick={() => {
-              if (structures) {
-                downloadTextFile(structures.coarseMmcif, `${downloadName}.cif`);
-              }
-            }}
-          >
-            Download mmCIF
-          </Button>
-        </div>
+              },
+            },
+            {
+              id: "mmcif",
+              label: "mmCIF",
+              description: `${downloadName}.cif`,
+              onSelect: () => {
+                if (structures) {
+                  downloadTextFile(structures.coarseMmcif, `${downloadName}.cif`);
+                }
+              },
+            },
+          ]}
+        />
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[3fr_2fr]">

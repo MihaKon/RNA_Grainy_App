@@ -49,22 +49,47 @@ describe("ResultView", () => {
     expect(within(report).getByText("82.98%")).toBeInTheDocument();
   });
 
-  it("downloads the coarse-grained structure once it is loaded", async () => {
+  it("downloads the coarse-grained structure from the menu", async () => {
     mockResultFiles();
     const { user } = renderResult();
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, "click")
       .mockImplementation(() => undefined);
 
-    const downloadButton = screen.getByRole("button", { name: "Download PDB" });
+    const downloadButton = screen.getByRole("button", { name: "Download" });
     expect(downloadButton).toBeDisabled();
     await screen.findByText("Viewer showing reference");
     await user.click(downloadButton);
+    await user.click(screen.getByRole("menuitem", { name: /PDB/ }));
 
     expect(click).toHaveBeenCalledOnce();
     const anchor = click.mock.contexts[0] as HTMLAnchorElement;
     expect(anchor.download).toBe("1EHZ_SimRNA.pdb");
     expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(downloadButton).toHaveFocus();
+  });
+
+  it("disables the PDB download for structures without PDB output", async () => {
+    mockResultFiles();
+    const { user } = renderApp({
+      pathname: `/results/${coarseGrainResult.workspace_id}`,
+      state: {
+        result: {
+          ...coarseGrainResult,
+          files: { ...coarseGrainResult.files, coarse_pdb_url: null },
+        },
+      },
+    });
+
+    await screen.findByText("Viewer showing reference");
+    await user.click(screen.getByRole("button", { name: "Download" }));
+
+    expect(screen.getByRole("menuitem", { name: /PDB/ })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByText("Unavailable for 100,000+ atoms")).toBeInTheDocument();
   });
 
   it("links citation markers in the model description", async () => {
@@ -91,6 +116,6 @@ describe("ResultView", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "The result could not be loaded.",
     );
-    expect(screen.getByRole("button", { name: "Download mmCIF" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Download" })).toBeDisabled();
   });
 });
