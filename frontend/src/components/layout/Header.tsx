@@ -113,9 +113,9 @@ function GitHubLink() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="RNAgrainy repository on GitHub"
-      className="text-ink-2 transition-colors hover:text-accent"
+      className="text-red transition-colors hover:text-red-deep"
     >
-      <GitHubIcon className="size-5" />
+      <GitHubIcon className="size-6" />
     </a>
   );
 }
