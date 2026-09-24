@@ -10,3 +10,5 @@ node_modules
 temp
 tests
 README.md
+frontend/node_modules
+frontend/dist
