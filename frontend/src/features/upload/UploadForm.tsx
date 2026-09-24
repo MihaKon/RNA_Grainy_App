@@ -59,8 +59,8 @@ export function UploadForm() {
   if (configQuery.isError || modelsQuery.isError) {
     return (
       <Alert severity="error">
-        <p>
-          Could not load the available models.{" "}
+        <p className="font-medium">Could not load the available models.</p>
+        <p className="text-ink-2">
           {getErrorMessage(configQuery.error ?? modelsQuery.error)}
         </p>
         <Button

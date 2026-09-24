@@ -9,6 +9,9 @@ export class ApiError extends Error {
 }
 
 const FALLBACK_ERROR_MESSAGE = "Something went wrong. Please try again.";
+const SERVER_UNAVAILABLE_MESSAGE =
+  "The server is currently unavailable. Please try again in a moment.";
+const SERVER_UNAVAILABLE_STATUSES = new Set([502, 503, 504]);
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
@@ -18,7 +21,7 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
   try {
     response = await fetch(path, { ...init, headers });
   } catch {
-    throw new ApiError("Could not connect to the server.", 0);
+    throw new ApiError(SERVER_UNAVAILABLE_MESSAGE, 0);
   }
 
   if (!response.ok) {
@@ -40,9 +43,11 @@ async function readErrorDetail(response: Response): Promise<string> {
       return body.detail;
     }
   } catch {
-    // Non-JSON error bodies (e.g. proxy errors) fall through to the generic message.
+    // Non-JSON error bodies (e.g. proxy errors) fall through to the generic messages.
   }
-  return FALLBACK_ERROR_MESSAGE;
+  return SERVER_UNAVAILABLE_STATUSES.has(response.status)
+    ? SERVER_UNAVAILABLE_MESSAGE
+    : FALLBACK_ERROR_MESSAGE;
 }
 
 export function getErrorMessage(error: unknown): string {
