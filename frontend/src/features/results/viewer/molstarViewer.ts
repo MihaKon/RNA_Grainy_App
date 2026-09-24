@@ -1,4 +1,4 @@
-import "molstar/build/viewer/theme/dark.css";
+import "molstar/build/viewer/molstar.css";
 
 import type { Trajectory } from "molstar/lib/mol-model/structure";
 import { PluginConfig } from "molstar/lib/mol-plugin/config";
@@ -66,8 +66,6 @@ interface StructureEntry {
   visible: boolean;
 }
 
-export const VIEWER_BACKGROUND = 0x002b45;
-
 const IS_POLYMER = MS.core.rel.eq([MS.ammp("entityType"), "polymer"]);
 const POLYMER_EXPRESSION = MS.struct.generator.atomGroups({
   "entity-test": IS_POLYMER,
@@ -87,9 +85,6 @@ export async function createMolstarViewer(
       ...DefaultPluginUISpec(),
       layout: {
         initial: { isExpanded: false, showControls: false },
-      },
-      canvas3d: {
-        renderer: { backgroundColor: Color(VIEWER_BACKGROUND) },
       },
       config: [
         [PluginConfig.Viewport.ShowExpand, true],
