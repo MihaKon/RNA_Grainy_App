@@ -21,18 +21,6 @@ class Issues(Enum):
 
     # GENERAL ISSUES #
 
-    SOURCE_STRUCTURE_ALREADY_COARSE_GRAINED = (
-        "source_structure_already_coarse_grained",
-        "The downloaded structure appears to already use a reduced representation",
-        Severity.INFO,
-    )
-
-    SOURCE_STRUCTURE_INCOMPATIBLE_WITH_COARSE_GRAIN_MODEL = (
-        "source_structure_incompatible_with_coarse_grain_model",
-        "The source structure does not contain enough atoms for the selected coarse-grained model",
-        Severity.ERROR,
-    )
-
     INVALID_NUMBER_OF_AA_ATOMS = (
         "invalid_number_of_aa_atoms",
         "The number of atoms in the parsed AA structure is not consistent with the number of atoms in the downloaded structure",
@@ -42,18 +30,6 @@ class Issues(Enum):
     INVALID_NUMBER_OF_AA_ATOMS_BY_ENTITY_TYPE = (
         "invalid_aa_atoms_by_entity_type",
         "Atom counts grouped by entity type do not match the downloaded CIF",
-        Severity.ERROR,
-    )
-
-    INVALID_NUMBER_OF_BEADS = (
-        "invalid_number_of_beads",
-        "The generated bead multiset does not match the beads constructible from the source atoms",
-        Severity.ERROR,
-    )
-
-    INVALID_NUMBER_OF_CONNECTIONS = (
-        "invalid_number_of_connections",
-        "The number of connections in the structure is invalid",
         Severity.ERROR,
     )
 
@@ -87,13 +63,13 @@ class Issues(Enum):
 
     BEAD_SKIPPED_DUE_TO_MISSING_SOURCE_ATOMS = (
         "bead_skipped_due_to_missing_source_atoms",
-        "A bead was not generated because none of its configured source atoms were present",
+        "A bead was not generated because of missing atoms in source residue",
         Severity.WARNING,
     )
 
-    BEAD_GENERATED_FROM_INCOMPLETE_ATOM_SET = (
-        "bead_generated_from_incomplete_atom_set",
-        "A bead was generated from only part of its configured source atom set",
+    BEAD_MISSING_DESPITE_AVAILABLE_SOURCE_ATOMS = (
+        "bead_missing_despite_available_source_atoms",
+        "A bead was not generated although residue contains required atoms.",
         Severity.WARNING,
     )
 
@@ -130,12 +106,6 @@ class Issues(Enum):
     GAP_IN_COARSE_STRUCTURE = (
         "gap_in_coarse_structure",
         "There is a gap in the coarse-grained structure",
-        Severity.WARNING,
-    )
-
-    ALTERNATIVE_ATOM_NAMES_NOT_SUPPORTED = (
-        "alternative_atom_names_not_supported",
-        "The reference structure contains alternative atom names that are not present in the coarse-grained structure",
         Severity.WARNING,
     )
 

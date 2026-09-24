@@ -4,6 +4,13 @@ from typing import Literal
 
 from gemmi import Chain, EntityType, Model, Residue, Structure, cif
 
+from app.coarse_grain.models import (
+    EMPTY_ALTLOC,
+    PRIMARY_ATOM_ALTLOC,
+    BaseCoarseGrainModel,
+    CalculateBeadModel,
+    DynamicCoarseGrainModel,
+)
 from pdb_audit.issues import IssueContent, Issues
 from pdb_audit.validation.context import ValidationContext
 
@@ -111,17 +118,48 @@ def get_residue_key(
     )
 
 
-def get_coarse_residues(
-    context: ValidationContext,
-) -> dict[ResidueKey, tuple[Model, Chain, Residue]]:
-    return {
-        get_residue_key(model, chain, residue): (
-            model,
-            chain,
-            residue,
-        )
-        for model, chain, residue in iter_residues(context.coarse_grain_structure)
-    }
+def get_bead_atom_names_for_residue(
+    coarse_grain_model: BaseCoarseGrainModel, residue_name: str, bead_id: str
+) -> list[str]:
+    residue_config = coarse_grain_model.nucleotides_config[residue_name]
+    bead_name = residue_config["bead_names"][bead_id]
+
+    if isinstance(coarse_grain_model, DynamicCoarseGrainModel):
+        atoms = residue_config["atom_centers"][bead_id]
+        strategy = residue_config.get("strategies", {}).get(bead_id, "direct")
+
+        if strategy == "direct":
+            return atoms[:1]
+
+        if strategy in ("geometric_center", "center_of_mass"):
+            return atoms
+
+        return []
+
+    if isinstance(coarse_grain_model, CalculateBeadModel):
+        return residue_config["atom_centers"][bead_id]
+
+    return [bead_name]
+
+
+def is_bead_constructible(
+    coarse_grain_model: BaseCoarseGrainModel, residue: Residue, bead_id: str
+) -> bool:
+    atom_names = get_bead_atom_names_for_residue(
+        coarse_grain_model=coarse_grain_model,
+        residue_name=residue.name,
+        bead_id=bead_id,
+    )
+
+    if not atom_names:
+        return False
+
+    available_atom_names = set()
+    for atom in residue:
+        if atom.altloc in (EMPTY_ALTLOC, PRIMARY_ATOM_ALTLOC):
+            available_atom_names.add(atom.name)
+
+    return not available_atom_names.isdisjoint(atom_names)
 
 
 def make_issue(

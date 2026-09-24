@@ -5,10 +5,14 @@ from pdb_audit.issues import IssueContent, Issues
 from pdb_audit.validation.context import ValidationContext
 from pdb_audit.validation.helpers import (
     CANONICAL_DNA_RESIDUES,
+    ResidueKey,
+    get_bead_atom_names_for_residue,
     get_original_atom_counts_by_entity_type,
     get_parsed_atom_counts_by_entity_type,
     get_residue_entity_category,
+    get_residue_key,
     get_structure_atom_count,
+    is_bead_constructible,
     iter_chains,
     iter_residues,
     make_issue,
@@ -147,9 +151,63 @@ def check_reference_cif_entity_metadata_lost(
 # MISSING, WRONG OR INCOMPLETE RESIDUES #
 
 
-def check_water_in_coarse_structure(
+def check_bead_skipped_due_to_missing_source_atoms(
     context: ValidationContext,
 ) -> list[IssueContent]:
+    issues = []
+    model_config = context.coarse_grain_model.nucleotides_config
+
+    coarse_beads: set[tuple[ResidueKey, str]] = set()
+    for model, chain, residue in iter_residues(context.coarse_grain_structure):
+        for atom in residue:
+            coarse_beads.add((get_residue_key(model, chain, residue), atom.name))
+
+    for model, chain, residue in iter_residues(context.reference_structure):
+        if residue.name not in model_config:
+            continue
+
+        residue_key = get_residue_key(model, chain, residue)
+
+        skipped_beads: list[str] = []
+        for bead_id, bead_name in model_config[residue.name]["bead_names"].items():
+            bead_atom_names = get_bead_atom_names_for_residue(
+                coarse_grain_model=context.coarse_grain_model,
+                residue_name=residue.name,
+                bead_id=bead_id,
+            )
+
+            if not bead_atom_names:
+                continue
+
+            if is_bead_constructible(
+                coarse_grain_model=context.coarse_grain_model,
+                residue=residue,
+                bead_id=bead_id,
+            ):
+                continue
+
+            if (residue_key, bead_name) in coarse_beads:
+                continue
+
+            skipped_beads.append(bead_name)
+
+        if not skipped_beads:
+            continue
+
+        issues.append(
+            make_issue(
+                issue=Issues.BEAD_SKIPPED_DUE_TO_MISSING_SOURCE_ATOMS,
+                model=model,
+                chain=chain,
+                residue=residue,
+                details=(f"Skipped beads: {', '.join(skipped_beads)}"),
+            )
+        )
+
+    return issues
+
+
+def check_water_in_coarse_structure(context: ValidationContext) -> list[IssueContent]:
     issues = []
 
     for model, chain, residue in iter_residues(context.coarse_grain_structure):

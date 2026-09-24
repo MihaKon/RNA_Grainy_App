@@ -3,6 +3,7 @@ from collections.abc import Callable
 from pdb_audit.issues import IssueContent
 from pdb_audit.validation.checks import (
     check_alt_loc_present,
+    check_bead_skipped_due_to_missing_source_atoms,
     check_dna_residues_in_coarse_structure,
     check_empty_chains,
     check_empty_models,
@@ -30,6 +31,7 @@ COARSE_GRAIN_CHECKS: list[CheckFunction] = [
     check_nucleotides_are_marked_as_polymer,
     check_dna_residues_in_coarse_structure,
     check_empty_chains,
+    check_bead_skipped_due_to_missing_source_atoms,
 ]
 
 REFERENCE_CHECKS: list[CheckFunction] = [
