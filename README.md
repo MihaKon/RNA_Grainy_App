@@ -5,7 +5,7 @@
 [**Open RNAgrainy**](https://rnagrainy.cs.put.poznan.pl/) ·
 [**Documentation**](https://rnagrainy.cs.put.poznan.pl/documentation/)
 
-![Stack](https://img.shields.io/badge/Stack-FastAPI%20%7C%20HTMX%20%7C%20Alpine.js%20%7C%20Tailwind%20%7C%20Gemmi-blue)
+![Stack](https://img.shields.io/badge/Stack-FastAPI%20%7C%20React%20%7C%20TypeScript%20%7C%20Tailwind%20%7C%20Mol*%20%7C%20Gemmi-blue)
 
 ## About
 
@@ -61,6 +61,11 @@ Detailed descriptions, mapping rules, and references are available in the
 
 ## Local Development
 
+The backend is a FastAPI application (`app/`) exposing a JSON API under `/api`. The
+frontend is a React + TypeScript application built with Vite (`frontend/`). In
+production, FastAPI serves the built frontend; during development, the Vite dev server
+serves it with hot reloading and proxies `/api` and `/static` to the backend.
+
 ### Requirements
 
 Install the following tools:
@@ -68,7 +73,7 @@ Install the following tools:
 - Python 3.12
 - Pipenv
 - Node.js 24 with npm
-- Docker with Docker Compose
+- Docker with Docker Compose (optional, to run the production image)
 
 ### Install dependencies
 
@@ -84,9 +89,10 @@ Install Python dependencies, including development tools:
 pipenv sync --dev
 ```
 
-Install frontend build dependencies:
+Install frontend dependencies:
 
 ```bash
+cd frontend
 npm ci
 ```
 
@@ -98,41 +104,54 @@ pipenv run pre-commit install
 
 ### Start the development environment
 
-Start the Tailwind CSS watcher in the first terminal:
+Start the backend in the first terminal:
 
 ```bash
+pipenv run uvicorn app.main:app --port 5050 --reload
+```
+
+Start the frontend dev server in a second terminal:
+
+```bash
+cd frontend
 npm run dev
 ```
 
-For the first run, build the Docker image and start the application in a second terminal:
+The application is available at `http://127.0.0.1:5173`. The Vite dev server proxies
+the API to `http://127.0.0.1:5050`; override it with the `BACKEND_URL` environment
+variable.
+
+### Run the production build
+
+Build the frontend and let FastAPI serve it:
+
+```bash
+cd frontend && npm run build && cd ..
+pipenv run uvicorn app.main:app --port 5050
+```
+
+Or build and run the Docker image, which builds the frontend itself:
 
 ```bash
 docker compose -f compose.yaml -f compose.dev.yaml up --build app
 ```
 
-For subsequent runs, if the dependencies and Dockerfile have not changed, rebuilding is not required:
+Either way, the application is available at `http://127.0.0.1:5050`.
+
+### Checks
+
+Backend: `pipenv run ruff check .`, `pipenv run mypy`, and the test suites, run
+separately as in CI (Playwright's event loop clashes with the async unit tests when they
+share a session; the E2E tests also need a frontend build):
 
 ```bash
-docker compose -f compose.yaml -f compose.dev.yaml up app
+pipenv run pytest tests/unit
+pipenv run pytest tests/integration
+pipenv run pytest tests/e2e
 ```
 
-The application is available at:
-
-```text
-http://127.0.0.1:5050
-```
-
-### React frontend (in progress)
-
-The new frontend (React, TypeScript, Vite, Tailwind CSS) lives in `frontend/`. With the backend running, start the Vite dev server, which proxies `/api` and `/static` to `http://127.0.0.1:5050` (override with `BACKEND_URL`):
-
-```bash
-cd frontend
-npm ci
-npm run dev
-```
-
-The frontend is available at `http://127.0.0.1:5173`. Other scripts: `npm run lint`, `npm run format`, `npm run typecheck`, `npm test`, `npm run build`.
+Frontend, in `frontend/`: `npm run lint`, `npm run format:check`, `npm run typecheck`,
+`npm test`.
 
 ## Authors
 

@@ -34,10 +34,11 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Install node dependencies
+      - name: Install frontend dependencies
         run: npm ci
+        working-directory: frontend
 
       - name: Cache Playwright browsers
         uses: actions/cache@v6
@@ -48,8 +49,9 @@ jobs:
       - name: Install Playwright browsers and system dependencies
         run: pipenv run playwright install --with-deps chromium
 
-      - name: Build Tailwind CSS
+      - name: Build frontend
         run: npm run build
+        working-directory: frontend
 
       - name: Validate pre-commit configuration
         run: pipenv run pre-commit validate-config
@@ -135,6 +137,9 @@ jobs:
 
           docker compose logs app
           exit 1
+
+      - name: Check frontend
+        run: curl --fail --silent http://127.0.0.1:5050/documentation | grep --quiet '<div id="root">'
 
       - name: Check cleaner
         run: |
