@@ -2,7 +2,7 @@ import type { AppConfig } from "@/api/types";
 import { formatBytes } from "@/lib/format";
 
 export interface LoadedCustomModel {
-  fileName: string;
+  origin: string;
   name: string;
   json: string;
 }
@@ -50,5 +50,5 @@ export async function readCustomModelFile(
       ? definition.model_name
       : DEFAULT_CUSTOM_MODEL_NAME;
 
-  return { fileName: file.name, name, json };
+  return { origin: file.name, name, json };
 }

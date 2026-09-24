@@ -11,7 +11,7 @@ describe("readCustomModelFile", () => {
     const json = JSON.stringify({ model_name: "<b>My model</b>", mapping: [] });
 
     await expect(readCustomModelFile(jsonFile(json), appConfig)).resolves.toEqual({
-      fileName: "model.json",
+      origin: "model.json",
       name: "<b>My model</b>",
       json,
     });
