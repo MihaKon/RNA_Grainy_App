@@ -122,6 +122,18 @@ The application is available at:
 http://127.0.0.1:5050
 ```
 
+### React frontend (in progress)
+
+The new frontend (React, TypeScript, Vite, Tailwind CSS) lives in `frontend/`. With the backend running, start the Vite dev server, which proxies `/api` and `/static` to `http://127.0.0.1:5050` (override with `BACKEND_URL`):
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+The frontend is available at `http://127.0.0.1:5173`. Other scripts: `npm run lint`, `npm run format`, `npm run typecheck`, `npm test`, `npm run build`.
+
 ## Authors
 
 ### Development
