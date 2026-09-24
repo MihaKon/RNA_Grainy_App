@@ -1,4 +1,4 @@
-import { Outlet, ScrollRestoration } from "react-router";
+import { type Location, Outlet, ScrollRestoration } from "react-router";
 
 import { CivicStripe } from "./CivicStripe";
 import { Footer } from "./Footer";
@@ -15,7 +15,13 @@ export function Layout() {
         <Outlet />
       </main>
       <Footer />
-      <ScrollRestoration />
+      <ScrollRestoration getKey={getScrollKey} />
     </div>
   );
+}
+
+// Every full page load starts with the "default" key, so key it by path instead;
+// otherwise one page would restore the scroll position saved for another.
+function getScrollKey(location: Location): string {
+  return location.key === "default" ? location.pathname : location.key;
 }
