@@ -47,10 +47,10 @@ describe("StructureViewer", () => {
     renderViewer();
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "The reference structure could not be displayed.",
+      "The all-atom structure could not be displayed.",
     );
     expect(screen.getByRole("button", { name: "Coarse-grained" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Reference" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "All-atom" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "By element" })).toBeDisabled();
   });
 

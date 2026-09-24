@@ -1,4 +1,5 @@
 import "molstar/build/viewer/molstar.css";
+import "./molstarOverrides.css";
 
 import type { Trajectory } from "molstar/lib/mol-model/structure";
 import { PluginConfig } from "molstar/lib/mol-plugin/config";
