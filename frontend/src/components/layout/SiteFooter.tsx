@@ -9,7 +9,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 lg:grid-cols-[1fr_auto] lg:px-8">
         <div className="max-w-md">
           <p className="eyebrow text-white/60">RNAgrainy is part of</p>
-          <RnaPolisMark className="mt-2 block text-3xl text-white" />
+          <RnaPolisMark colorway="white" className="mt-3 h-14" />
           <p className="mt-4 text-sm">
             A platform of computational tools for RNA structure research, maintained at
             the Institute of Computing Science, Poznan University of Technology, and the

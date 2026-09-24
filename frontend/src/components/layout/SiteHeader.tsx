@@ -34,10 +34,7 @@ export function SiteHeader() {
       >
         <Link to="/" className="flex items-center gap-4" onClick={closeMenu}>
           <RnaPolisMark
-            className={cn(
-              "text-blue transition-[font-size]",
-              scrolled ? "text-2xl" : "text-3xl",
-            )}
+            className={cn("transition-[height]", scrolled ? "h-8" : "h-11")}
           />
           <span aria-hidden="true" className="h-8 w-px bg-line-soft" />
           <span className="flex flex-col">
