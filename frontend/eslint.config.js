@@ -34,6 +34,7 @@ export default defineConfig([
     rules: {
       // Type-only imports use `import type`
       "@typescript-eslint/consistent-type-imports": "error",
+      "@typescript-eslint/no-unused-vars": ["error", { ignoreRestSiblings: true }],
     },
   },
   // Sorted imports: packages, then @/, then relative
