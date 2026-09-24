@@ -15,6 +15,7 @@ from gemmi import (
     ConnectionList,
     ConnectionType,
     Element,
+    EntityType,
     Position,
     Residue,
     Structure,
@@ -165,7 +166,10 @@ class BaseCoarseGrainModel(ABC):
                 for res_id in range(len(chain) - 1, -1, -1):
                     res = chain[res_id]
 
-                    if not self._should_keep_residue(res.name):
+                    if (
+                        not self._should_keep_residue(res.name)
+                        or res.entity_type == EntityType.NonPolymer
+                    ):
                         del chain[res_id]
                         continue
 
@@ -316,7 +320,10 @@ class CalculateBeadModel(BaseCoarseGrainModel):
                 for res_id in range(len(chain) - 1, -1, -1):
                     res = chain[res_id]
 
-                    if not self._should_keep_residue(res.name):
+                    if (
+                        not self._should_keep_residue(res.name)
+                        or res.entity_type == EntityType.NonPolymer
+                    ):
                         del chain[res_id]
                         continue
 
