@@ -1,8 +1,6 @@
 import os
 import pathlib
 
-from fastapi.templating import Jinja2Templates
-
 # Application
 APP_VERSION = os.getenv("APP_VERSION", "dev").removeprefix("v")
 
@@ -22,12 +20,14 @@ BASE_DIR = pathlib.Path(__file__).resolve().parent
 COARSE_GRAIN_MODELS_DIR = BASE_DIR / "coarse_grain" / "models"
 CITATIONS_DIR = BASE_DIR / "coarse_grain" / "metadata" / "citations.json"
 
-TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 MODELS_IMAGES_DIR = STATIC_DIR / "images"
 PRESETS_DIR = STATIC_DIR / "presets"
 
 WORKSPACE_STORAGE_DIR = BASE_DIR.parent / "temp"
+FRONTEND_DIST_DIR = pathlib.Path(
+    os.getenv("FRONTEND_DIST_DIR", BASE_DIR.parent / "frontend" / "dist")
+)
 
 
 # Structure files
@@ -57,5 +57,4 @@ MIN_FREE_DISK_SIZE = 2 * BYTES_PER_GIB
 
 
 # Initialization
-TEMPLATES = Jinja2Templates(directory=TEMPLATES_DIR)
 WORKSPACE_STORAGE_DIR.mkdir(parents=True, exist_ok=True)

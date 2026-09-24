@@ -1,4 +1,3 @@
-import re
 import time
 from pathlib import Path
 
@@ -9,7 +8,6 @@ import app.services.workspaces.cleaner as cleaner_module
 from app.services.workspaces import WorkspaceCleaner
 from app.services.workspaces.paths import CONSUMED_MARKER
 from app.settings import WORKSPACE_CONSUMED_LIFETIME
-from tests.integration.helpers import extract_data_attribute
 
 
 def test_results_lifecycle(
@@ -18,45 +16,23 @@ def test_results_lifecycle(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     upload_response = client.post(
-        "/upload/preset/",
+        "/api/coarse-grain/preset",
         data={"preset_id": "1EHZ", "selected_model": "SimModel"},
     )
 
     assert upload_response.status_code == 200
-    assert "text/html" in upload_response.headers["content-type"]
-    assert 'id="comparison-view"' in upload_response.text
-
-    match = re.search(r"results/([^/]+)/", upload_response.text)
-
-    assert match is not None
-
-    result_urls = {
-        "reference_url": extract_data_attribute(
-            upload_response.text, "data-reference-url"
-        ),
-        "coarse_cif_url": extract_data_attribute(
-            upload_response.text, "data-coarse-cif-url"
-        ),
-        "coarse_pdb_url": extract_data_attribute(
-            upload_response.text, "data-coarse-pdb-url"
-        ),
-        "consumed_url": extract_data_attribute(
-            upload_response.text, "data-consumed-url"
-        ),
-    }
-
-    assert all(result_urls.values())
-
-    workspace_id = match.group(1)
-
-    for url in result_urls.values():
-        assert f"/api/results/{workspace_id}/" in url
+    result = upload_response.json()
+    workspace_id = result["workspace_id"]
+    files = result["files"]
 
     download_urls = {
-        "reference_url": result_urls["reference_url"],
-        "coarse_cif_url": result_urls["coarse_cif_url"],
-        "coarse_pdb_url": result_urls["coarse_pdb_url"],
+        "reference": files["reference_url"],
+        "coarse_cif": files["coarse_mmcif_url"],
+        "coarse_pdb": files["coarse_pdb_url"],
     }
+
+    for url in [*download_urls.values(), files["consumed_url"]]:
+        assert url.startswith(f"/api/results/{workspace_id}/")
 
     downloaded_contents: dict[str, bytes] = {}
 
@@ -79,16 +55,16 @@ def test_results_lifecycle(
     for file_path in expected_files.values():
         assert file_path.is_file()
 
-    consumed_response = client.post(result_urls["consumed_url"])
+    consumed_response = client.post(files["consumed_url"])
     assert consumed_response.status_code == 204
     assert consumed_response.content == b""
     assert (workspace_dir / CONSUMED_MARKER).is_file()
 
     assert all(downloaded_contents.values())
 
-    second_download_response = client.get(result_urls["reference_url"])
+    second_download_response = client.get(download_urls["reference"])
     assert second_download_response.status_code == 200
-    assert second_download_response.content == downloaded_contents["reference_url"]
+    assert second_download_response.content == downloaded_contents["reference"]
 
     WorkspaceCleaner.cleanup_workspaces()
     assert workspace_dir.is_dir()
@@ -98,5 +74,5 @@ def test_results_lifecycle(
     WorkspaceCleaner.cleanup_workspaces()
     assert not workspace_dir.exists()
 
-    expired_download_response = client.get(result_urls["reference_url"])
+    expired_download_response = client.get(download_urls["reference"])
     assert expired_download_response.status_code == 404
