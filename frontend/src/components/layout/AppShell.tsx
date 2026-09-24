@@ -1,6 +1,7 @@
 import { type Location, Outlet, ScrollRestoration } from "react-router";
 
 import { CivicStripe } from "./CivicStripe";
+import { Colonnade } from "./Colonnade";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 
@@ -14,6 +15,7 @@ export function AppShell() {
       <main className="flex-1">
         <Outlet />
       </main>
+      <Colonnade />
       <SiteFooter />
       <ScrollRestoration getKey={getScrollKey} />
     </div>
