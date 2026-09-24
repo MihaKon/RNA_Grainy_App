@@ -1,11 +1,9 @@
-import { FlankingColumns } from "@/components/layout/FlankingColumns";
 import { PageHero } from "@/components/layout/PageHero";
 import { UploadForm } from "@/features/upload/UploadForm";
 
 export function HomePage() {
   return (
-    <div className="relative isolate">
-      <FlankingColumns />
+    <>
       <PageHero
         title={
           <>
@@ -22,6 +20,6 @@ export function HomePage() {
       <div className="mx-auto max-w-2xl px-4 pb-16">
         <UploadForm />
       </div>
-    </div>
+    </>
   );
 }
