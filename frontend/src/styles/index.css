@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --color-*: initial;
+  --color-white: #ffffff;
+
+  --color-blue: #0091c9;
+  --color-blue-deep: #0073a1;
+  --color-blue-bright: #00a8e0;
+  --color-blue-ink: #002b45;
+  --color-red: #d6280a;
+  --color-red-deep: #a61d04;
+  --color-gold: #f9d616;
+  --color-gold-deep: #d9b500;
+  --color-gold-icon: #b8960a;
+  --color-gold-text: #a07800;
+  --color-ink: #0a2238;
+  --color-ink-2: #244763;
+  --color-ink-3: #5a7793;
+  --color-surface: #f8ffff;
+  --color-paper: #f6f1e4;
+  --color-line-soft: color-mix(in oklab, var(--color-ink) 13%, transparent);
+
+  --color-accent: var(--color-blue);
+  --color-accent-hover: var(--color-blue-bright);
+
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --font-display: "Bebas Neue", "Arial Narrow", sans-serif;
+  --font-serif: "Newsreader Variable", Georgia, serif;
+
+  --text-hero: 3.5rem;
+  --text-hero--line-height: 0.95;
+  --text-hero-compact: 2.25rem;
+  --text-hero-compact--line-height: 1;
+  --text-heading: 2.5rem;
+  --text-heading--line-height: 1;
+  --text-heading-compact: 2rem;
+  --text-heading-compact--line-height: 1;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.6;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.4;
+
+  --breakpoint-*: initial;
+  --breakpoint-lg: 60rem;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-surface);
+    color: var(--color-ink-2);
+    font-family: var(--font-sans);
+    font-size: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: var(--text-label--line-height);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
