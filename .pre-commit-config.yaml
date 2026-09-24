@@ -37,7 +37,7 @@ repos:
         entry: pipenv run mypy
         language: system
         pass_filenames: false
-        files: '^((app|tests)/.*\.py|pyproject\.toml|Pipfile(\.lock)?)$'
+        files: '^((app|tests|pdb_audit)/.*\.py|pyproject\.toml|Pipfile(\.lock)?)$'
         stages: [pre-commit]
 
       - id: pytest
