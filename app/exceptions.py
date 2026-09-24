@@ -2,14 +2,9 @@ from collections.abc import Sequence
 from typing import Any
 
 from fastapi import Request, status
-from fastapi.exception_handlers import (
-    request_validation_exception_handler as default_request_validation_exception_handler,
-)
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-
-from app.messages import render_form_error_message
 
 
 class AppException(Exception):
@@ -40,21 +35,9 @@ class InvalidModelParametersError(AppException):
     pass
 
 
-API_PATH_PREFIX = "/api/"
-
-
-def is_api_request(request: Request) -> bool:
-    return request.url.path.startswith(API_PATH_PREFIX)
-
-
-def error_response(request: Request, message: str) -> Response:
-    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
-
-    if is_api_request(request):
-        return JSONResponse(status_code=status_code, content={"detail": message})
-
-    return render_form_error_message(
-        request=request, error=message, status_code=status_code
+def error_response(message: str) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, content={"detail": message}
     )
 
 
@@ -83,23 +66,13 @@ def describe_validation_error(errors: Sequence[Any]) -> str:
     return error_message or f"Invalid {field_name}"
 
 
-async def app_exception_handler(request: Request, exc: Exception) -> Response:
-    return error_response(request, str(exc))
+async def app_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    return error_response(str(exc))
 
 
-async def validation_exception_handler(request: Request, exc: Exception) -> Response:
-    if isinstance(exc, ValidationError):
-        error_message = describe_validation_error(exc.errors())
-    else:
-        error_message = str(exc).split("Value error, ")[-1]
-
-    return error_response(request, error_message)
-
-
-async def request_validation_exception_handler(
+async def validation_exception_handler(
     request: Request, exc: Exception
-) -> Response:
-    if is_api_request(request) and isinstance(exc, RequestValidationError):
-        return error_response(request, describe_validation_error(exc.errors()))
-
-    return await default_request_validation_exception_handler(request, exc)  # type: ignore[arg-type]
+) -> JSONResponse:
+    if isinstance(exc, ValidationError | RequestValidationError):
+        return error_response(describe_validation_error(exc.errors()))
+    return error_response(str(exc).split("Value error, ")[-1])
