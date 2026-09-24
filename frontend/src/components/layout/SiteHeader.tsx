@@ -48,7 +48,7 @@ export function SiteHeader() {
             </span>
             {!scrolled && (
               <span className="hidden eyebrow text-[0.5625rem] lg:inline">
-                Coarse-grained RNA structure models
+                Coarse-graining of RNA 3D structures
               </span>
             )}
           </span>
