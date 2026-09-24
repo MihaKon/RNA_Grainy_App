@@ -71,8 +71,8 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
         />
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[2fr_3fr]">
-        <div className="min-w-0 lg:order-last">
+      <div className="mt-8 grid gap-6 lg:grid-cols-[3fr_2fr]">
+        <div className="min-w-0">
           {structuresQuery.isError ? (
             <ResultLoadError error={structuresQuery.error} />
           ) : (
