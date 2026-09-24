@@ -12,7 +12,8 @@ import { SelectField } from "@/components/ui/SelectField";
 import { type TabItem, Tabs } from "@/components/ui/Tabs";
 import { TextField } from "@/components/ui/TextField";
 import { formatBeadsPerResidue, formatBytes, formatList } from "@/lib/format";
-import type { ResultLocationState } from "@/pages/ResultPage";
+import type { ResultLocationState } from "@/features/results/resultState";
+import { preloadStructureViewer } from "@/features/results/viewer/preload";
 
 import { CustomModelInput } from "./CustomModelInput";
 import { ExamplePicker } from "./ExamplePicker";
@@ -106,6 +107,8 @@ function UploadFormContent({ config, models }: UploadFormContentProps) {
 
     const source = toStructureSource(values);
     if (!source || hasErrors(validateUploadForm(values, config))) return;
+
+    void preloadStructureViewer();
 
     mutation.mutate(
       {

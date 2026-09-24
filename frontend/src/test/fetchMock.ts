@@ -32,12 +32,15 @@ export function mockFetch(routes: Record<string, RouteHandler>) {
 
 export function requestBody(
   fetchMock: ReturnType<typeof mockFetch>,
-  index = -1,
+  url: string,
+  method = "POST",
 ): FormData {
-  const call = fetchMock.mock.calls.at(index);
+  const call = fetchMock.mock.calls.find(
+    ([input, init]) => input === url && (init?.method ?? "GET") === method,
+  );
   const body = call?.[1]?.body;
   if (!(body instanceof FormData)) {
-    throw new Error("Expected the request body to be FormData.");
+    throw new Error(`Expected a ${method} ${url} request with a FormData body.`);
   }
   return body;
 }

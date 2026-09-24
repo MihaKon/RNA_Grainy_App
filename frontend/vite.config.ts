@@ -13,6 +13,10 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  build: {
+    // Mol* ships as a single ~3.3 MB chunk that is lazy-loaded on the result page.
+    chunkSizeWarningLimit: 4000,
+  },
   server: {
     port: 5173,
     proxy: {

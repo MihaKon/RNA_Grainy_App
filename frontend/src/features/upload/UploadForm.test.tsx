@@ -70,7 +70,7 @@ describe("UploadForm", () => {
     expect(router.state.location.pathname).toBe(
       `/results/${coarseGrainResult.workspace_id}`,
     );
-    const body = requestBody(fetchMock);
+    const body = requestBody(fetchMock, "/api/coarse-grain/preset");
     expect(body.get("preset_id")).toBe("1EHZ");
     expect(body.get("selected_model")).toBe("SimModel");
     expect(body.get("chains")).toBe("A");
@@ -93,7 +93,7 @@ describe("UploadForm", () => {
     await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
 
     await screen.findByText("Model report");
-    expect(requestBody(fetchMock).get("file")).toEqual(file);
+    expect(requestBody(fetchMock, "/api/coarse-grain/file").get("file")).toEqual(file);
   });
 
   it("sends a loaded custom model definition", async () => {
@@ -115,7 +115,7 @@ describe("UploadForm", () => {
     await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
 
     await screen.findByText("Model report");
-    const body = requestBody(fetchMock);
+    const body = requestBody(fetchMock, "/api/coarse-grain/rcsb");
     expect(body.get("rcsb_id")).toBe("1EHZ");
     expect(body.get("selected_model")).toBe("custom");
     expect(body.get("custom_model_data")).toBe(definition);

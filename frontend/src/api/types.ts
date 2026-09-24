@@ -52,8 +52,8 @@ export interface ResultFiles {
 export interface CoarseGrainResult {
   workspace_id: string;
   filename: string;
-  reference_format: string;
-  coarse_format: string;
+  reference_format: "pdb" | "mmcif";
+  coarse_format: "mmcif";
   files: ResultFiles;
   atom_counts: AtomCounts;
   selected_models: number[];
