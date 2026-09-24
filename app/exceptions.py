@@ -1,5 +1,13 @@
-from fastapi import Request
-from fastapi.responses import HTMLResponse
+from collections.abc import Sequence
+from typing import Any
+
+from fastapi import Request, status
+from fastapi.exception_handlers import (
+    request_validation_exception_handler as default_request_validation_exception_handler,
+)
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, Response
+from pydantic import ValidationError
 
 from app.messages import render_form_error_message
 
@@ -32,46 +40,66 @@ class InvalidModelParametersError(AppException):
     pass
 
 
-async def app_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
-    error_message = str(exc)
+API_PATH_PREFIX = "/api/"
+
+
+def is_api_request(request: Request) -> bool:
+    return request.url.path.startswith(API_PATH_PREFIX)
+
+
+def error_response(request: Request, message: str) -> Response:
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
+
+    if is_api_request(request):
+        return JSONResponse(status_code=status_code, content={"detail": message})
 
     return render_form_error_message(
-        request=request, error=error_message, status_code=422
+        request=request, error=message, status_code=status_code
     )
 
 
-async def validation_exception_handler(
-    request: Request, exc: Exception
-) -> HTMLResponse:
-    if isinstance(exc, ValueError):
-        first_error = exc.errors()[0]  # type: ignore
-        error_type = first_error.get("type", "")
-        field_path = first_error.get("loc", [])
-        field_name = str(field_path[-1]) if field_path else "field"
+def describe_validation_error(errors: Sequence[Any]) -> str:
+    first_error = errors[0]
+    error_type = first_error.get("type", "")
+    field_path = first_error.get("loc", [])
+    field_name = str(field_path[-1]) if field_path else "field"
 
-        error_map = {
-            "extra_forbidden": f"Unexpected field: {field_name}",
-            "missing": f"Required: {field_name}",
-            "value_error": f"Invalid value for {field_name}. "
-            + (
-                "Check file extension."
-                if field_name == "file"
-                else "Check data types and structure."
-            ),
-            "type_error": f"Invalid type for {field_name}. ",
-        }
+    if error_type == "value_error":
+        return str(first_error.get("msg", "")).removeprefix("Value error, ")
 
-        error_message = error_map.get(error_type)
-        if not error_message:
-            for key in error_map:
-                if error_type.startswith(key):
-                    error_message = error_map[key]
-                    break
-        if not error_message:
-            error_message = f"Invalid {field_name}"
+    error_map = {
+        "extra_forbidden": f"Unexpected field: {field_name}",
+        "missing": f"Required: {field_name}",
+        "type_error": f"Invalid type for {field_name}. ",
+    }
+
+    error_message = error_map.get(error_type)
+    if not error_message:
+        for key in error_map:
+            if error_type.startswith(key):
+                error_message = error_map[key]
+                break
+
+    return error_message or f"Invalid {field_name}"
+
+
+async def app_exception_handler(request: Request, exc: Exception) -> Response:
+    return error_response(request, str(exc))
+
+
+async def validation_exception_handler(request: Request, exc: Exception) -> Response:
+    if isinstance(exc, ValidationError):
+        error_message = describe_validation_error(exc.errors())
     else:
         error_message = str(exc).split("Value error, ")[-1]
 
-    return render_form_error_message(
-        request=request, error=error_message, status_code=422
-    )
+    return error_response(request, error_message)
+
+
+async def request_validation_exception_handler(
+    request: Request, exc: Exception
+) -> Response:
+    if is_api_request(request) and isinstance(exc, RequestValidationError):
+        return error_response(request, describe_validation_error(exc.errors()))
+
+    return await default_request_validation_exception_handler(request, exc)  # type: ignore[arg-type]

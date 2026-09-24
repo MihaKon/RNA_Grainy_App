@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -9,10 +10,19 @@ from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.exceptions import (
     AppException,
     app_exception_handler,
+    request_validation_exception_handler,
     validation_exception_handler,
 )
 from app.models.form import SupportedFormats
-from app.routes import about, docs, results, uploads
+from app.routes import (
+    about,
+    coarse_grain,
+    coarse_grain_models,
+    config,
+    docs,
+    results,
+    uploads,
+)
 from app.settings import APP_VERSION, STATIC_DIR, TEMPLATES
 
 app = FastAPI(title="RNAgrainy", version=APP_VERSION)
@@ -22,9 +32,13 @@ app.include_router(about.router)
 app.include_router(docs.router)
 app.include_router(uploads.router)
 app.include_router(results.router)
+app.include_router(config.router)
+app.include_router(coarse_grain_models.router)
+app.include_router(coarse_grain.router)
 
 app.add_exception_handler(AppException, app_exception_handler)
 app.add_exception_handler(ValidationError, validation_exception_handler)
+app.add_exception_handler(RequestValidationError, request_validation_exception_handler)
 
 
 @app.get("/healthz", include_in_schema=False)

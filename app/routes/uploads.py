@@ -1,117 +1,44 @@
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
-from gemmi import Structure
 
-from app.exceptions import FileProcessingError
-from app.models.form import (
-    COARSE_FILE_FORMAT,
-    FileUploadRequest,
-    PresetRequest,
-    RCSBRequest,
-    SupportedFormats,
+from app.models.form import FileUploadRequest, PresetRequest, RCSBRequest, UploadBase
+from app.services.coarse_graining import (
+    StructureSource,
+    coarse_grain_structure,
+    fetch_rcsb_structure,
+    read_preset_structure,
+    read_uploaded_structure,
 )
-from app.rcsb import fetch_rcsb_file
 from app.services.structures import StructureProcessor
-from app.services.workspaces import WorkspaceManager
-from app.settings import BYTES_PER_MIB, MAX_FILE_UPLOAD_SIZE, PRESETS_DIR, TEMPLATES
+from app.settings import TEMPLATES
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
 
-def process_structure_and_get_metadata(
-    file_content: str,
-    file_format: SupportedFormats,
-    selected_model: str,
-    models: list[int],
-    chains: list[str],
-    custom_model_data: dict | None = None,
-) -> tuple[Structure, Structure, dict[str, int]]:
-    original_structure = StructureProcessor.parse_structure(
-        file_content, file_format, models=models, chains=chains
-    )
-    coarse_structure = StructureProcessor.apply_coarse_graining(
-        original_structure, selected_model, custom_model_data
-    )
-
-    atom_counts = {
-        "original": StructureProcessor.get_structure_atom_count(original_structure),
-        "coarse": StructureProcessor.get_structure_atom_count(coarse_structure),
-    }
-    return original_structure, coarse_structure, atom_counts
-
-
-async def save_structures(
-    workspace_id: str,
-    original_structure: Structure,
-    file_format: SupportedFormats,
-    coarse_structure: Structure,
-) -> None:
-    original_format = file_format.normalize_format()
-
-    original_content = StructureProcessor.structure_to_cif_string(original_structure)
-
-    cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
-
-    pdb_content: str | None = None
-
-    if StructureProcessor.get_structure_atom_count(coarse_structure) <= 99999:
-        pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
-
-    WorkspaceManager.setup_workspace_dir(workspace_id)
-
-    try:
-        if pdb_content is not None:
-            await WorkspaceManager.create_file(
-                workspace_id,
-                pdb_content,
-                f"coarse.{SupportedFormats.PDB.value}",
-            )
-        await WorkspaceManager.create_file(
-            workspace_id, original_content, f"reference.{original_format.value}"
-        )
-        await WorkspaceManager.create_file(
-            workspace_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
-        )
-    except Exception:
-        WorkspaceManager.cleanup_workspace(workspace_id)
-        raise
-
-
 async def handle_request_and_render(
-    request: Request,
-    file_content: str,
-    filename: str,
-    file_format: SupportedFormats,
-    selected_model: str,
-    models: list[int],
-    chains: list[str],
-    custom_model_data: dict | None = None,
+    request: Request, source: StructureSource, upload_request: UploadBase
 ) -> HTMLResponse:
-    workspace_id = WorkspaceManager.create_workspace_id()
-    original_structure, coarse_structure, atom_counts = (
-        process_structure_and_get_metadata(
-            file_content,
-            file_format,
-            selected_model,
-            models,
-            chains,
-            custom_model_data,
-        )
-    )
-    await save_structures(
-        workspace_id, original_structure, file_format, coarse_structure
+    outcome = await coarse_grain_structure(
+        source,
+        upload_request.selected_model,
+        models=upload_request.models,  # type: ignore
+        chains=upload_request.chains,  # type: ignore
+        custom_model_data=upload_request.custom_model_data,  # type: ignore
     )
 
     context = StructureProcessor.build_comparison_context(
         request=request,
-        workspace_id=workspace_id,
-        filename=filename,
-        file_format=file_format,
-        selected_model=selected_model,
-        atom_counts=atom_counts,
-        selected_models=models,
-        selected_chains=chains,
-        custom_model_data=custom_model_data,
+        workspace_id=outcome.workspace_id,
+        filename=source.filename,
+        file_format=source.file_format,
+        selected_model=upload_request.selected_model,
+        atom_counts={
+            "original": outcome.original_atom_count,
+            "coarse": outcome.coarse_atom_count,
+        },
+        selected_models=upload_request.models,  # type: ignore
+        selected_chains=upload_request.chains,  # type: ignore
+        custom_model_data=upload_request.custom_model_data,  # type: ignore
     )
     return TEMPLATES.TemplateResponse(
         request=request,
@@ -129,42 +56,15 @@ async def upload_file(
     models: str = Form(None),
     chains: str = Form(None),
 ) -> HTMLResponse:
-    upload_req = FileUploadRequest(
+    upload_request = FileUploadRequest(
         file=file,
         selected_model=selected_model,
         custom_model_data=custom_model_data,
         models=models,
         chains=chains,
     )
-    if upload_req.file.size is None:
-        raise FileProcessingError("Uploaded file is empty.")
-    elif upload_req.file.size > MAX_FILE_UPLOAD_SIZE:
-        max_size_mib = MAX_FILE_UPLOAD_SIZE / BYTES_PER_MIB
-        raise FileProcessingError(
-            f"File size exceeds maximum file upload size of: {max_size_mib:g} MiB."
-        )
-
-    try:
-        file_content = (await upload_req.file.read()).decode("utf-8")
-    except UnicodeDecodeError as e:
-        raise FileProcessingError(f"Error reading file: {e}")
-
-    if file_content == "":
-        raise FileProcessingError("Uploaded file is empty.")
-
-    file_format = SupportedFormats(upload_req.file.filename.split(".")[-1].lower())  # type: ignore
-    filename: str = upload_req.file.filename.split(".")[0]  # type: ignore
-
-    return await handle_request_and_render(
-        request,
-        file_content,
-        filename,
-        file_format,
-        upload_req.selected_model,
-        models=upload_req.models,  # type: ignore
-        chains=upload_req.chains,  # type: ignore
-        custom_model_data=upload_req.custom_model_data,  # type: ignore
-    )
+    source = await read_uploaded_structure(upload_request.file)
+    return await handle_request_and_render(request, source, upload_request)
 
 
 @router.post("/rcsb/", response_class=HTMLResponse)
@@ -176,33 +76,15 @@ async def upload_rcsb(
     models: str = Form(None),
     chains: str = Form(None),
 ) -> HTMLResponse:
-    rcsb_req = RCSBRequest(
+    upload_request = RCSBRequest(
         rcsb_id=rcsb_id,
         selected_model=selected_model,
         custom_model_data=custom_model_data,
         models=models,
         chains=chains,
-    )  # type: ignore
-
-    file_content = await fetch_rcsb_file(rcsb_req.rcsb_id)
-    if file_content is None:
-        raise FileProcessingError(
-            f"Could not fetch file for RCSB ID: {rcsb_req.rcsb_id}"
-        )
-
-    file_format = SupportedFormats.CIF
-    filename: str = rcsb_req.rcsb_id
-
-    return await handle_request_and_render(
-        request,
-        file_content,
-        filename,
-        file_format,
-        rcsb_req.selected_model,
-        models=rcsb_req.models,  # type: ignore
-        chains=rcsb_req.chains,  # type: ignore
-        custom_model_data=rcsb_req.custom_model_data,  # type: ignore
     )
+    source = await fetch_rcsb_structure(upload_request.rcsb_id)
+    return await handle_request_and_render(request, source, upload_request)
 
 
 @router.post("/preset/", response_class=HTMLResponse)
@@ -214,38 +96,12 @@ async def upload_preset(
     models: str = Form(None),
     chains: str = Form(None),
 ) -> HTMLResponse:
-    preset_req = PresetRequest(
+    upload_request = PresetRequest(
         preset_id=preset_id,
         selected_model=selected_model,
         custom_model_data=custom_model_data,
         models=models,
         chains=chains,
-    )  # type: ignore
-    preset_path = PRESETS_DIR / f"{preset_req.preset_id}.{SupportedFormats.CIF.value}"
-
-    if not preset_path.exists():
-        raise FileProcessingError(
-            f"Preset file not found for ID: {preset_req.preset_id}"
-        )
-
-    try:
-        file_content = preset_path.read_text(encoding="utf-8")
-    except UnicodeDecodeError as e:
-        raise FileProcessingError(f"Error reading preset file: {e}")
-
-    if file_content == "":
-        raise FileProcessingError("Preset file is empty.")
-
-    file_format = SupportedFormats.CIF
-    filename: str = preset_req.preset_id
-
-    return await handle_request_and_render(
-        request,
-        file_content,
-        filename,
-        file_format,
-        preset_req.selected_model,
-        models=preset_req.models,  # type: ignore
-        chains=preset_req.chains,  # type: ignore
-        custom_model_data=preset_req.custom_model_data,  # type: ignore
     )
+    source = read_preset_structure(upload_request.preset_id)
+    return await handle_request_and_render(request, source, upload_request)
