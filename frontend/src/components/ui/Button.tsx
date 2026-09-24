@@ -1,8 +1,8 @@
-import type { ComponentProps } from "react";
+import type { ButtonHTMLAttributes } from "react";
 
 import { cn } from "@/lib/cn";
 
-export type ButtonVariant = "primary" | "ghost";
+type ButtonVariant = "primary" | "ghost";
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
@@ -17,7 +17,7 @@ function buttonClasses(variant: ButtonVariant): string {
   );
 }
 
-interface ButtonProps extends ComponentProps<"button"> {
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
 }
 
