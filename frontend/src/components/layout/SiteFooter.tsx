@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 
+import putSignUrl from "@/assets/brand/put-sign-white.svg";
 import { RnaPolisMark } from "@/components/brand/RnaPolisMark";
 import { GITHUB_REPOSITORY_URL } from "@/lib/links";
 
@@ -15,6 +16,22 @@ export function SiteFooter() {
             the Institute of Computing Science, Poznan University of Technology, and the
             Department of Structural Bioinformatics, IBCH PAS.
           </p>
+          <div className="mt-6 flex items-center gap-6 border-t border-white/10 pt-6">
+            <a
+              href="https://put.poznan.pl/en"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="opacity-90 transition-opacity hover:opacity-100"
+            >
+              <img
+                src={putSignUrl}
+                alt="Poznan University of Technology"
+                width={64}
+                height={64}
+                className="size-16"
+              />
+            </a>
+          </div>
         </div>
 
         <nav aria-label="Resources" className="flex flex-col gap-2 text-sm">
