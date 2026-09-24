@@ -45,19 +45,19 @@ Detailed descriptions, mapping rules, and references are available in the
 
 ### Main page
 
-<img width="1535" height="863" alt="RNAgrainy main page" src="https://github.com/user-attachments/assets/e4b52f6a-f9f5-48b8-8177-77c652d099fc" />
+![RNAgrainy main page](docs/screenshots/main-page.png)
 
 ### Coarse-grained structure comparison
 
-<img width="1535" height="862" alt="RNAgrainy coarse-grained structure comparison" src="https://github.com/user-attachments/assets/2780ac8f-f267-4bbd-8927-4eb9bd0799bf" />
+![RNAgrainy coarse-grained structure comparison](docs/screenshots/structure-comparison.png)
 
 ### Custom coarse-grained model creator
 
-<img width="1535" height="862" alt="RNAgrainy custom coarse-grained model creator" src="https://github.com/user-attachments/assets/f293bfd9-343f-4b37-8785-d395826ae667" />
+![RNAgrainy custom coarse-grained model creator](docs/screenshots/model-creator.png)
 
 ### Model documentation
 
-<img width="1535" height="862" alt="RNAgrainy model documentation" src="https://github.com/user-attachments/assets/77a9fbe3-e0b3-4cce-8305-33a4074c5e01" />
+![RNAgrainy model documentation](docs/screenshots/model-documentation.png)
 
 ## Local Development
 
@@ -65,6 +65,45 @@ The backend is a FastAPI application (`app/`) exposing a JSON API under `/api`. 
 frontend is a React + TypeScript application built with Vite (`frontend/`). In
 production, FastAPI serves the built frontend; during development, the Vite dev server
 serves it with hot reloading and proxies `/api` and `/static` to the backend.
+
+### Tech stack
+
+- **Backend:** Python 3.12, FastAPI, Pydantic, Gemmi
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS 4, TanStack Query, React Router,
+  Mol*
+- **Tooling:** Ruff, mypy, pytest, Playwright, ESLint, Prettier, Vitest, pre-commit
+- **Deployment:** Docker (multi-stage build of the frontend and backend), GitHub Actions
+
+### Project structure
+
+```text
+app/                  FastAPI backend
+  coarse_grain/       coarse-graining algorithm and model definitions
+  routes/             JSON API endpoints and the frontend catch-all route
+  services/           structure loading, coarse-graining, and result workspaces
+  static/             example structures and model images
+frontend/             React + TypeScript frontend (Vite)
+  src/api/            typed API client and TanStack Query hooks
+  src/features/       upload form, model creator, results viewer, model docs
+  src/pages/          routed pages (home, results, documentation, about)
+  src/components/     layout, brand, and shared UI components
+tests/                backend unit, integration, and Playwright E2E tests
+docs/screenshots/     screenshots used in this README
+```
+
+### API
+
+| Method | Endpoint                                  | Description                                    |
+| ------ | ----------------------------------------- | ---------------------------------------------- |
+| `GET`  | `/api/config`                             | Supported formats, upload limits, example IDs  |
+| `GET`  | `/api/models`                             | Available coarse-grained models                |
+| `POST` | `/api/coarse-grain/file`                  | Coarse-grain an uploaded structure file        |
+| `POST` | `/api/coarse-grain/rcsb`                  | Coarse-grain a structure fetched by PDB ID     |
+| `POST` | `/api/coarse-grain/preset`                | Coarse-grain one of the example structures     |
+| `GET`  | `/api/results/{workspace_id}/{file_type}` | Download the reference or coarse-grained file  |
+| `POST` | `/api/results/{workspace_id}/consumed`    | Remove a result workspace after it was loaded  |
+
+The interactive API documentation is available at `/docs` when the backend is running.
 
 ### Requirements
 
@@ -152,6 +191,11 @@ pipenv run pytest tests/e2e
 
 Frontend, in `frontend/`: `npm run lint`, `npm run format:check`, `npm run typecheck`,
 `npm test`.
+
+The pre-commit hooks run the formatters, linters, type checks, and the backend unit and
+integration tests together with the frontend checks. GitHub Actions runs all checks,
+including the E2E tests and a Docker Compose health check, on every pull request and on
+pushes to `main` and `develop`.
 
 ## Authors
 
