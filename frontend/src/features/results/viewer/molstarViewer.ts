@@ -1,4 +1,4 @@
-import "molstar/build/viewer/theme/dark.css";
+import "molstar/build/viewer/molstar.css";
 
 import type { StateObjectSelector } from "molstar/lib/mol-state";
 import type { BuiltInTrajectoryFormat } from "molstar/lib/mol-plugin-state/formats/trajectory";
@@ -42,8 +42,6 @@ interface StructureEntry {
   visible: boolean;
 }
 
-export const VIEWER_BACKGROUND = 0x002b45;
-
 export async function createMolstarViewer(
   target: HTMLElement,
   structures: readonly StructureInput[],
@@ -55,9 +53,6 @@ export async function createMolstarViewer(
       ...DefaultPluginUISpec(),
       layout: {
         initial: { isExpanded: false, showControls: false },
-      },
-      canvas3d: {
-        renderer: { backgroundColor: Color(VIEWER_BACKGROUND) },
       },
       config: [
         [PluginConfig.Viewport.ShowExpand, true],

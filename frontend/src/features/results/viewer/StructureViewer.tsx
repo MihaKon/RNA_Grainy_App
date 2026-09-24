@@ -130,12 +130,12 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
     <div className="flex flex-col gap-3">
       <div
         ref={containerRef}
-        className="relative h-[55dvh] min-h-80 overflow-hidden rounded-md bg-blue-ink"
+        className="relative h-[55dvh] min-h-80 overflow-hidden rounded-md border border-line-soft bg-white"
       >
         {status !== "ready" && (
           <p
             role={status === "error" ? "alert" : "status"}
-            className="absolute inset-0 z-10 flex items-center justify-center bg-blue-ink font-mono text-label tracking-[0.15em] text-white/70 uppercase"
+            className="absolute inset-0 z-10 flex items-center justify-center bg-white font-mono text-label tracking-[0.15em] text-ink-3 uppercase"
           >
             {status === "error"
               ? "The structure viewer could not be started."

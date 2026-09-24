@@ -149,7 +149,7 @@ function ViewerPlaceholder() {
   return (
     <div
       role="status"
-      className="flex h-[55dvh] min-h-80 items-center justify-center rounded-md bg-blue-ink font-mono text-label tracking-[0.15em] text-white/70 uppercase"
+      className="flex h-[55dvh] min-h-80 items-center justify-center rounded-md border border-line-soft bg-white font-mono text-label tracking-[0.15em] text-ink-3 uppercase"
     >
       Loading structures…
     </div>
