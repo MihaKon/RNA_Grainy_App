@@ -1,4 +1,5 @@
 import "molstar/build/viewer/molstar.css";
+import "./molstarOverrides.css";
 
 import type { StateObjectSelector } from "molstar/lib/mol-state";
 import type { BuiltInTrajectoryFormat } from "molstar/lib/mol-plugin-state/formats/trajectory";

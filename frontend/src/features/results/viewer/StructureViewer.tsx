@@ -18,7 +18,7 @@ interface StructureViewerProps {
 
 const STRUCTURE_TOGGLES: readonly { id: StructureId; label: string }[] = [
   { id: "coarse", label: "Coarse-grained" },
-  { id: "reference", label: "Reference" },
+  { id: "reference", label: "All-atom" },
 ];
 
 const REPRESENTATIONS: readonly { type: RepresentationType; label: string }[] = [
@@ -130,7 +130,7 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
     <div className="flex flex-col gap-3">
       <div
         ref={containerRef}
-        className="relative h-[55dvh] min-h-80 overflow-hidden rounded-md border border-line-soft bg-white"
+        className="relative h-[55dvh] min-h-80 overflow-hidden rounded-md bg-white"
       >
         {status !== "ready" && (
           <p
@@ -178,7 +178,7 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
           ))}
         </ControlGroup>
 
-        <ControlGroup label="Reference color">
+        <ControlGroup label="All-atom color">
           <ToggleButton
             pressed={colorByElement}
             disabled={controlsDisabled}
