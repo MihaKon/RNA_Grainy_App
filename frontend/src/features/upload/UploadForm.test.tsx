@@ -43,11 +43,11 @@ async function fillSource(user: User, kind: SourceKind) {
       await user.upload(screen.getByLabelText(/choose a file/i), structureFile);
       break;
     case "rcsb":
-      await user.click(screen.getByRole("tab", { name: "PDB ID" }));
+      await user.click(screen.getByRole("tab", { name: "Fetch from PDB" }));
       await user.type(screen.getByRole("textbox", { name: "PDB ID" }), "1ehz");
       break;
     case "preset":
-      await user.click(screen.getByRole("tab", { name: "Example" }));
+      await user.click(screen.getByRole("tab", { name: "Use example" }));
       await user.click(screen.getByRole("radio", { name: "1MNX" }));
       break;
   }
@@ -112,7 +112,7 @@ describe("UploadForm", () => {
     });
     const { router, user } = await renderForm();
 
-    await user.click(screen.getByRole("tab", { name: "Example" }));
+    await user.click(screen.getByRole("tab", { name: "Use example" }));
     await user.click(screen.getByRole("radio", { name: "1EHZ" }));
     await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "SimModel");
     await user.type(screen.getByLabelText("Chains"), "A");
@@ -156,7 +156,7 @@ describe("UploadForm", () => {
     const { user } = await renderForm();
     const definition = JSON.stringify({ model_name: "Two-bead model" });
 
-    await user.click(screen.getByRole("tab", { name: "PDB ID" }));
+    await user.click(screen.getByRole("tab", { name: "Fetch from PDB" }));
     await user.type(screen.getByRole("textbox", { name: "PDB ID" }), "1ehz");
     await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "custom");
     await user.upload(
@@ -319,7 +319,7 @@ describe("UploadForm", () => {
     });
     const { user } = await renderForm();
 
-    await user.click(screen.getByRole("tab", { name: "PDB ID" }));
+    await user.click(screen.getByRole("tab", { name: "Fetch from PDB" }));
     await user.type(screen.getByRole("textbox", { name: "PDB ID" }), "9xyz");
     await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "SimModel");
     await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));

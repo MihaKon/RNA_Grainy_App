@@ -43,7 +43,7 @@ describe("ModelCreator", () => {
     expect(screen.getByText("Custom model loaded")).toBeInTheDocument();
     expect(screen.getByText("Model creator")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("tab", { name: "Example" }));
+    await user.click(screen.getByRole("tab", { name: "Use example" }));
     await user.click(screen.getByRole("radio", { name: "1EHZ" }));
     await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
 
@@ -169,7 +169,7 @@ describe("ModelCreator", () => {
 
   it("keeps editing when Enter is pressed in a creator field", async () => {
     const { user } = renderApp("/");
-    await user.click(await screen.findByRole("tab", { name: "Example" }));
+    await user.click(await screen.findByRole("tab", { name: "Use example" }));
     await user.click(screen.getByRole("radio", { name: "1EHZ" }));
     await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "custom");
     await user.click(screen.getByRole("button", { name: "Open creator" }));
