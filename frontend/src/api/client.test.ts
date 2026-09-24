@@ -27,7 +27,7 @@ describe("apiRequest", () => {
 
   it("falls back to a generic message for non-JSON errors", async () => {
     mockFetch({
-      "GET /api/config": () => new Response("Bad gateway", { status: 502 }),
+      "GET /api/config": () => new Response("Internal error", { status: 500 }),
     });
 
     const error: unknown = await apiRequest("/api/config").catch((e: unknown) => e);
@@ -35,11 +35,25 @@ describe("apiRequest", () => {
     expect(getErrorMessage(error)).toBe("Something went wrong. Please try again.");
   });
 
+  it("reports an unreachable backend behind the proxy", async () => {
+    mockFetch({ "GET /api/config": () => new Response("", { status: 502 }) });
+
+    await expect(apiRequest("/api/config")).rejects.toEqual(
+      new ApiError(
+        "The server is currently unavailable. Please try again in a moment.",
+        502,
+      ),
+    );
+  });
+
   it("reports network failures", async () => {
     mockFetch({});
 
     await expect(apiRequest("/api/config")).rejects.toEqual(
-      new ApiError("Could not connect to the server.", 0),
+      new ApiError(
+        "The server is currently unavailable. Please try again in a moment.",
+        0,
+      ),
     );
   });
 });
