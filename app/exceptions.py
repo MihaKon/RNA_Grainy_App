@@ -1,7 +1,10 @@
-from fastapi import Request
-from fastapi.responses import HTMLResponse
+from collections.abc import Sequence
+from typing import Any
 
-from app.messages import render_form_error_message
+from fastapi import Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
 
 class AppException(Exception):
@@ -32,46 +35,44 @@ class InvalidModelParametersError(AppException):
     pass
 
 
-async def app_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
-    error_message = str(exc)
-
-    return render_form_error_message(
-        request=request, error=error_message, status_code=422
+def error_response(message: str) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, content={"detail": message}
     )
+
+
+def describe_validation_error(errors: Sequence[Any]) -> str:
+    first_error = errors[0]
+    error_type = first_error.get("type", "")
+    field_path = first_error.get("loc", [])
+    field_name = str(field_path[-1]) if field_path else "field"
+
+    if error_type == "value_error":
+        return str(first_error.get("msg", "")).removeprefix("Value error, ")
+
+    error_map = {
+        "extra_forbidden": f"Unexpected field: {field_name}",
+        "missing": f"Required: {field_name}",
+        "type_error": f"Invalid type for {field_name}. ",
+    }
+
+    error_message = error_map.get(error_type)
+    if not error_message:
+        for key in error_map:
+            if error_type.startswith(key):
+                error_message = error_map[key]
+                break
+
+    return error_message or f"Invalid {field_name}"
+
+
+async def app_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    return error_response(str(exc))
 
 
 async def validation_exception_handler(
     request: Request, exc: Exception
-) -> HTMLResponse:
-    if isinstance(exc, ValueError):
-        first_error = exc.errors()[0]  # type: ignore
-        error_type = first_error.get("type", "")
-        field_path = first_error.get("loc", [])
-        field_name = str(field_path[-1]) if field_path else "field"
-
-        error_map = {
-            "extra_forbidden": f"Unexpected field: {field_name}",
-            "missing": f"Required: {field_name}",
-            "value_error": f"Invalid value for {field_name}. "
-            + (
-                "Check file extension."
-                if field_name == "file"
-                else "Check data types and structure."
-            ),
-            "type_error": f"Invalid type for {field_name}. ",
-        }
-
-        error_message = error_map.get(error_type)
-        if not error_message:
-            for key in error_map:
-                if error_type.startswith(key):
-                    error_message = error_map[key]
-                    break
-        if not error_message:
-            error_message = f"Invalid {field_name}"
-    else:
-        error_message = str(exc).split("Value error, ")[-1]
-
-    return render_form_error_message(
-        request=request, error=error_message, status_code=422
-    )
+) -> JSONResponse:
+    if isinstance(exc, ValidationError | RequestValidationError):
+        return error_response(describe_validation_error(exc.errors()))
+    return error_response(str(exc).split("Value error, ")[-1])

@@ -1,15 +1,13 @@
 # syntax=docker/dockerfile:1
 
-FROM node:24-alpine AS assets
+FROM node:24-alpine AS frontend
 
-WORKDIR /build
+WORKDIR /build/frontend
 
-COPY package.json package-lock.json ./
+COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 
-COPY app/styles ./app/styles
-COPY app/templates ./app/templates
-COPY app/static/js ./app/static/js
+COPY frontend ./
 RUN npm run build
 
 
@@ -28,7 +26,7 @@ COPY Pipfile Pipfile.lock ./
 RUN pipenv sync --system
 
 COPY app ./app
-COPY --from=assets /build/app/static/css/app.css ./app/static/css/app.css
+COPY --from=frontend /build/frontend/dist ./frontend/dist
 
 RUN useradd --create-home --uid 10001 appuser \
     && mkdir -p /app/temp \

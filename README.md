@@ -5,7 +5,7 @@
 [**Open RNAgrainy**](https://rnagrainy.cs.put.poznan.pl/) ·
 [**Documentation**](https://rnagrainy.cs.put.poznan.pl/documentation/)
 
-![Stack](https://img.shields.io/badge/Stack-FastAPI%20%7C%20HTMX%20%7C%20Alpine.js%20%7C%20Tailwind%20%7C%20Gemmi-blue)
+![Stack](https://img.shields.io/badge/Stack-FastAPI%20%7C%20React%20%7C%20TypeScript%20%7C%20Tailwind%20%7C%20Mol*%20%7C%20Gemmi-blue)
 
 ## About
 
@@ -45,21 +45,65 @@ Detailed descriptions, mapping rules, and references are available in the
 
 ### Main page
 
-<img width="1535" height="863" alt="RNAgrainy main page" src="https://github.com/user-attachments/assets/e4b52f6a-f9f5-48b8-8177-77c652d099fc" />
+![RNAgrainy main page](docs/screenshots/main-page.png)
 
 ### Coarse-grained structure comparison
 
-<img width="1535" height="862" alt="RNAgrainy coarse-grained structure comparison" src="https://github.com/user-attachments/assets/2780ac8f-f267-4bbd-8927-4eb9bd0799bf" />
+![RNAgrainy coarse-grained structure comparison](docs/screenshots/structure-comparison.png)
 
 ### Custom coarse-grained model creator
 
-<img width="1535" height="862" alt="RNAgrainy custom coarse-grained model creator" src="https://github.com/user-attachments/assets/f293bfd9-343f-4b37-8785-d395826ae667" />
+![RNAgrainy custom coarse-grained model creator](docs/screenshots/model-creator.png)
 
 ### Model documentation
 
-<img width="1535" height="862" alt="RNAgrainy model documentation" src="https://github.com/user-attachments/assets/77a9fbe3-e0b3-4cce-8305-33a4074c5e01" />
+![RNAgrainy model documentation](docs/screenshots/model-documentation.png)
 
 ## Local Development
+
+The backend is a FastAPI application (`app/`) exposing a JSON API under `/api`. The
+frontend is a React + TypeScript application built with Vite (`frontend/`). In
+production, FastAPI serves the built frontend; during development, the Vite dev server
+serves it with hot reloading and proxies `/api` and `/static` to the backend.
+
+### Tech stack
+
+- **Backend:** Python 3.12, FastAPI, Pydantic, Gemmi
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS 4, TanStack Query, React Router,
+  Mol*
+- **Tooling:** Ruff, mypy, pytest, Playwright, ESLint, Prettier, Vitest, pre-commit
+- **Deployment:** Docker (multi-stage build of the frontend and backend), GitHub Actions
+
+### Project structure
+
+```text
+app/                  FastAPI backend
+  coarse_grain/       coarse-graining algorithm and model definitions
+  routes/             JSON API endpoints and the frontend catch-all route
+  services/           structure loading, coarse-graining, and result workspaces
+  static/             example structures and model images
+frontend/             React + TypeScript frontend (Vite)
+  src/api/            typed API client and TanStack Query hooks
+  src/features/       upload form, model creator, results viewer, model docs
+  src/pages/          routed pages (home, results, documentation, about)
+  src/components/     layout, brand, and shared UI components
+tests/                backend unit, integration, and Playwright E2E tests
+docs/screenshots/     screenshots used in this README
+```
+
+### API
+
+| Method | Endpoint                                  | Description                                    |
+| ------ | ----------------------------------------- | ---------------------------------------------- |
+| `GET`  | `/api/config`                             | Supported formats, upload limits, example IDs  |
+| `GET`  | `/api/models`                             | Available coarse-grained models                |
+| `POST` | `/api/coarse-grain/file`                  | Coarse-grain an uploaded structure file        |
+| `POST` | `/api/coarse-grain/rcsb`                  | Coarse-grain a structure fetched by PDB ID     |
+| `POST` | `/api/coarse-grain/preset`                | Coarse-grain one of the example structures     |
+| `GET`  | `/api/results/{workspace_id}/{file_type}` | Download the reference or coarse-grained file  |
+| `POST` | `/api/results/{workspace_id}/consumed`    | Remove a result workspace after it was loaded  |
+
+The interactive API documentation is available at `/docs` when the backend is running.
 
 ### Requirements
 
@@ -68,7 +112,7 @@ Install the following tools:
 - Python 3.12
 - Pipenv
 - Node.js 24 with npm
-- Docker with Docker Compose
+- Docker with Docker Compose (optional, to run the production image)
 
 ### Install dependencies
 
@@ -84,9 +128,10 @@ Install Python dependencies, including development tools:
 pipenv sync --dev
 ```
 
-Install frontend build dependencies:
+Install frontend dependencies:
 
 ```bash
+cd frontend
 npm ci
 ```
 
@@ -98,29 +143,59 @@ pipenv run pre-commit install
 
 ### Start the development environment
 
-Start the Tailwind CSS watcher in the first terminal:
+Start the backend in the first terminal:
 
 ```bash
+pipenv run uvicorn app.main:app --port 5050 --reload
+```
+
+Start the frontend dev server in a second terminal:
+
+```bash
+cd frontend
 npm run dev
 ```
 
-For the first run, build the Docker image and start the application in a second terminal:
+The application is available at `http://127.0.0.1:5173`. The Vite dev server proxies
+the API to `http://127.0.0.1:5050`; override it with the `BACKEND_URL` environment
+variable.
+
+### Run the production build
+
+Build the frontend and let FastAPI serve it:
+
+```bash
+cd frontend && npm run build && cd ..
+pipenv run uvicorn app.main:app --port 5050
+```
+
+Or build and run the Docker image, which builds the frontend itself:
 
 ```bash
 docker compose -f compose.yaml -f compose.dev.yaml up --build app
 ```
 
-For subsequent runs, if the dependencies and Dockerfile have not changed, rebuilding is not required:
+Either way, the application is available at `http://127.0.0.1:5050`.
+
+### Checks
+
+Backend: `pipenv run ruff check .`, `pipenv run mypy`, and the test suites, run
+separately as in CI (Playwright's event loop clashes with the async unit tests when they
+share a session; the E2E tests also need a frontend build):
 
 ```bash
-docker compose -f compose.yaml -f compose.dev.yaml up app
+pipenv run pytest tests/unit
+pipenv run pytest tests/integration
+pipenv run pytest tests/e2e
 ```
 
-The application is available at:
+Frontend, in `frontend/`: `npm run lint`, `npm run format:check`, `npm run typecheck`,
+`npm test`.
 
-```text
-http://127.0.0.1:5050
-```
+The pre-commit hooks run the formatters, linters, type checks, and the backend unit and
+integration tests together with the frontend checks. GitHub Actions runs all checks,
+including the E2E tests and a Docker Compose health check, on every pull request and on
+pushes to `main` and `develop`.
 
 ## Authors
 

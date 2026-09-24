@@ -1,0 +1,14 @@
+.msp-plugin,
+.msp-plugin .msp-viewport {
+  background: #fff;
+}
+
+.msp-plugin .msp-layout-standard {
+  border: 0;
+}
+
+/* Mol* does not raise its expanded (full-window) layout above the page, so the sticky
+   header would cover it. */
+.msp-plugin .msp-layout-expanded {
+  z-index: 100;
+}

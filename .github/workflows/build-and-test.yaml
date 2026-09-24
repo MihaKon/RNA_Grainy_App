@@ -34,10 +34,11 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Install node dependencies
+      - name: Install frontend dependencies
         run: npm ci
+        working-directory: frontend
 
       - name: Cache Playwright browsers
         uses: actions/cache@v6
@@ -48,8 +49,9 @@ jobs:
       - name: Install Playwright browsers and system dependencies
         run: pipenv run playwright install --with-deps chromium
 
-      - name: Build Tailwind CSS
+      - name: Build frontend
         run: npm run build
+        working-directory: frontend
 
       - name: Validate pre-commit configuration
         run: pipenv run pre-commit validate-config
@@ -71,6 +73,42 @@ jobs:
 
       - name: Run E2E tests
         run: pipenv run pytest tests/e2e
+
+  frontend:
+    name: Build and test frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
 
   docker:
     name: Build and test Docker Compose
@@ -99,6 +137,9 @@ jobs:
 
           docker compose logs app
           exit 1
+
+      - name: Check frontend
+        run: curl --fail --silent http://127.0.0.1:5050/documentation | grep --quiet '<div id="root">'
 
       - name: Check cleaner
         run: |

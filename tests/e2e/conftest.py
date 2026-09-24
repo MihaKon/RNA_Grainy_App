@@ -7,12 +7,17 @@ import httpx
 import pytest
 from playwright.sync_api import Page
 
+from app.settings import FRONTEND_DIST_DIR
+
 PORT = 8000
 BASE_URL = f"http://127.0.0.1:{PORT}"
 
 
 @pytest.fixture(scope="session", autouse=True)
 def start_local_server() -> Generator[None, None, None]:
+    if not (FRONTEND_DIST_DIR / "index.html").is_file():
+        pytest.fail("Frontend build not found. Run `npm run build` in frontend/.")
+
     process = subprocess.Popen(
         [
             sys.executable,
