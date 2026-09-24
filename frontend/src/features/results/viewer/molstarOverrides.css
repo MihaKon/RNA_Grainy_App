@@ -1,3 +1,8 @@
+.msp-plugin,
+.msp-plugin .msp-viewport {
+  background: #fff;
+}
+
 .msp-plugin .msp-layout-standard {
   border: 0;
 }
