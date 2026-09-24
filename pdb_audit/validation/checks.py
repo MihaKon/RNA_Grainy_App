@@ -4,10 +4,12 @@ from app.services.structures import StructureProcessor
 from pdb_audit.issues import IssueContent, Issues
 from pdb_audit.validation.context import ValidationContext
 from pdb_audit.validation.helpers import (
+    CANONICAL_DNA_RESIDUES,
     get_original_atom_counts_by_entity_type,
     get_parsed_atom_counts_by_entity_type,
     get_residue_entity_category,
     get_structure_atom_count,
+    iter_chains,
     iter_residues,
     make_issue,
 )
@@ -70,9 +72,30 @@ def check_empty_models(context: ValidationContext) -> list[IssueContent]:
     issues = []
 
     for model in context.coarse_grain_structure:
-        residue_count = sum(len(chain) for chain in model)
-        if residue_count == 0:
-            issues.append(make_issue(Issues.EMPTY_MODEL, model=model))
+        if model.count_atom_sites() == 0:
+            issues.append(
+                make_issue(
+                    issue=Issues.EMPTY_MODEL,
+                    model=model,
+                )
+            )
+
+    return issues
+
+
+def check_empty_chains(context: ValidationContext) -> list[IssueContent]:
+    issues = []
+
+    for model, chain in iter_chains(context.coarse_grain_structure):
+        if len(chain) == 0:
+            issues.append(
+                make_issue(
+                    issue=Issues.EMPTY_CHAIN,
+                    model=model,
+                    chain=chain,
+                )
+            )
+
     return issues
 
 
@@ -213,15 +236,13 @@ def check_protein_residues_in_coarse_structure(
     for model, chain, residue in iter_residues(structure):
         if get_residue_entity_category(residue) != "polymer":
             continue
-
         entity = structure.get_entity(residue.entity_id) if residue.entity_id else None
 
-        if entity is not None and entity.polymer_type != PolymerType.Unknown:
-            is_protein = entity.polymer_type in peptide_types
-        else:
-            is_protein = find_tabulated_residue(residue.name).is_amino_acid()
+        entity_is_protein = entity is not None and entity.polymer_type in peptide_types
 
-        if not is_protein:
+        residue_is_amino_acid = find_tabulated_residue(residue.name).is_amino_acid()
+
+        if not (entity_is_protein or residue_is_amino_acid):
             continue
 
         protein_count += 1
@@ -242,6 +263,81 @@ def check_protein_residues_in_coarse_structure(
             issue=Issues.PROTEIN_RESIDUE_IN_COARSE_STRUCTURE,
             details=(
                 f"Protein residues: {protein_count}. "
+                f"First {len(examples)} examples: {'; '.join(examples)}"
+            ),
+        )
+    ]
+
+
+def check_dna_residues_in_coarse_structure(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    dna_residue_count = 0
+    examples: list[str] = []
+    example_limit = 5
+
+    for model, chain, residue in iter_residues(context.coarse_grain_structure):
+        if residue.name.upper() not in CANONICAL_DNA_RESIDUES:
+            continue
+
+        dna_residue_count += 1
+
+        if len(examples) < example_limit:
+            examples.append(
+                f"model={model.num}, "
+                f"chain={chain.name}, "
+                f"residue={residue.seqid}, "
+                f"res_name={residue.name}"
+            )
+
+    if dna_residue_count == 0:
+        return []
+
+    return [
+        make_issue(
+            Issues.DNA_RESIDUE_IN_COARSE_STRUCTURE,
+            details=(
+                f"Canonical DNA residues: {dna_residue_count}. "
+                f"First {len(examples)} examples: "
+                f"{'; '.join(examples)}"
+            ),
+        )
+    ]
+
+
+# ALT LOCS ISSUES #
+
+
+def check_alt_loc_present(context: ValidationContext) -> list[IssueContent]:
+    count = 0
+    examples: list[str] = []
+    example_limit = 5
+
+    for model, chain, residue in iter_residues(context.reference_structure):
+        altlocs = {atom.altloc for atom in residue if atom.altloc not in ("\0", " ")}
+
+        if not altlocs:
+            continue
+
+        count += 1
+
+        if len(examples) < example_limit:
+            examples.append(
+                f"model={model.num}, "
+                f"chain={chain.name}, "
+                f"residue={residue.seqid}, "
+                f"res_name={residue.name}, "
+                f"altlocs={sorted(altlocs)}"
+            )
+
+    if count == 0:
+        return []
+
+    return [
+        make_issue(
+            issue=Issues.ALT_LOC_PRESENT,
+            details=(
+                f"Residues with alternative locations: {count}. "
                 f"First {len(examples)} examples: {'; '.join(examples)}"
             ),
         )

@@ -20,6 +20,7 @@ class Issues(Enum):
         return f"{self.code}: {self.message} ({self.severity.value})"
 
     # GENERAL ISSUES #
+
     SOURCE_STRUCTURE_ALREADY_COARSE_GRAINED = (
         "source_structure_already_coarse_grained",
         "The downloaded structure appears to already use a reduced representation",
@@ -56,12 +57,6 @@ class Issues(Enum):
         Severity.ERROR,
     )
 
-    INVALID_NUMBER_OF_CHAINS = (
-        "invalid_number_of_chains",
-        "The number of coarse-grained chains is not consistent wit the number of reference structure RNA chains",
-        Severity.ERROR,
-    )
-
     EMPTY_CHAIN = (
         "empty_chain",
         "There is empty chain in the coarse-grained structure",
@@ -79,14 +74,6 @@ class Issues(Enum):
     REFERENCE_CIF_ENTITY_METADATA_LOST = (
         "reference_cif_entity_metadata_lost",
         "Entity metadata was lost while serializing the reference structure",
-        Severity.ERROR,
-    )
-
-    # NMR ISSUES #
-
-    MERGED_NMR_MODELS = (
-        "merged_nmr_models",
-        "Multiple NMR models merged to one model in coarse structure",
         Severity.ERROR,
     )
 
@@ -203,8 +190,6 @@ class Issues(Enum):
         "Structure contains different alt locs than A",
         Severity.WARNING,
     )
-
-    # STRESS TESTS #
 
 
 @dataclass
