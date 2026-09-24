@@ -53,22 +53,25 @@ describe("ResultView", () => {
     expect(within(report).getByText("82.98%")).toBeInTheDocument();
   });
 
-  it("downloads the coarse-grained structure once it is loaded", async () => {
+  it("downloads the coarse-grained structure from the menu", async () => {
     mockResultFiles();
     const { user } = renderResult();
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, "click")
       .mockImplementation(() => undefined);
 
-    const downloadButton = screen.getByRole("button", { name: "Download PDB" });
+    const downloadButton = screen.getByRole("button", { name: "Download" });
     expect(downloadButton).toBeDisabled();
     await screen.findByText("Viewer showing reference");
     await user.click(downloadButton);
+    await user.click(screen.getByRole("menuitem", { name: /PDB/ }));
 
     expect(click).toHaveBeenCalledOnce();
     const anchor = click.mock.contexts[0] as HTMLAnchorElement;
     expect(anchor.download).toBe("1EHZ_SimRNA.pdb");
     expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(downloadButton).toHaveFocus();
   });
 
   it("offers only mmCIF when the PDB file is unavailable", async () => {
@@ -83,15 +86,18 @@ describe("ResultView", () => {
 
     expect(await screen.findByText("Viewer showing reference")).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Download PDB" }),
-    ).not.toBeInTheDocument();
-    expect(
       screen.getByText(
         "PDB output is unavailable for structures with 100,000 or more atoms.",
       ),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Download mmCIF" }));
+    await user.click(screen.getByRole("button", { name: "Download" }));
+    expect(screen.getByRole("menuitem", { name: /PDB/ })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByText("Unavailable for 100,000+ atoms")).toBeInTheDocument();
+    await user.click(screen.getByRole("menuitem", { name: /mmCIF/ }));
 
     const anchor = click.mock.contexts[0] as HTMLAnchorElement;
     expect(anchor.download).toBe("1EHZ_SimRNA.cif");
@@ -106,16 +112,24 @@ describe("ResultView", () => {
         jsonResponse({ detail: "Server error." }, 500),
       [`POST ${files.consumed_url}`]: () => new Response(null, { status: 204 }),
     });
-    renderResult();
+    const { user } = renderResult();
 
     expect(await screen.findByText("Viewer showing reference")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Download PDB" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Download mmCIF" })).toBeEnabled();
     expect(
       screen.getByText(
         "The PDB file could not be downloaded. The mmCIF file is still available.",
       ),
     ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Download" }));
+    expect(screen.getByRole("menuitem", { name: /PDB/ })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByRole("menuitem", { name: /mmCIF/ })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   it("links citation markers in the model description", async () => {
@@ -142,7 +156,7 @@ describe("ResultView", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("This result has expired.");
     expect(alert).toHaveTextContent("kept for about an hour");
-    expect(screen.getByRole("button", { name: "Download mmCIF" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Download" })).toBeDisabled();
   });
 
   it("shows the server message when the result files cannot be loaded", async () => {
