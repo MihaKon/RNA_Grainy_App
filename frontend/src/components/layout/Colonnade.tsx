@@ -10,7 +10,7 @@ export function Colonnade() {
         alt=""
         width={1099}
         height={147}
-        className="mx-auto block w-72 lg:w-[26rem]"
+        className="mx-auto block w-80 lg:w-[32rem]"
       />
       <CivicStripe />
     </div>
