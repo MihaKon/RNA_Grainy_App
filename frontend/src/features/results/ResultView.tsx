@@ -11,7 +11,6 @@ import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { AtomMappingTable } from "@/features/models/AtomMappingTable";
 import { ModelDescription } from "@/features/models/ModelDescription";
 import { downloadTextFile } from "@/lib/download";
-import { formatBeadsPerResidue } from "@/lib/format";
 
 import { ModelReport } from "./ModelReport";
 import { preloadStructureViewer } from "./viewer/preload";
@@ -29,30 +28,17 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 lg:px-8">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-label tracking-[0.15em] text-ink-3 uppercase">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1 text-accent hover:text-accent-hover"
-        >
-          <ArrowLeft aria-hidden="true" className="size-3" /> New structure
-        </Link>
-        <span aria-hidden="true">/</span>
-        <span>Job {result.workspace_id.slice(0, 8)}</span>
-        <span className="inline-flex items-center gap-1.5">
-          <span aria-hidden="true" className="size-1.5 rounded-full bg-blue" />
-          Completed
-        </span>
-      </div>
+      <Link
+        to="/"
+        className="inline-flex items-center gap-1 font-mono text-label tracking-[0.15em] text-accent uppercase hover:text-accent-hover"
+      >
+        <ArrowLeft aria-hidden="true" className="size-3" /> New structure
+      </Link>
 
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-hero-compact text-ink lg:text-heading">
-            Coarse-grained <span className="text-accent">{result.filename}</span>
-          </h1>
-          <p className="text-sm text-ink-2">
-            {model.name} — {formatBeadsPerResidue(model.beads_per_residue)}
-          </p>
-        </div>
+        <h1 className="font-display text-hero-compact text-ink lg:text-heading">
+          {result.filename}
+        </h1>
         <DropdownMenu
           label="Download"
           disabled={!structures}
@@ -84,8 +70,8 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
         />
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[3fr_2fr]">
-        <div>
+      <div className="mt-8 grid gap-6 lg:grid-cols-[2fr_3fr]">
+        <div className="min-w-0 lg:order-last">
           {structuresQuery.isError ? (
             <Alert severity="error">
               <p className="font-medium">The result could not be loaded.</p>
@@ -111,34 +97,27 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
           )}
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           <ModelReport result={result} />
-
-          <Alert severity="info">
-            <ul className="flex list-disc flex-col gap-1 pl-4">
-              <li>
-                Reference atoms are counted from the first model and all chains unless a
-                selection was made.
-              </li>
-              {pdbAvailable ? (
-                <li>
-                  Chain names may be shortened in PDB files of large structures. Check
-                  the output before further use.
-                </li>
-              ) : (
-                <li>
-                  PDB output is unavailable for structures with 100,000 or more atoms.
-                </li>
-              )}
-            </ul>
-          </Alert>
-
           <Disclosure title="Model description">
             <ModelDescription model={model} />
           </Disclosure>
           <Disclosure title="Atom mapping">
             <AtomMappingTable mapping={model.mapping} />
           </Disclosure>
+          <Alert severity="info">
+            <ul className="flex list-disc flex-col gap-1 pl-4">
+              <li>
+                Reference atoms are counted in the first model across all chains, unless
+                specific models or chains were selected.
+              </li>
+              <li>
+                {pdbAvailable
+                  ? "Chain names in PDB files of large structures may be shortened, so check the file before further use."
+                  : "PDB output is unavailable for structures with 100,000 or more atoms; use mmCIF instead."}
+              </li>
+            </ul>
+          </Alert>
         </div>
       </div>
     </div>

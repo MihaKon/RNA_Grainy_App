@@ -18,7 +18,7 @@ interface StructureViewerProps {
 
 const STRUCTURE_TOGGLES: readonly { id: StructureId; label: string }[] = [
   { id: "coarse", label: "Coarse-grained" },
-  { id: "reference", label: "All-atom" },
+  { id: "reference", label: "Reference" },
 ];
 
 const REPRESENTATIONS: readonly { type: RepresentationType; label: string }[] = [
@@ -178,7 +178,7 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
           ))}
         </ControlGroup>
 
-        <ControlGroup label="All-atom color">
+        <ControlGroup label="Reference color">
           <ToggleButton
             pressed={colorByElement}
             disabled={controlsDisabled}
