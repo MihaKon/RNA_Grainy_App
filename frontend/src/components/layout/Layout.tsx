@@ -1,6 +1,7 @@
 import { type Location, Outlet, ScrollRestoration } from "react-router";
 
 import { CivicStripe } from "./CivicStripe";
+import { Colonnade } from "./Colonnade";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 
@@ -14,6 +15,7 @@ export function Layout() {
       <main className="flex-1">
         <Outlet />
       </main>
+      <Colonnade />
       <Footer />
       <ScrollRestoration getKey={getScrollKey} />
     </div>
