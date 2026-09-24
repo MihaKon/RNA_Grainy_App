@@ -7,7 +7,7 @@ import { resultStructuresQueryOptions } from "@/api/results";
 import type { CoarseGrainResult } from "@/api/types";
 import { Alert } from "@/components/ui/Alert";
 import { Disclosure } from "@/components/ui/Disclosure";
-import { DropdownMenu } from "@/components/ui/DropdownMenu";
+import { Button } from "@/components/ui/Button";
 import { AtomMappingTable } from "@/features/models/AtomMappingTable";
 import { ModelDescription } from "@/features/models/ModelDescription";
 import { downloadTextFile } from "@/lib/download";
@@ -39,35 +39,31 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
         <h1 className="font-display text-hero-compact text-ink lg:text-heading">
           {result.filename}
         </h1>
-        <DropdownMenu
-          label="Download"
-          disabled={!structures}
-          items={[
-            {
-              id: "pdb",
-              label: "PDB",
-              description: pdbAvailable
-                ? `${downloadName}.pdb`
-                : "Unavailable for 100,000+ atoms",
-              disabled: !structures?.coarsePdb,
-              onSelect: () => {
+        <div className="flex flex-wrap gap-3">
+          <Button
+            variant={pdbAvailable ? "ghost" : "primary"}
+            disabled={!structures}
+            onClick={() => {
+              if (structures) {
+                downloadTextFile(structures.coarseMmcif, `${downloadName}.cif`);
+              }
+            }}
+          >
+            Download mmCIF
+          </Button>
+          {pdbAvailable && (
+            <Button
+              disabled={!structures?.coarsePdb}
+              onClick={() => {
                 if (structures?.coarsePdb) {
                   downloadTextFile(structures.coarsePdb, `${downloadName}.pdb`);
                 }
-              },
-            },
-            {
-              id: "mmcif",
-              label: "mmCIF",
-              description: `${downloadName}.cif`,
-              onSelect: () => {
-                if (structures) {
-                  downloadTextFile(structures.coarseMmcif, `${downloadName}.cif`);
-                }
-              },
-            },
-          ]}
-        />
+              }}
+            >
+              Download PDB
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[3fr_2fr]">
