@@ -47,6 +47,8 @@ describe("ResultView", () => {
     renderResult();
 
     expect(await screen.findByText("Viewer showing reference")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^1EHZ$/);
+    expect(screen.queryByText(/Job/)).not.toBeInTheDocument();
     const report = screen.getByRole("region", { name: "Conversion summary" });
     expect(within(report).getByText("1,821")).toBeInTheDocument();
     expect(within(report).getByText("310")).toBeInTheDocument();
@@ -87,7 +89,7 @@ describe("ResultView", () => {
     expect(await screen.findByText("Viewer showing reference")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "PDB output is unavailable for structures with 100,000 or more atoms.",
+        "PDB output is unavailable for structures with 100,000 or more atoms; use mmCIF instead.",
       ),
     ).toBeInTheDocument();
 
