@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from typing import Any
 
@@ -25,15 +26,107 @@ _REFERENCE_MMCIF_CATEGORIES = (
 
 def _base_mmcif_groups() -> MmcifOutputGroups:
     groups = MmcifOutputGroups(False)
+    groups.atoms = True
+    groups.group_pdb = True
     groups.entry = True
     groups.title_keywords = True
-    groups.conn = True
     groups.cell = True
+    groups.conn = True
     groups.atoms = True
     groups.entity = True
     groups.entity_poly = True
     groups.struct_asym = True
     return groups
+
+
+def _base_pdb_options(minimal: bool) -> PdbWriteOptions:
+    options = PdbWriteOptions(minimal=minimal)
+    options.preserve_serial = True
+    options.conect_records = True
+    options.link_records = False
+    return options
+
+
+def _fix_mmcif_entry_id(
+    block: cif.Block,
+    structure: Structure,
+    filename: str | None,
+    coarse: bool,
+    model_name: str | None = None,
+) -> None:
+    raw_id = block.find_value("_entry.id")
+    entry_id = cif.as_string(raw_id).strip() if raw_id is not None else ""
+
+    candidates = (entry_id, filename or "", structure.name, block.name)
+    base_name = next(
+        (
+            value.strip()
+            for value in candidates
+            if value and value.strip() not in ("", "?", ".")
+        ),
+        "RNAgrainy",
+    )
+    safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", base_name).strip("_")
+    safe_name = safe_name or "RNAgrainy"
+
+    if coarse:
+        safe_model_name = (
+            re.sub(r"[^A-Za-z0-9_-]+", "_", model_name or "coarse_grained").strip("_")
+            or "coarse_grained"
+        )
+
+        coarse_id = f"{safe_name}_{safe_model_name}"
+        block.name = coarse_id
+        block.set_pair("_entry.id", coarse_id)
+    elif entry_id in ("", "?", "."):
+        block.set_pair("_entry.id", safe_name)
+        block.name = safe_name
+
+
+def _fix_pdb_header_and_title(
+    pdb_structure: Structure,
+    pdb_content: str,
+    filename: str | None,
+    model_name: str | None,
+    source_content: str | None,
+    source_format: SupportedFormats | None,
+) -> str:
+    prefix: list[str] = []
+    header = None
+
+    if source_format == SupportedFormats.PDB and source_content is not None:
+        header = next(
+            (line for line in source_content.splitlines() if line.startswith("HEADER")),
+            None,
+        )
+    elif source_format in (SupportedFormats.CIF, SupportedFormats.MMCIF):
+        generated_headers = pdb_structure.make_pdb_string(
+            options=PdbWriteOptions(headers_only=True)
+        )
+        header = next(
+            (
+                line
+                for line in generated_headers.splitlines()
+                if line.startswith("HEADER")
+            ),
+            None,
+        )
+
+    if header is not None:
+        prefix.append(header)
+
+    if model_name is not None:
+        entry_id = (
+            pdb_structure.info["_entry.id"].strip()
+            if "_entry.id" in pdb_structure.info
+            else ""
+        )
+        base_name = (
+            entry_id if entry_id not in ("", "?", ".") else filename or "RNAgrainy"
+        )
+        prefix.append(f"TITLE     {base_name}_{model_name}")
+
+    return "\n".join(prefix) + "\n" + pdb_content if prefix else pdb_content
 
 
 def filter_structure_inplace(
@@ -85,26 +178,64 @@ class StructureProcessor:
         )
 
     @staticmethod
-    def structure_to_pdb_string(structure: Structure) -> str:
+    def structure_to_pdb_string(
+        structure: Structure,
+        minimal_metadata: bool,
+        filename: str | None = None,
+        model_name: str | None = None,
+        source_content: str | None = None,
+        source_format: SupportedFormats | None = None,
+    ) -> str:
         pdb_structure = structure.clone()
-        write_options = PdbWriteOptions(preserve_serial=True, conect_records=True)
-        write_options.link_records = False
+        write_options = _base_pdb_options(minimal=minimal_metadata)
+
+        if minimal_metadata:
+            write_options.cryst1_record = False
+            write_options.end_record = True
+
         pdb_structure.shorten_chain_names()
-        return pdb_structure.make_pdb_string(options=write_options)
+        pdb_content = pdb_structure.make_pdb_string(options=write_options)
+
+        if not minimal_metadata:
+            return pdb_content
+
+        return _fix_pdb_header_and_title(
+            pdb_structure,
+            pdb_content,
+            filename,
+            model_name,
+            source_content,
+            source_format,
+        )
 
     @staticmethod
-    def coarse_structure_to_cif_string(structure: Structure) -> str:
+    def coarse_structure_to_cif_string(
+        structure: Structure,
+        model_name: str,
+        filename: str | None = None,
+    ) -> str:
         groups = _base_mmcif_groups()
+        groups.title_keywords = False
+        groups.cell = False
+        groups.entity_poly_seq = True
+
         document = structure.make_mmcif_document(groups=groups)
+        _fix_mmcif_entry_id(
+            document.sole_block(),
+            structure,
+            filename,
+            coarse=True,
+            model_name=model_name,
+        )
         return document.as_string()
 
     @staticmethod
     def reference_structure_to_cif_string(
         structure: Structure,
         source_content: str,
+        filename: str,
     ) -> str:
         groups = _base_mmcif_groups()
-        groups.assembly = True
         groups.entity_poly_seq = True
         groups.chem_comp = True
 
@@ -121,6 +252,12 @@ class StructureProcessor:
                     raw=True,
                 )
 
+        _fix_mmcif_entry_id(
+            target_block,
+            structure,
+            filename,
+            coarse=False,
+        )
         return document.as_string()
 
     @staticmethod

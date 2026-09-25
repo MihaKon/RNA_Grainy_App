@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.services.structures import StructureProcessor
 from pdb_audit.issues import IssueContent
 from pdb_audit.validators import ValidatedStructure
@@ -17,7 +18,9 @@ def save_issue_artifacts(item: ValidatedStructure, cache_directory: Path) -> Non
     structure_directory = cache_directory / item.file_name
 
     reference_content = StructureProcessor.reference_structure_to_cif_string(
-        item.reference_structure, item.original_reference_cif
+        structure=item.reference_structure,
+        source_content=item.original_reference_cif,
+        filename=item.file_name,
     )
     save_structure_as_cif(
         content=reference_content,
@@ -28,7 +31,9 @@ def save_issue_artifacts(item: ValidatedStructure, cache_directory: Path) -> Non
         if not result.issues:
             continue
         coarse_content = StructureProcessor.coarse_structure_to_cif_string(
-            result.structure
+            structure=result.structure,
+            model_name=CoarseGrainModelRegistry.get_model(model_name).name_verbose,
+            filename=item.file_name,
         )
         save_structure_as_cif(
             content=coarse_content,

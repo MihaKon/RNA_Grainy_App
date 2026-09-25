@@ -146,7 +146,19 @@ class BaseCoarseGrainModel(ABC):
 
         coarse_structure.entities.clear()
         coarse_structure.setup_entities()
-        coarse_structure.assign_label_seq_id()
+
+        for chain in coarse_structure[0]:
+            polymer = chain.get_polymer()
+            if polymer:
+                entity = coarse_structure.get_entity_of(polymer)
+                entity.full_sequence = polymer.extract_sequence()
+
+        for model in coarse_structure:
+            for chain in model:
+                for residue in chain:
+                    residue.label_seq = None
+
+        coarse_structure.assign_label_seq_id(force=True)
         return coarse_structure
 
     def _get_bead_name_for_bead_id(self, res_name: str, bead_id: str) -> str:

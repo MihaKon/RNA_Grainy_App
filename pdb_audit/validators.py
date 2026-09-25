@@ -59,6 +59,7 @@ class Validator:
                 model = model_class()
 
                 context = ValidationContext(
+                    file_name=item.file_name,
                     original_reference_cif=item.original_reference_cif,
                     reference_structure=item.reference_structure,
                     coarse_grain_structure=result.structure,

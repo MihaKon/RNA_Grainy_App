@@ -110,9 +110,10 @@ def check_reference_cif_entity_metadata_lost(
     context: ValidationContext,
 ) -> list[IssueContent]:
     original_block = cif.read_string(context.original_reference_cif).sole_block()
-
     serialized_cif = StructureProcessor.reference_structure_to_cif_string(
-        context.reference_structure, context.original_reference_cif
+        structure=context.reference_structure,
+        source_content=context.original_reference_cif,
+        filename=context.file_name,
     )
     serialized_block = cif.read_string(serialized_cif).sole_block()
 
