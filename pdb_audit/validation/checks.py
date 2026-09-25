@@ -163,7 +163,10 @@ def check_bead_skipped_due_to_missing_source_atoms(
             coarse_beads.add((get_residue_key(model, chain, residue), atom.name))
 
     for model, chain, residue in iter_residues(context.reference_structure):
-        if residue.name not in model_config:
+        if (
+            residue.name not in model_config
+            or residue.entity_type == EntityType.NonPolymer
+        ):
             continue
 
         residue_key = get_residue_key(model, chain, residue)
