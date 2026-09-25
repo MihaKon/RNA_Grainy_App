@@ -206,6 +206,9 @@ class BaseCoarseGrainModel(ABC):
             for chain in model:
                 self._connect_chain_residues(structure, chain, intra_rules, inter_rule)
 
+        for number, connection in enumerate(structure.connections, start=1):
+            connection.name = f"{number}"
+
     def _connect_chain_residues(
         self, structure: Structure, chain: Chain, intra_rules: list, inter_rule: dict
     ) -> None:
