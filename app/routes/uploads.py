@@ -43,34 +43,57 @@ def process_structure_and_get_metadata(
 async def save_structures(
     workspace_id: str,
     original_structure: Structure,
+    filename: str,
     file_format: SupportedFormats,
     coarse_structure: Structure,
+    source_content: str,
+    model_name: str,
 ) -> None:
     original_format = file_format.normalize_format()
 
-    original_content = StructureProcessor.structure_to_cif_string(original_structure)
+    if original_format == SupportedFormats.PDB:
+        original_content = StructureProcessor.structure_to_pdb_string(
+            structure=original_structure, minimal_metadata=False
+        )
+    else:
+        original_content = StructureProcessor.reference_structure_to_cif_string(
+            structure=original_structure,
+            source_content=source_content,
+            filename=filename,
+        )
 
-    cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
+    coarse_mmcif_content = StructureProcessor.coarse_structure_to_cif_string(
+        structure=coarse_structure,
+        model_name=model_name,
+        filename=filename,
+    )
 
-    pdb_content: str | None = None
+    coarse_pdb_content: str | None = None
 
     if StructureProcessor.get_structure_atom_count(coarse_structure) <= 99999:
-        pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
+        coarse_pdb_content = StructureProcessor.structure_to_pdb_string(
+            structure=coarse_structure,
+            minimal_metadata=True,
+            filename=filename,
+            model_name=model_name,
+            source_content=source_content,
+            source_format=original_format,
+        )
 
     WorkspaceManager.setup_workspace_dir(workspace_id)
 
     try:
-        if pdb_content is not None:
+        if coarse_pdb_content is not None:
             await WorkspaceManager.create_file(
                 workspace_id,
-                pdb_content,
+                coarse_pdb_content,
                 f"coarse.{SupportedFormats.PDB.value}",
             )
         await WorkspaceManager.create_file(
             workspace_id, original_content, f"reference.{original_format.value}"
         )
         await WorkspaceManager.create_file(
-            workspace_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
+            workspace_id, coarse_mmcif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
         )
     except Exception:
         WorkspaceManager.cleanup_workspace(workspace_id)
@@ -98,9 +121,6 @@ async def handle_request_and_render(
             custom_model_data,
         )
     )
-    await save_structures(
-        workspace_id, original_structure, file_format, coarse_structure
-    )
 
     context = StructureProcessor.build_comparison_context(
         request=request,
@@ -113,6 +133,17 @@ async def handle_request_and_render(
         selected_chains=chains,
         custom_model_data=custom_model_data,
     )
+
+    await save_structures(
+        workspace_id=workspace_id,
+        original_structure=original_structure,
+        filename=filename,
+        file_format=file_format,
+        coarse_structure=coarse_structure,
+        source_content=file_content,
+        model_name=context["model"]["name"],
+    )
+
     return TEMPLATES.TemplateResponse(
         request=request,
         name="comparison.html",

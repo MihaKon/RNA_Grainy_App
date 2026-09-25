@@ -10,3 +10,5 @@ node_modules
 temp
 tests
 README.md
+
+pdb_audit/cache/

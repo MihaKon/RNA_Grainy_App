@@ -11,3 +11,4 @@ temp
 !app/static/images
 !app/static/presets
 !app/static/js
+pdb_audit/cache/

@@ -16,6 +16,15 @@ window.createMolstarViewer = async function (containerId, structures) {
   const plugin = viewer.plugin;
   const structureEntries = new Map();
 
+  const componentTypes = [
+    "polymer",
+    "ligand",
+    "non-standard",
+    "branched",
+    "water",
+    "ion",
+  ];
+
   const representationTypes = new Set([
     "ball-and-stick",
     "cartoon",
@@ -28,11 +37,21 @@ window.createMolstarViewer = async function (containerId, structures) {
   ]);
 
   const structureColors = {
-    reference: 0x047857, // emerald-700
-    coarse: 0xf97316,    // orange-500
+    reference: 0x047857,
+    coarse: 0xf97316,
   };
 
-  function createRepresentationConfig(entry, representationType) {
+  function getStructureEntry(structureId) {
+    const entry = structureEntries.get(structureId);
+
+    if (!entry) {
+      throw new Error(`Unknown Mol* structure ${structureId}`);
+    }
+
+    return entry;
+  }
+
+  function createRepresentationConfig(entry, representationType, colorMode) {
     if (!representationTypes.has(representationType)) {
       throw new Error(
         `Unsupported representation type: ${representationType}`,
@@ -48,10 +67,10 @@ window.createMolstarViewer = async function (containerId, structures) {
     const config = {
       type: representationType,
       typeParams,
-      color: entry.colorMode,
+      color: colorMode,
     };
 
-    if (entry.colorMode === "uniform") {
+    if (colorMode === "uniform") {
       config.colorParams = {
         value: entry.uniformColor,
       };
@@ -60,12 +79,37 @@ window.createMolstarViewer = async function (containerId, structures) {
     return config;
   }
 
-  function getStructureEntry(structureId) {
-    const structure = structureEntries.get(structureId);
-    if (!structure) {
-      throw new Error(`Unknown Mol* structure ${structureId}`);
+  async function updateComponentRepresentation(
+    entry,
+    component,
+    representationType,
+    colorMode,
+  ) {
+    const representation =
+      await plugin.builders.structure.representation.addRepresentation(
+        component.selector,
+        createRepresentationConfig(
+          entry,
+          representationType,
+          colorMode,
+        ),
+        {
+          tag: component.tag,
+        },
+      );
+
+    if (!representation) {
+      throw new Error(
+        `Could not create ${representationType} representation ` +
+          `for ${component.type}`,
+      );
     }
-    return structure;
+
+    plugin.state.data.updateCellState(representation.ref, {
+      isHidden: !entry.visible,
+    });
+
+    component.representation = representation;
   }
 
   function setStructureVisibility(structureId, visible) {
@@ -75,54 +119,53 @@ window.createMolstarViewer = async function (containerId, structures) {
 
     const entry = getStructureEntry(structureId);
     entry.visible = visible;
-    plugin.state.data.updateCellState(
-      entry.representation.ref,
-      {
-        isHidden: !visible,
-      },
-    );
+
+    for (const component of entry.components) {
+      plugin.state.data.updateCellState(
+        component.representation.ref,
+        {
+          isHidden: !visible,
+        },
+      );
+    }
   }
 
-  async function setStructureRepresentation(structureId, representationType,) {
+  async function setStructureRepresentation(structureId, representationType) {
+    if (!representationTypes.has(representationType)) {
+      throw new Error(
+        `Unsupported representation type: ${representationType}`,
+      );
+    }
+
     const entry = getStructureEntry(structureId);
+
     if (entry.representationType === representationType) {
       return;
     }
 
-    const representation = await plugin.builders.structure.representation.addRepresentation(
-      entry.structure,
-      createRepresentationConfig(
-        entry,
-        representationType,
-      ),
-      {
-        tag: entry.representationTag,
-      },
+    const polymerComponent = entry.components.find(
+      (component) => component.type === "polymer",
     );
 
-    if (!representation) {
+    if (!polymerComponent) {
       throw new Error(
-        `Could not create ${representationType} representation ` +
-          `for ${structureId}`,
+        `Polymer component not found for ${structureId}`,
       );
     }
 
-    entry.representation = representation;
-    entry.representationType = representationType;
-
-    plugin.state.data.updateCellState(
-      representation.ref,
-      {
-        isHidden: !entry.visible,
-      },
+    await updateComponentRepresentation(
+      entry,
+      polymerComponent,
+      representationType,
+      entry.colorMode,
     );
+
+    entry.representationType = representationType;
   }
 
   async function setStructureColoring(structureId, colorMode) {
     if (!colorModes.has(colorMode)) {
-      throw new Error(
-        `Unsupported color mode: ${colorMode}`,
-      );
+      throw new Error(`Unsupported color mode: ${colorMode}`);
     }
 
     const entry = getStructureEntry(structureId);
@@ -131,49 +174,38 @@ window.createMolstarViewer = async function (containerId, structures) {
       return;
     }
 
-    const representation = await plugin.builders.structure.representation.addRepresentation(
-      entry.structure,
-      createRepresentationConfig(
-        {
-          ...entry,
-          colorMode,
-        },
-        entry.representationType,
-      ),
-      {
-        tag: entry.representationTag,
-      },
-    );
+    for (const component of entry.components) {
+      const representationType =
+        component.type === "polymer"
+          ? entry.representationType
+          : "ball-and-stick";
 
-    if (!representation) {
-      throw new Error(
-        `Could not change coloring for ${structureId}`,
+      await updateComponentRepresentation(
+        entry,
+        component,
+        representationType,
+        colorMode,
       );
     }
 
-    entry.representation = representation;
     entry.colorMode = colorMode;
-
-    plugin.state.data.updateCellState(
-      representation.ref,
-      {
-        isHidden: !entry.visible,
-      },
-    );
   }
 
   for (const structureData of structures) {
     if (!structureData.id) {
-      throw new Error(`Every Mol* structure must have and id.`);
+      throw new Error("Every Mol* structure must have an id.");
     }
 
     if (structureEntries.has(structureData.id)) {
-      throw new Error(`Duplicate Mol* structure id ${structureData.id}`);
+      throw new Error(
+        `Duplicate Mol* structure id ${structureData.id}`,
+      );
     }
 
     const data = await plugin.builders.data.download(
       {
         url: structureData.url,
+        label: structureData.label,
       },
       {
         state: {
@@ -188,14 +220,12 @@ window.createMolstarViewer = async function (containerId, structures) {
     );
 
     const model = await plugin.builders.structure.createModel(trajectory);
-
     const structure = await plugin.builders.structure.createStructure(model);
 
     const entry = {
       structure,
-      representation: null,
-      representationTag: `rnagrainy-${structureData.id}-representation`,
-      representationType: null,
+      components: [],
+      representationType: "ball-and-stick",
       colorMode: "uniform",
       uniformColor: structureData.isCoarse
         ? structureColors.coarse
@@ -204,14 +234,35 @@ window.createMolstarViewer = async function (containerId, structures) {
       visible: true,
     };
 
-    entry.representation = await plugin.builders.structure.representation.addRepresentation(
-      structure,
-      createRepresentationConfig(entry, "ball-and-stick"),
-      {
-        tag: entry.representationTag,
-      },
-    );
-    entry.representationType = "ball-and-stick";
+    for (const componentType of componentTypes) {
+      const selector =
+        await plugin.builders.structure.tryCreateComponentStatic(
+          structure,
+          componentType,
+        );
+
+      if (!selector) {
+        continue;
+      }
+
+      const component = {
+        type: componentType,
+        selector,
+        tag:
+          `rnagrainy-${structureData.id}-` +
+          `${componentType}-representation`,
+        representation: null,
+      };
+
+      await updateComponentRepresentation(
+        entry,
+        component,
+        "ball-and-stick",
+        entry.colorMode,
+      );
+
+      entry.components.push(component);
+    }
 
     structureEntries.set(structureData.id, entry);
   }
@@ -220,9 +271,11 @@ window.createMolstarViewer = async function (containerId, structures) {
     setStructureVisibility,
     setStructureRepresentation,
     setStructureColoring,
+
     getStructureColoring(structureId) {
       return getStructureEntry(structureId).colorMode;
     },
+
     getStructure(structureId) {
       return getStructureEntry(structureId).structure;
     },
@@ -243,6 +296,5 @@ window.createMolstarViewer = async function (containerId, structures) {
       structureEntries.clear();
       viewer.dispose();
     },
-
   });
 };
