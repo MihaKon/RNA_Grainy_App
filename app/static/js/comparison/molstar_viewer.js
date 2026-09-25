@@ -144,6 +144,7 @@ window.createMolstarViewer = async function (containerId, structures) {
     const data = await plugin.builders.data.download(
       {
         url: structureData.url,
+        label: structureData.label,
       },
       {
         state: {

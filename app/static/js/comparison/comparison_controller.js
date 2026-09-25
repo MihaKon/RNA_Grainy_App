@@ -64,6 +64,7 @@
       referenceUrl: container.dataset.referenceUrl,
       coarseCifUrl: container.dataset.coarseCifUrl,
       coarsePdbUrl: container.dataset.coarsePdbUrl || null,
+      label: container.dataset.label,
       consumedUrl: container.dataset.consumedUrl,
       referenceFormat: container.dataset.referenceFormat,
       coarseFormat: container.dataset.coarseFormat,
@@ -217,12 +218,14 @@
     molstarController = await window.createMolstarViewer("molstar-container", [
       {
         id: "reference",
+        label: config.label,
         url: referenceBlobUrl,
         format: config.referenceFormat,
         isCoarse: false,
       },
       {
         id: "coarse",
+        label: config.label,
         url: coarseCifBlobUrl,
         format: config.coarseFormat,
         isCoarse: true,
