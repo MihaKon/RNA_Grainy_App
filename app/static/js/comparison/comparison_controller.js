@@ -105,7 +105,6 @@
       "backbone",
     ];
 
-
     for (const buttonId of representationButtonIds) {
       const button = document.getElementById(buttonId);
 
@@ -149,6 +148,53 @@
     });
   }
 
+  function configureColoringButton(buttonId, controller, structureId) {
+    const button = document.getElementById(buttonId);
+
+    if (!button) {
+      return;
+    }
+
+    function isElementColoringActive() {
+      return (
+        controller.getStructureColoring(structureId) ===
+        "element-symbol"
+      );
+    }
+
+    button.setAttribute(
+      "aria-pressed",
+      String(isElementColoringActive()),
+    );
+
+    button.addEventListener("click", async () => {
+      const nextColorMode = isElementColoringActive()
+        ? "uniform"
+        : "element-symbol";
+
+      button.disabled = true;
+
+      try {
+        await controller.setStructureColoring(
+          structureId,
+          nextColorMode,
+        );
+
+        button.setAttribute(
+          "aria-pressed",
+          String(isElementColoringActive()),
+        );
+      } catch (error) {
+        console.error(
+          "Could not change Mol* coloring:",
+          error,
+        );
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+
   function configureVisualizationControls(controller) {
     configureVisibilityButton(
       "vis-cg",
@@ -180,7 +226,14 @@
       "backbone",
     );
 
+    configureColoringButton(
+      "color-by-element",
+      controller,
+      "reference",
+    );
+
     setActiveRepresentationButton("b-and-s");
+
   }
 
   async function initializeComparison(container) {
