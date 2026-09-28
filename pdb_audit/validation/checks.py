@@ -623,6 +623,12 @@ def check_connectivity_between_invalid_beads(
     )
 
     allowed: set[frozenset[tuple[str, ...]]] = set()
+    original_label_seq = {
+        get_residue_key(ref_model, ref_chain, ref_residue): ref_residue.label_seq
+        for ref_model, ref_chain, ref_residue in iter_residues(
+            context.reference_structure
+        )
+    }
 
     for chain in model:
         previous_residue = None
@@ -634,6 +640,15 @@ def check_connectivity_between_invalid_beads(
 
             bead_names = model_config[residue.name]["bead_names"]
             atoms = {atom.name: atom for atom in residue}
+
+            current_label_seq = original_label_seq.get(
+                get_residue_key(model, chain, residue)
+            )
+            previous_label_seq: int | None = (
+                original_label_seq.get(get_residue_key(model, chain, previous_residue))
+                if previous_residue is not None
+                else None
+            )
 
             if isinstance(intra_rules, dict):
                 rules = intra_rules[
@@ -658,6 +673,9 @@ def check_connectivity_between_invalid_beads(
                 previous_residue is not None
                 and inter_rule.get("tail")
                 and inter_rule.get("head")
+                and previous_label_seq
+                and current_label_seq
+                and current_label_seq == previous_label_seq + 1
             ):
                 previous_bead_names = model_config[previous_residue.name]["bead_names"]
                 previous_atoms = {atom.name: atom for atom in previous_residue}
