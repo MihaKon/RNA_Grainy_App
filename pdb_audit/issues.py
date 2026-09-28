@@ -138,7 +138,7 @@ class Issues(Enum):
     EXCESSIVE_CONNECTIVITY_LENGTH = (
         "excessive_connectivity_length",
         "A connection between coarse-grained beads is unusually long",
-        Severity.ERROR,
+        Severity.WARNING,
     )
 
     # ALT LOCS ISSUES #

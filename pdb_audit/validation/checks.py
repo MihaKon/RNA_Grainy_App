@@ -101,7 +101,7 @@ def check_empty_chains(context: ValidationContext) -> list[IssueContent]:
     issues = []
 
     for model, chain in iter_chains(context.coarse_grain_structure):
-        if len(chain) == 0:
+        if chain.count_atom_sites() == 0:
             issues.append(
                 make_issue(
                     issue=Issues.EMPTY_CHAIN,
@@ -148,13 +148,29 @@ def check_reference_cif_entity_metadata_lost(
         if original_block.find_values(tag) and not serialized_block.find_values(tag):
             missing_tags.append(tag)
 
-    if not missing_tags:
+    copied_categories = (
+        "_entity.",
+        "_chem_comp.",
+        "_pdbx_struct_mod_residue.",
+    )
+
+    changed_categories = []
+    for category in copied_categories:
+        if original_block.get_mmcif_category(
+            category
+        ) != serialized_block.get_mmcif_category(category):
+            changed_categories.append(category)
+
+    if not missing_tags and not changed_categories:
         return []
 
     return [
         make_issue(
             Issues.REFERENCE_CIF_ENTITY_METADATA_LOST,
-            details=f"Missing mmCIF tags after serialization: {', '.join(missing_tags)}",
+            details=(
+                f"Missing tags: {', '.join(missing_tags) or 'none'}. "
+                f"Changed categories: {', '.join(changed_categories) or 'none'}."
+            ),
         )
     ]
 
