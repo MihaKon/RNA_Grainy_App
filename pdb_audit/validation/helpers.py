@@ -2,7 +2,7 @@ from collections import Counter
 from collections.abc import Iterator
 from typing import Literal
 
-from gemmi import Chain, EntityType, Model, Residue, Structure, cif
+from gemmi import AtomAddress, Chain, EntityType, Model, Residue, Structure, cif
 
 from app.coarse_grain.models import (
     EMPTY_ALTLOC,
@@ -160,6 +160,22 @@ def is_bead_constructible(
             available_atom_names.add(atom.name)
 
     return not available_atom_names.isdisjoint(atom_names)
+
+
+def get_connection_key(
+    first: AtomAddress, second: AtomAddress
+) -> frozenset[tuple[str, ...]]:
+    return frozenset(
+        (
+            address.chain_name,
+            address.res_id.name,
+            str(address.res_id.seqid),
+            address.res_id.segment,
+            address.atom_name,
+            address.altloc,
+        )
+        for address in (first, second)
+    )
 
 
 def make_issue(

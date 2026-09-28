@@ -236,7 +236,14 @@ class BaseCoarseGrainModel(ABC):
                     structure, res, intra_rules, chain.name
                 )
 
-            if prev_res and inter_rule.get("tail") and inter_rule.get("head"):
+            if (
+                prev_res is not None
+                and inter_rule.get("tail")
+                and inter_rule.get("head")
+                and prev_res.label_seq
+                and res.label_seq
+                and res.label_seq == prev_res.label_seq + 1
+            ):
                 self._add_inter_residue_connection(
                     structure, prev_res, res, inter_rule, chain.name
                 )

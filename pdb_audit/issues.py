@@ -53,7 +53,7 @@ class Issues(Enum):
         Severity.ERROR,
     )
 
-    # Missing, wrong or incomplete residues in the structure #
+    # MISSING, WRONG OR INCOMPLETE RESIDUES IN THE STRUCTURE #
 
     MISSING_MODIFIED_RESIDUE = (
         "missing_modified_residue",
@@ -103,12 +103,6 @@ class Issues(Enum):
         Severity.WARNING,
     )
 
-    GAP_IN_COARSE_STRUCTURE = (
-        "gap_in_coarse_structure",
-        "There is a gap in the coarse-grained structure",
-        Severity.WARNING,
-    )
-
     # CONNECTION ISSUES #
 
     CONNECTIVITY_NOT_FOUND = (
@@ -141,6 +135,12 @@ class Issues(Enum):
         Severity.WARNING,
     )
 
+    EXCESSIVE_CONNECTIVITY_LENGTH = (
+        "excessive_connectivity_length",
+        "A connection between coarse-grained beads is unusually long",
+        Severity.ERROR,
+    )
+
     # ALT LOCS ISSUES #
 
     ALT_LOC_PRESENT = (
@@ -149,17 +149,17 @@ class Issues(Enum):
         Severity.INFO,
     )
 
-    ALT_LOC_B_OCCUPANCY_IS_HIGHER_THAN_A = (
-        "alt_loc_b_occupancy_is_higher_than_a",
-        "The algorithm chose A although B alt loc has higher occupancy",
-        Severity.WARNING,
-    )
-
-    A_ALT_LOC_NOT_FOUND = (
-        "a_alt_loc_not_found",
-        "Structure contains different alt locs than A",
-        Severity.WARNING,
-    )
+    # ALT_LOC_B_OCCUPANCY_IS_HIGHER_THAN_A = (
+    #    "alt_loc_b_occupancy_is_higher_than_a",
+    #    "The algorithm chose A although B alt loc has higher occupancy",
+    #    Severity.WARNING,
+    # )
+    #
+    # A_ALT_LOC_NOT_FOUND = (
+    #    "a_alt_loc_not_found",
+    #    "Structure contains different alt locs than A",
+    #    Severity.WARNING,
+    # )
 
 
 @dataclass

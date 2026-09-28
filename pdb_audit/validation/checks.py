@@ -1,4 +1,13 @@
-from gemmi import EntityType, PolymerType, cif, find_tabulated_residue
+from typing import cast
+
+from gemmi import (
+    ConnectionType,
+    EntityType,
+    PolymerType,
+    cif,
+    find_tabulated_residue,
+    make_address,
+)
 
 from app.services.structures import StructureProcessor
 from pdb_audit.issues import IssueContent, Issues
@@ -7,6 +16,7 @@ from pdb_audit.validation.helpers import (
     CANONICAL_DNA_RESIDUES,
     ResidueKey,
     get_bead_atom_names_for_residue,
+    get_connection_key,
     get_original_atom_counts_by_entity_type,
     get_parsed_atom_counts_by_entity_type,
     get_residue_entity_category,
@@ -149,7 +159,64 @@ def check_reference_cif_entity_metadata_lost(
     ]
 
 
-# MISSING, WRONG OR INCOMPLETE RESIDUES #
+# MISSING, WRONG OR INCOMPLETE RESIDUES IN THE STRUCTURE #
+
+
+def check_missing_modified_residue(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    reference = context.reference_structure
+    model_config = context.coarse_grain_model.nucleotides_config
+
+    modified_rna = {
+        (mod.chain_name, str(mod.res_id.seqid), mod.res_id.name): mod.parent_comp_id
+        for mod in reference.mod_residues
+        if mod.parent_comp_id in {"A", "C", "G", "U"}
+    }
+
+    coarse_residues = {
+        get_residue_key(model, chain, residue)
+        for model, chain, residue in iter_residues(context.coarse_grain_structure)
+        if len(residue) > 0
+    }
+
+    missing_count = 0
+    examples: list[str] = []
+
+    for model, chain, residue in iter_residues(reference):
+        parent = modified_rna.get((chain.name, str(residue.seqid), residue.name))
+        if parent is None:
+            continue
+
+        if residue.entity_type == EntityType.NonPolymer:
+            continue
+
+        if residue.name in model_config:
+            continue
+
+        if get_residue_key(model, chain, residue) in coarse_residues:
+            continue
+
+        missing_count += 1
+        if len(examples) < 5:
+            examples.append(
+                f"model={model.num}, chain={chain.name}, "
+                f"residue={residue.seqid} {residue.name} "
+                f"(parent={parent})"
+            )
+
+    if missing_count == 0:
+        return []
+
+    return [
+        make_issue(
+            issue=Issues.MISSING_MODIFIED_RESIDUE,
+            details=(
+                f"Modified RNA residues not represented in CG: {missing_count}. "
+                f"First {len(examples)}: {'; '.join(examples)}"
+            ),
+        )
+    ]
 
 
 def check_bead_skipped_due_to_missing_source_atoms(
@@ -193,7 +260,10 @@ def check_bead_skipped_due_to_missing_source_atoms(
             if (residue_key, bead_name) in coarse_beads:
                 continue
 
-            skipped_beads.append(bead_name)
+            skipped_beads.append(
+                f"{bead_name}: required one of [{', '.join(bead_atom_names)}], "
+                f"missing [{', '.join(bead_atom_names)}]"
+            )
 
         if not skipped_beads:
             continue
@@ -204,9 +274,55 @@ def check_bead_skipped_due_to_missing_source_atoms(
                 model=model,
                 chain=chain,
                 residue=residue,
-                details=(f"Skipped beads: {', '.join(skipped_beads)}"),
+                details=f"Skipped beads: {'; '.join(skipped_beads)}",
             )
         )
+
+    return issues
+
+
+def check_bead_missing_despite_available_source_atoms(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    issues = []
+    model_config = context.coarse_grain_model.nucleotides_config
+
+    coarse_beads: set[tuple[ResidueKey, str]] = set()
+    for model, chain, residue in iter_residues(context.coarse_grain_structure):
+        residue_key = get_residue_key(model, chain, residue)
+        for atom in residue:
+            coarse_beads.add((residue_key, atom.name))
+
+    for model, chain, residue in iter_residues(context.reference_structure):
+        if residue.name not in model_config:
+            continue
+        if residue.entity_type == EntityType.NonPolymer:
+            continue
+
+        residue_key = get_residue_key(model, chain, residue)
+        missing_beads = []
+
+        for bead_id, bead_name in model_config[residue.name]["bead_names"].items():
+            if not is_bead_constructible(
+                coarse_grain_model=context.coarse_grain_model,
+                residue=residue,
+                bead_id=bead_id,
+            ):
+                continue
+
+            if (residue_key, bead_name) not in coarse_beads:
+                missing_beads.append(bead_name)
+
+        if missing_beads:
+            issues.append(
+                make_issue(
+                    issue=Issues.BEAD_MISSING_DESPITE_AVAILABLE_SOURCE_ATOMS,
+                    model=model,
+                    chain=chain,
+                    residue=residue,
+                    details=f"Missing beads: {', '.join(missing_beads)}",
+                )
+            )
 
     return issues
 
@@ -362,6 +478,385 @@ def check_dna_residues_in_coarse_structure(
                 f"Canonical DNA residues: {dna_residue_count}. "
                 f"First {len(examples)} examples: "
                 f"{'; '.join(examples)}"
+            ),
+        )
+    ]
+
+
+# CONNECTION ISSUES #
+
+
+def check_connectivity_not_found(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    structure = context.coarse_grain_structure
+
+    if len(structure) != 1:
+        return []
+
+    cg_model = context.coarse_grain_model
+    model_config = cg_model.nucleotides_config
+    raw_intra_rules, inter_rule = cg_model.connectivity_rules
+    intra_rules = cast(
+        list[list[str]] | dict[str, list[list[str]]],
+        raw_intra_rules,
+    )
+
+    missing_count = 0
+    examples: list[str] = []
+
+    original_label_seq = {
+        get_residue_key(model, chain, residue): residue.label_seq
+        for model, chain, residue in iter_residues(context.reference_structure)
+    }
+
+    for chain in structure[0]:
+        previous_residue = None
+
+        for residue in chain:
+            if residue.name not in model_config:
+                previous_residue = None
+                continue
+
+            bead_names = model_config[residue.name]["bead_names"]
+
+            if isinstance(intra_rules, dict):
+                rules = intra_rules[
+                    "purine" if residue.name in ("A", "G") else "pyrimidine"
+                ]
+            else:
+                rules = intra_rules
+
+            for source_id, target_id in rules:
+                source_name = bead_names[source_id]
+                target_name = bead_names[target_id]
+                source = next((a for a in residue if a.name == source_name), None)
+                target = next((a for a in residue if a.name == target_name), None)
+
+                if source is None or target is None:
+                    continue
+
+                if (
+                    structure.find_connection(
+                        make_address(chain, residue, source),
+                        make_address(chain, residue, target),
+                    )
+                    is None
+                ):
+                    missing_count += 1
+                    if len(examples) < 5:
+                        examples.append(
+                            f"{chain.name}/{residue.seqid}: {source_name}-{target_name}"
+                        )
+
+            current_label_seq = original_label_seq.get(
+                get_residue_key(structure[0], chain, residue)
+            )
+
+            previous_label_seq: int | None = (
+                original_label_seq.get(
+                    get_residue_key(structure[0], chain, previous_residue)
+                )
+                if previous_residue is not None
+                else None
+            )
+
+            if (
+                previous_residue is not None
+                and inter_rule.get("tail")
+                and inter_rule.get("head")
+                and previous_label_seq
+                and current_label_seq
+                and current_label_seq == previous_label_seq + 1
+            ):
+                previous_bead_names = model_config[previous_residue.name]["bead_names"]
+                tail_name = previous_bead_names[inter_rule["tail"]]
+                head_name = bead_names[inter_rule["head"]]
+
+                tail = next((a for a in previous_residue if a.name == tail_name), None)
+                head = next((a for a in residue if a.name == head_name), None)
+
+                if tail is not None and head is not None:
+                    if (
+                        structure.find_connection(
+                            make_address(chain, previous_residue, tail),
+                            make_address(chain, residue, head),
+                        )
+                        is None
+                    ):
+                        missing_count += 1
+                        if len(examples) < 5:
+                            examples.append(
+                                f"{chain.name}/{previous_residue.seqid}"
+                                f"-{residue.seqid}: {tail_name}-{head_name}"
+                            )
+
+            previous_residue = residue
+
+    if missing_count == 0:
+        return []
+
+    return [
+        make_issue(
+            issue=Issues.CONNECTIVITY_NOT_FOUND,
+            details=(
+                f"Expected connections missing: {missing_count}. "
+                f"First {len(examples)}: {'; '.join(examples)}"
+            ),
+        )
+    ]
+
+
+def check_connectivity_between_invalid_beads(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    structure = context.coarse_grain_structure
+    if len(structure) != 1:
+        return []
+
+    model = structure[0]
+    model_config = context.coarse_grain_model.nucleotides_config
+    raw_intra_rules, inter_rule = context.coarse_grain_model.connectivity_rules
+    intra_rules = cast(
+        list[list[str]] | dict[str, list[list[str]]],
+        raw_intra_rules,
+    )
+
+    allowed: set[frozenset[tuple[str, ...]]] = set()
+
+    for chain in model:
+        previous_residue = None
+
+        for residue in chain:
+            if residue.name not in model_config:
+                previous_residue = None
+                continue
+
+            bead_names = model_config[residue.name]["bead_names"]
+            atoms = {atom.name: atom for atom in residue}
+
+            if isinstance(intra_rules, dict):
+                rules = intra_rules[
+                    "purine" if residue.name in ("A", "G") else "pyrimidine"
+                ]
+            else:
+                rules = intra_rules
+
+            for source_id, target_id in rules:
+                source = atoms.get(bead_names[source_id])
+                target = atoms.get(bead_names[target_id])
+
+                if source is not None and target is not None:
+                    allowed.add(
+                        get_connection_key(
+                            make_address(chain, residue, source),
+                            make_address(chain, residue, target),
+                        )
+                    )
+
+            if (
+                previous_residue is not None
+                and inter_rule.get("tail")
+                and inter_rule.get("head")
+            ):
+                previous_bead_names = model_config[previous_residue.name]["bead_names"]
+                previous_atoms = {atom.name: atom for atom in previous_residue}
+
+                tail = previous_atoms.get(previous_bead_names[inter_rule["tail"]])
+                head = atoms.get(bead_names[inter_rule["head"]])
+
+                if tail is not None and head is not None:
+                    allowed.add(
+                        get_connection_key(
+                            make_address(chain, previous_residue, tail),
+                            make_address(chain, residue, head),
+                        )
+                    )
+
+            previous_residue = residue
+
+    invalid_count = 0
+    examples: list[str] = []
+
+    for connection in structure.connections:
+        if (
+            model.find_cra(connection.partner1).atom is None
+            or model.find_cra(connection.partner2).atom is None
+        ):
+            continue
+
+        if get_connection_key(connection.partner1, connection.partner2) in allowed:
+            continue
+
+        invalid_count += 1
+        if len(examples) < 5:
+            examples.append(
+                f"{connection.name}: {connection.partner1} -> {connection.partner2}"
+            )
+
+    if invalid_count == 0:
+        return []
+
+    return [
+        make_issue(
+            issue=Issues.CONNECTIVITY_BETWEEN_INVALID_BEADS,
+            details=(
+                f"Connections not allowed by model rules: {invalid_count}. "
+                f"First {len(examples)}: {'; '.join(examples)}"
+            ),
+        )
+    ]
+
+
+def check_duplicated_connectivity(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    structure = context.coarse_grain_structure
+
+    if len(structure) != 1:
+        return []
+
+    seen = set()
+    duplicate_count = 0
+    examples: list[str] = []
+
+    for connection in structure.connections:
+        endpoints = tuple(
+            sorted(
+                (
+                    address.chain_name,
+                    address.res_id.name,
+                    str(address.res_id.seqid),
+                    address.res_id.segment,
+                    address.atom_name,
+                    address.altloc,
+                )
+                for address in (connection.partner1, connection.partner2)
+            )
+        )
+
+        if endpoints in seen:
+            duplicate_count += 1
+            if len(examples) < 5:
+                examples.append(
+                    f"{connection.name}: {connection.partner1} ↔ {connection.partner2}"
+                )
+        else:
+            seen.add(endpoints)
+
+    if duplicate_count == 0:
+        return []
+
+    return [
+        make_issue(
+            issue=Issues.DUPLICATED_CONNECTIVITY,
+            details=(
+                f"Duplicate connections: {duplicate_count}. "
+                f"First {len(examples)}: {'; '.join(examples)}"
+            ),
+        )
+    ]
+
+
+def check_connectivity_with_not_existent_bead(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    structure = context.coarse_grain_structure
+    broken_count = 0
+    examples: list[str] = []
+
+    for connection in structure.connections:
+        exists_in_one_model = any(
+            model.find_cra(connection.partner1).atom is not None
+            and model.find_cra(connection.partner2).atom is not None
+            for model in structure
+        )
+        if exists_in_one_model:
+            continue
+
+        broken_count += 1
+        if len(examples) < 5:
+            examples.append(
+                f"{connection.name}: {connection.partner1} → {connection.partner2}"
+            )
+
+    if broken_count == 0:
+        return []
+
+    return [
+        make_issue(
+            issue=Issues.CONNECTIVITY_WITH_NOT_EXISTENT_BEAD,
+            details=(
+                f"Connections without both beads in one model: {broken_count}. "
+                f"First {len(examples)}: {'; '.join(examples)}"
+            ),
+        )
+    ]
+
+
+def check_wrong_connectivity_type(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    wrong = [
+        connection
+        for connection in context.coarse_grain_structure.connections
+        if connection.type != ConnectionType.Covale
+    ]
+
+    if not wrong:
+        return []
+
+    examples = "; ".join(
+        f"{connection.name}: {connection.type.name}" for connection in wrong[:5]
+    )
+    return [
+        make_issue(
+            issue=Issues.WRONG_CONNECTIVITY_TYPE,
+            details=f"Non-covalent connections: {len(wrong)}. First examples: {examples}",
+        )
+    ]
+
+
+def check_excessive_connectivity_length(
+    context: ValidationContext,
+) -> list[IssueContent]:
+    structure = context.coarse_grain_structure
+
+    if len(structure) != 1:
+        return []
+
+    max_length = 8.0
+    model = structure[0]
+    long_count = 0
+    examples: list[str] = []
+
+    for connection in structure.connections:
+        atom1 = model.find_cra(connection.partner1).atom
+        atom2 = model.find_cra(connection.partner2).atom
+
+        if atom1 is None or atom2 is None:
+            continue
+
+        distance = atom1.pos.dist(atom2.pos)
+        if distance <= max_length:
+            continue
+
+        long_count += 1
+        examples.append(
+            f"{connection.name}: "
+            f"{connection.partner1} -> {connection.partner2} "
+            f"({distance:.2f} Å)"
+        )
+
+    if long_count == 0:
+        return []
+
+    return [
+        make_issue(
+            issue=Issues.EXCESSIVE_CONNECTIVITY_LENGTH,
+            details=(
+                f"Connections longer than {max_length:g} Å: {long_count}. "
+                f"{len(examples)} examples: {'; '.join(examples)}"
             ),
         )
     ]
