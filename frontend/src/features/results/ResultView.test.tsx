@@ -63,6 +63,7 @@ describe("ResultView", () => {
       "CG beads",
       "Atom reduction",
     ]);
+    expect(within(report).getByText("5 beads per nucleotide")).toBeInTheDocument();
     expect(within(report).getByText("1,821")).toBeInTheDocument();
     expect(within(report).getByText("310")).toBeInTheDocument();
     expect(within(report).getByText("82.98%")).toBeInTheDocument();

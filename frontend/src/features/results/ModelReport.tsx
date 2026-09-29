@@ -5,7 +5,7 @@ export function ModelReport({ result }: { result: CoarseGrainResult }) {
   const { atom_counts: atomCounts, model } = result;
   const rows = [
     ["CG model", model.name],
-    ["CG resolution", formatBeadsPerResidue(model.beads_per_residue)],
+    ["CG resolution", formatBeadsPerResidue(model.beads_per_residue, "nucleotide")],
     ["Input models", result.selected_models.join(", ") || "All"],
     ["Input chains", result.selected_chains.join(", ") || "All"],
     ["Input atoms", atomCounts.original.toLocaleString("en-US")],

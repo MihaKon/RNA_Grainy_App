@@ -20,9 +20,12 @@ export function formatBeadCount(beads: readonly number[]): string {
   return formatList(beads.map(String));
 }
 
-export function formatBeadsPerResidue(beads: readonly number[]): string {
+export function formatBeadsPerResidue(
+  beads: readonly number[],
+  unit: "residue" | "nucleotide" = "residue",
+): string {
   const isSingular = beads.length === 1 && beads[0] === 1;
-  return `${formatBeadCount(beads)} ${isSingular ? "bead" : "beads"} per residue`;
+  return `${formatBeadCount(beads)} ${isSingular ? "bead" : "beads"} per ${unit}`;
 }
 
 export function formatPercent(fraction: number): string {
