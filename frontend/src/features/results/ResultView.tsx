@@ -107,6 +107,11 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
                     ? "Chain names in PDB files of large structures may be shortened, so check the file before further use."
                     : "PDB output is unavailable for structures with 100,000 or more atoms; use mmCIF instead."}
               </li>
+              <li>
+                Some beads may be skipped for incomplete residues or residues with
+                incorrect atoms, because the atoms they are built from are missing or
+                wrong.
+              </li>
             </ul>
           </Alert>
         </div>
