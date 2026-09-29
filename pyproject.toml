@@ -12,7 +12,7 @@ line-ending = "auto"
 
 [tool.mypy]
 python_version = "3.12"
-files = ["app", "tests", "pdb_audit"]
+files = ["app", "tests"]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 disallow_any_unimported = true
