@@ -141,6 +141,10 @@ class BaseCoarseGrainModel(ABC):
         coarse_structure = original_structure.clone()
         coarse_structure.connections = ConnectionList()
 
+        coarse_structure.setup_entities()
+        coarse_structure.assign_label_seq_id(force=True)
+        self._handle_modified_residues_as_their_parents(coarse_structure)
+
         self._filter_atoms(coarse_structure)
         self._rebuild_connectivity(coarse_structure)
 
@@ -240,8 +244,8 @@ class BaseCoarseGrainModel(ABC):
                 prev_res is not None
                 and inter_rule.get("tail")
                 and inter_rule.get("head")
-                and prev_res.label_seq
-                and res.label_seq
+                and prev_res.label_seq is not None
+                and res.label_seq is not None
                 and res.label_seq == prev_res.label_seq + 1
             ):
                 self._add_inter_residue_connection(
@@ -327,6 +331,46 @@ class BaseCoarseGrainModel(ABC):
             conn.asu = Asu.Same
 
         return conn
+
+    def _get_modified_residue_parents(
+        self,
+        structure: Structure,
+    ) -> dict[tuple[str, str, str], str]:
+        modified_residue_parents: dict[tuple[str, str, str], str] = {}
+
+        for modification in structure.mod_residues:
+            if modification.parent_comp_id not in self.nucleotides_config:
+                continue
+
+            key = (
+                modification.chain_name,
+                str(modification.res_id.seqid),
+                modification.res_id.name,
+            )
+            modified_residue_parents[key] = modification.parent_comp_id
+
+        return modified_residue_parents
+
+    def _handle_modified_residues_as_their_parents(self, structure: Structure) -> None:
+        modified_residue_parents = self._get_modified_residue_parents(structure)
+
+        for model in structure:
+            for chain in model:
+                for residue in chain:
+                    parent_name = modified_residue_parents.get(
+                        (
+                            chain.name,
+                            str(residue.seqid),
+                            residue.name,
+                        )
+                    )
+
+                    if (
+                        parent_name is not None
+                        and residue.entity_type != EntityType.NonPolymer
+                    ):
+                        residue.name = parent_name
+                        residue.het_flag = "A"
 
 
 class CalculateBeadModel(BaseCoarseGrainModel):

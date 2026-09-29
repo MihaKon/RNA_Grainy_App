@@ -178,6 +178,47 @@ def get_connection_key(
     )
 
 
+def get_expected_residue_labels(
+    context: ValidationContext,
+) -> dict[ResidueKey, int | None]:
+    reference = context.reference_structure.clone()
+    reference.setup_entities()
+    reference.assign_label_seq_id(force=True)
+
+    modified_residue_parents = {
+        (
+            mod_residue.chain_name,
+            str(mod_residue.res_id.seqid),
+            mod_residue.res_id.name,
+        ): mod_residue.parent_comp_id
+        for mod_residue in reference.mod_residues
+        if mod_residue.parent_comp_id in context.coarse_grain_model.nucleotides_config
+    }
+
+    labels: dict[ResidueKey, int | None] = {}
+
+    for model, chain, residue in iter_residues(reference):
+        parent = modified_residue_parents.get(
+            (chain.name, str(residue.seqid), residue.name)
+        )
+
+        residue_name = (
+            parent
+            if parent is not None and residue.entity_type != EntityType.NonPolymer
+            else residue.name
+        )
+
+        key = (
+            model.num,
+            chain.name,
+            str(residue.seqid),
+            residue_name,
+        )
+        labels[key] = residue.label_seq
+
+    return labels
+
+
 def make_issue(
     issue: Issues,
     model: Model | None = None,

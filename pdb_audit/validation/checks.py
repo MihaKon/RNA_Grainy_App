@@ -17,6 +17,7 @@ from pdb_audit.validation.helpers import (
     ResidueKey,
     get_bead_atom_names_for_residue,
     get_connection_key,
+    get_expected_residue_labels,
     get_original_atom_counts_by_entity_type,
     get_parsed_atom_counts_by_entity_type,
     get_residue_entity_category,
@@ -210,7 +211,14 @@ def check_missing_modified_residue(
         if residue.name in model_config:
             continue
 
-        if get_residue_key(model, chain, residue) in coarse_residues:
+        coarse_key = (
+            model.num,
+            chain.name,
+            str(residue.seqid),
+            parent,
+        )
+
+        if coarse_key in coarse_residues:
             continue
 
         missing_count += 1
@@ -528,10 +536,7 @@ def check_connectivity_not_found(
     missing_count = 0
     examples: list[str] = []
 
-    original_label_seq = {
-        get_residue_key(model, chain, residue): residue.label_seq
-        for model, chain, residue in iter_residues(context.reference_structure)
-    }
+    original_label_seq = get_expected_residue_labels(context)
 
     for chain in structure[0]:
         previous_residue = None
@@ -646,12 +651,7 @@ def check_connectivity_between_invalid_beads(
     )
 
     allowed: set[frozenset[tuple[str, ...]]] = set()
-    original_label_seq = {
-        get_residue_key(ref_model, ref_chain, ref_residue): ref_residue.label_seq
-        for ref_model, ref_chain, ref_residue in iter_residues(
-            context.reference_structure
-        )
-    }
+    original_label_seq = get_expected_residue_labels(context)
 
     for chain in model:
         previous_residue = None
