@@ -2,7 +2,7 @@ import { Link } from "react-router";
 
 import putSignUrl from "@/assets/brand/put-sign-white.svg";
 import { RnaPolisMark } from "@/components/brand/RnaPolisMark";
-import { GITHUB_REPOSITORY_URL } from "@/lib/links";
+import { GITHUB_REPOSITORY_URL, RNAPOLIS_URL } from "@/lib/links";
 
 export function Footer() {
   return (
@@ -10,7 +10,14 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 lg:grid-cols-[1fr_auto] lg:px-8">
         <div>
           <p className="eyebrow text-white/60">RNAgrainy is part of</p>
-          <RnaPolisMark colorway="white" className="mt-3 h-14" />
+          <a
+            href={RNAPOLIS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-block opacity-90 transition-opacity hover:opacity-100"
+          >
+            <RnaPolisMark colorway="white" className="h-14" />
+          </a>
           <div className="mt-4 flex items-center gap-6">
             <p className="max-w-md text-sm">
               A platform of computational tools for RNA structure research, maintained
