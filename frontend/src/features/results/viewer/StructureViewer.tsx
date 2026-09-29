@@ -1,10 +1,11 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 
 import type { ResultStructures } from "@/api/results";
 import { Alert } from "@/components/ui/Alert";
 import { ToggleButton } from "@/components/ui/ToggleButton";
 
 import {
+  type ColorMode,
   createMolstarViewer,
   type MolstarViewer,
   type RepresentationType,
@@ -17,15 +18,20 @@ interface StructureViewerProps {
   referenceFormat: "mmcif" | "pdb";
 }
 
-const STRUCTURE_TOGGLES: readonly { id: StructureId; label: string }[] = [
-  { id: "coarse", label: "Coarse-grained" },
-  { id: "reference", label: "All-atom" },
+const STRUCTURE_TOGGLES: readonly { id: StructureId; label: string; name: string }[] = [
+  { id: "coarse", label: "CG model", name: "CG model" },
+  { id: "reference", label: "Input structure (all-atom)", name: "input structure" },
 ];
 
 const REPRESENTATIONS: readonly { type: RepresentationType; label: string }[] = [
   { type: "ball-and-stick", label: "Ball & stick" },
   { type: "cartoon", label: "Cartoon" },
   { type: "backbone", label: "Backbone" },
+];
+
+const COLOR_MODES: readonly { mode: ColorMode; label: string }[] = [
+  { mode: "uniform", label: "Single color" },
+  { mode: "element-symbol", label: "Element" },
 ];
 
 type ViewerStatus = "loading" | "ready" | "error";
@@ -41,7 +47,7 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
   });
   const [representation, setRepresentation] =
     useState<RepresentationType>("ball-and-stick");
-  const [colorByElement, setColorByElement] = useState(false);
+  const [colorMode, setColorMode] = useState<ColorMode>("uniform");
   const [failedStructures, setFailedStructures] = useState<readonly StructureId[]>([]);
   const [modelNumbers, setModelNumbers] = useState<readonly number[]>([]);
   const [modelIndex, setModelIndex] = useState(0);
@@ -127,7 +133,7 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
 
   const changeRepresentation = (type: RepresentationType) =>
     runViewerAction(async (viewer) => {
-      await viewer.setRepresentation(type);
+      await viewer.setRepresentation("reference", type);
       setRepresentation(type);
     });
 
@@ -137,19 +143,18 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
       setModelIndex(index);
     });
 
-  const toggleElementColors = () =>
+  const changeColorMode = (mode: ColorMode) =>
     runViewerAction(async (viewer) => {
-      await viewer.setColorMode(
-        "reference",
-        colorByElement ? "uniform" : "element-symbol",
-      );
-      setColorByElement(!colorByElement);
+      await viewer.setColorMode("reference", mode);
+      setColorMode(mode);
     });
 
   const controlsDisabled = status !== "ready" || busy;
-  const failedLabels = STRUCTURE_TOGGLES.filter(({ id }) =>
+  const referenceControlsDisabled =
+    controlsDisabled || failedStructures.includes("reference");
+  const failedNames = STRUCTURE_TOGGLES.filter(({ id }) =>
     failedStructures.includes(id),
-  ).map(({ label }) => label.toLowerCase());
+  ).map(({ name }) => name);
 
   return (
     <div className="flex flex-col gap-3">
@@ -169,15 +174,15 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
         )}
       </div>
 
-      {failedLabels.length > 0 && (
+      {failedNames.length > 0 && (
         <Alert severity="error">
-          The {failedLabels.join(" and ")} structure could not be displayed. The
-          downloads are not affected.
+          The {failedNames.join(" and ")} could not be displayed. The downloads are not
+          affected.
         </Alert>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-        <ControlGroup label="Show">
+      <div className="flex flex-col gap-3">
+        <ControlGroup label="Display">
           {STRUCTURE_TOGGLES.map(({ id, label }) => (
             <ToggleButton
               key={id}
@@ -204,47 +209,35 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
               Water, ions &amp; ligands
             </ToggleButton>
           )}
+          {modelNumbers.length > 1 && (
+            <InlineSelect
+              label="Model"
+              value={String(modelIndex)}
+              disabled={controlsDisabled}
+              onChange={(index) => void changeModel(Number(index))}
+              options={modelNumbers.map((modelNumber, index) => ({
+                value: String(index),
+                label: `${String(modelNumber)} (${String(index + 1)} of ${String(modelNumbers.length)})`,
+              }))}
+            />
+          )}
         </ControlGroup>
 
-        <ControlGroup label="Style">
-          {REPRESENTATIONS.map(({ type, label }) => (
-            <ToggleButton
-              key={type}
-              pressed={representation === type}
-              disabled={controlsDisabled}
-              onClick={() => void changeRepresentation(type)}
-            >
-              {label}
-            </ToggleButton>
-          ))}
-        </ControlGroup>
-
-        {modelNumbers.length > 1 && (
-          <label className="flex items-center gap-2">
-            <span className="eyebrow">Model</span>
-            <select
-              value={modelIndex}
-              disabled={controlsDisabled}
-              onChange={(event) => void changeModel(Number(event.target.value))}
-              className="cursor-pointer rounded border-[1.5px] border-line-soft bg-white px-2 py-1 font-mono text-label tracking-[0.12em] text-ink-2 hover:border-accent disabled:opacity-50"
-            >
-              {modelNumbers.map((modelNumber, index) => (
-                <option key={index} value={index}>
-                  {modelNumber} ({index + 1} of {modelNumbers.length})
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-
-        <ControlGroup label="All-atom color">
-          <ToggleButton
-            pressed={colorByElement}
-            disabled={controlsDisabled || failedStructures.includes("reference")}
-            onClick={() => void toggleElementColors()}
-          >
-            By element
-          </ToggleButton>
+        <ControlGroup label="Input structure">
+          <InlineSelect
+            label="Color by"
+            value={colorMode}
+            disabled={referenceControlsDisabled}
+            onChange={(mode) => void changeColorMode(mode)}
+            options={COLOR_MODES.map(({ mode, label }) => ({ value: mode, label }))}
+          />
+          <InlineSelect
+            label="Representation"
+            value={representation}
+            disabled={referenceControlsDisabled}
+            onChange={(type) => void changeRepresentation(type)}
+            options={REPRESENTATIONS.map(({ type, label }) => ({ value: type, label }))}
+          />
         </ControlGroup>
       </div>
     </div>
@@ -259,6 +252,47 @@ function ControlGroup({ label, children }: { label: string; children: ReactNode 
       </span>
       {children}
     </div>
+  );
+}
+
+interface InlineSelectProps<T extends string> {
+  label: string;
+  value: T;
+  disabled: boolean;
+  options: readonly { value: T; label: string }[];
+  onChange: (value: T) => void;
+}
+
+function InlineSelect<T extends string>({
+  label,
+  value,
+  disabled,
+  options,
+  onChange,
+}: InlineSelectProps<T>) {
+  const id = useId();
+
+  return (
+    <span className="flex items-center gap-2">
+      <label htmlFor={id} className="text-sm text-ink-2">
+        {label}
+      </label>
+      <select
+        id={id}
+        value={value}
+        disabled={disabled}
+        onChange={(event) => {
+          onChange(event.target.value as T);
+        }}
+        className="cursor-pointer rounded border-[1.5px] border-line-soft bg-surface px-2 py-1 text-sm text-ink transition-colors focus:border-accent focus:outline-none disabled:opacity-60"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </span>
   );
 }
 

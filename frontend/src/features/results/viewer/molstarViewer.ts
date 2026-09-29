@@ -33,7 +33,7 @@ export interface MolstarViewer {
   setVisibility(id: StructureId, visible: boolean): void;
   setNonPolymerVisibility(visible: boolean): void;
   setModel(index: number): Promise<void>;
-  setRepresentation(type: RepresentationType): Promise<void>;
+  setRepresentation(id: StructureId, type: RepresentationType): Promise<void>;
   setColorMode(id: StructureId, colorMode: ColorMode): Promise<void>;
   dispose(): void;
 }
@@ -252,11 +252,10 @@ export async function createMolstarViewer(
       entry.visible = visible;
       applyVisibility(entry);
     },
-    async setRepresentation(type) {
-      for (const [id, entry] of entries) {
-        if (entry.representationType !== type) {
-          await updateRepresentation(id, type, entry.colorMode);
-        }
+    async setRepresentation(id, type) {
+      const entry = getEntry(id);
+      if (entry.representationType !== type) {
+        await updateRepresentation(id, type, entry.colorMode);
       }
     },
     async setColorMode(id, colorMode) {
