@@ -32,6 +32,8 @@ const REPRESENTATIONS: readonly { type: RepresentationType; label: string }[] = 
 const COLOR_MODES: readonly { mode: ColorMode; label: string }[] = [
   { mode: "uniform", label: "Single color" },
   { mode: "element-symbol", label: "Element" },
+  { mode: "chain-id", label: "Chain" },
+  { mode: "residue-name", label: "Residue" },
 ];
 
 type ViewerStatus = "loading" | "ready" | "error";

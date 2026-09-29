@@ -14,7 +14,7 @@ import { Color } from "molstar/lib/mol-util/color";
 
 export type StructureId = "reference" | "coarse";
 export type RepresentationType = "ball-and-stick" | "cartoon" | "backbone";
-export type ColorMode = "uniform" | "element-symbol";
+export type ColorMode = "uniform" | "element-symbol" | "chain-id" | "residue-name";
 
 export interface StructureInput {
   id: StructureId;
