@@ -140,6 +140,7 @@ class BaseCoarseGrainModel(ABC):
     def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
         coarse_structure = original_structure.clone()
         coarse_structure.connections = ConnectionList()
+        coarse_structure.clear_conect()
 
         coarse_structure.setup_entities()
         coarse_structure.assign_label_seq_id(force=True)
