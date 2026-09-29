@@ -21,7 +21,8 @@ export type UploadFormErrors = Partial<
   Record<"source" | "model" | "models" | "chains", string>
 >;
 
-const PDB_ID_PATTERN = /^[a-z0-9]{4}$/i;
+// Classic 4-character IDs and extended wwPDB IDs such as pdb_00001ehz.
+const PDB_ID_PATTERN = /^(?:[a-z0-9]{4}|pdb_[a-z0-9]{8})$/i;
 const MODELS_PATTERN = /^[\d,\s]*$/;
 const CHAINS_PATTERN = /^[a-z0-9,\s]*$/i;
 
@@ -98,7 +99,7 @@ function validateSource(
     case "rcsb":
       return PDB_ID_PATTERN.test(values.rcsbId.trim())
         ? undefined
-        : "Enter a 4-character PDB ID, e.g. 1EHZ.";
+        : "Enter a PDB ID, e.g. 1EHZ or pdb_00001ehz.";
     case "preset":
       return values.presetId ? undefined : "Choose an example structure.";
   }

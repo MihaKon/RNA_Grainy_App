@@ -157,9 +157,9 @@ function UploadFormContent({ config, models }: UploadFormContentProps) {
             {values.sourceKind === "rcsb" && (
               <TextField
                 label="PDB ID"
-                placeholder="e.g. 1EHZ"
+                placeholder="e.g. 1EHZ or pdb_00001ehz"
                 value={values.rcsbId}
-                maxLength={4}
+                maxLength={12}
                 autoComplete="off"
                 spellCheck={false}
                 hint="The structure is downloaded in mmCIF format from the RCSB PDB."

@@ -27,8 +27,15 @@ describe("validateUploadForm", () => {
 
   it.each([
     [{ sourceKind: "file" }, "Choose a structure file."],
-    [{ sourceKind: "rcsb", rcsbId: "" }, "Enter a 4-character PDB ID, e.g. 1EHZ."],
-    [{ sourceKind: "rcsb", rcsbId: "1EH" }, "Enter a 4-character PDB ID, e.g. 1EHZ."],
+    [{ sourceKind: "rcsb", rcsbId: "" }, "Enter a PDB ID, e.g. 1EHZ or pdb_00001ehz."],
+    [
+      { sourceKind: "rcsb", rcsbId: "1EH" },
+      "Enter a PDB ID, e.g. 1EHZ or pdb_00001ehz.",
+    ],
+    [
+      { sourceKind: "rcsb", rcsbId: "pdb_1ehz" },
+      "Enter a PDB ID, e.g. 1EHZ or pdb_00001ehz.",
+    ],
     [{ sourceKind: "preset", presetId: "" }, "Choose an example structure."],
   ] as const)("reports a missing source for %o", (patch, message) => {
     expect(validateUploadForm({ ...validValues, ...patch }, appConfig).source).toBe(
@@ -40,6 +47,16 @@ describe("validateUploadForm", () => {
     const values = { ...validValues, sourceKind: "rcsb", rcsbId: " 1ehz " } as const;
     expect(validateUploadForm(values, appConfig)).toEqual({});
     expect(toStructureSource(values)).toEqual({ kind: "rcsb", rcsbId: "1EHZ" });
+  });
+
+  it("accepts an extended PDB ID", () => {
+    const values = {
+      ...validValues,
+      sourceKind: "rcsb",
+      rcsbId: "pdb_00004tna",
+    } as const;
+    expect(validateUploadForm(values, appConfig)).toEqual({});
+    expect(toStructureSource(values)).toEqual({ kind: "rcsb", rcsbId: "PDB_00004TNA" });
   });
 
   it("requires a model and a loaded custom model definition", () => {
