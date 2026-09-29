@@ -33,14 +33,21 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
         to="/"
         className="inline-flex items-center gap-1 font-mono text-label tracking-[0.15em] text-accent uppercase hover:text-accent-hover"
       >
-        <ArrowLeft aria-hidden="true" className="size-3" /> New structure
+        <ArrowLeft aria-hidden="true" className="size-3" /> Process another structure
       </Link>
 
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <h1 className="font-display text-hero-compact text-ink lg:text-heading">
           {result.filename}
         </h1>
-        <div className="flex flex-wrap gap-3">
+        <div
+          role="group"
+          aria-labelledby="download-cg-model"
+          className="flex flex-wrap items-center gap-3"
+        >
+          <span id="download-cg-model" className="eyebrow">
+            Download CG model
+          </span>
           <Button
             variant={pdbAvailable ? "ghost" : "primary"}
             disabled={!structures}
@@ -50,7 +57,7 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
               }
             }}
           >
-            Download mmCIF
+            mmCIF
           </Button>
           {pdbAvailable && (
             <Button
@@ -61,7 +68,7 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
                 }
               }}
             >
-              Download PDB
+              PDB
             </Button>
           )}
         </div>
@@ -87,7 +94,7 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
 
         <div className="flex min-w-0 flex-col gap-4">
           <ModelReport result={result} />
-          <Disclosure title="Model description">
+          <Disclosure title="CG model details">
             <ModelDescription model={model} />
           </Disclosure>
           <Disclosure title="Atom mapping">
