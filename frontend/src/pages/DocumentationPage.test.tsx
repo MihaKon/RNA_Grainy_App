@@ -22,6 +22,9 @@ describe("DocumentationPage", () => {
       "href",
       "https://doi.org/10.1093/nar/gkv1479",
     );
+    expect(
+      within(section).getByRole("link", { name: "doi:10.1093/nar/gkv1479" }),
+    ).toHaveAttribute("href", "https://doi.org/10.1093/nar/gkv1479");
     expect(within(section).getByRole("img")).toHaveAttribute(
       "src",
       "/static/images/simmodel.png",
