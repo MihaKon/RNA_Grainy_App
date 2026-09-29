@@ -276,6 +276,13 @@ def check_bead_skipped_due_to_missing_source_atoms(
             if (residue_key, bead_name) in coarse_beads:
                 continue
 
+            if (
+                bead_name == "P"
+                and "P" in bead_atom_names
+                and residue.entity_type == EntityType.Polymer
+                and residue.label_seq == 1
+            ):
+                continue
             skipped_beads.append(
                 f"{bead_name}: required one of [{', '.join(bead_atom_names)}], "
                 f"missing [{', '.join(bead_atom_names)}]"
