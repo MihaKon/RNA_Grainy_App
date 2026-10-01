@@ -27,6 +27,7 @@ from tests.integration.helpers import AtomKey, extract_data_attribute, get_atoms
         "IsRNAOneModel",
         "IsRNATwoModel",
         "HireModel",
+        "custom",
     ],
 )
 def test_coarse_pdb_and_cif_exports_are_consistent(
@@ -38,12 +39,20 @@ def test_coarse_pdb_and_cif_exports_are_consistent(
     selected_model: str,
 ) -> None:
     input_path = test_data_dir / f"{structure_id}.{input_format}"
+
+    form_data = {
+        "selected_model": selected_model,
+        "models": "1",
+    }
+
+    if selected_model == "custom":
+        form_data["custom_model_data"] = (
+            test_data_dir / "custom_model.json"
+        ).read_text(encoding="utf-8")
+
     upload_response = client.post(
         "/upload/file/",
-        data={
-            "selected_model": selected_model,
-            "models": "1",
-        },
+        data=form_data,
         files={
             "file": (
                 input_path.name,
