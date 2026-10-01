@@ -64,10 +64,10 @@ def _fix_mmcif_entry_id(
             for value in candidates
             if value and value.strip() not in ("", "?", ".")
         ),
-        "RNAgrainy",
+        "coarse_grained",
     )
     safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", base_name).strip("_")
-    safe_name = safe_name or "RNAgrainy"
+    safe_name = safe_name or "coarse_grained"
 
     if coarse:
         safe_model_name = (
@@ -122,7 +122,7 @@ def _fix_pdb_header_and_title(
             else ""
         )
         base_name = (
-            entry_id if entry_id not in ("", "?", ".") else filename or "RNAgrainy"
+            entry_id if entry_id not in ("", "?", ".") else filename or "coarse_grained"
         )
         prefix.append(f"TITLE     {base_name}_{model_name}")
 
