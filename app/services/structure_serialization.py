@@ -44,7 +44,8 @@ def set_mmcif_entry_id(
     is_coarse: bool,
     model_name: str | None = None,
 ) -> None:
-    """Set a readable mmCIF identifier, appending the model name for CG output.
+    """
+    Set a readable mmCIF identifier, appending the model name for CG output.
     Prefer an existing entry ID, then the uploaded filename, structure name,
     and CIF block name. Preserve an existing reference entry ID.
     """
@@ -86,7 +87,8 @@ def add_pdb_header_and_title(
     source_content: str | None,
     source_format: SupportedFormats | None,
 ) -> str:
-    """Prepend source HEADER when available and name the CG structure in TITLE.
+    """
+    Prepend source HEADER when available and name the CG structure in TITLE.
     For PDB input, reuse its HEADER. For mmCIF input, ask Gemmi to generate
     a PDB HEADER from the available structure metadata.
     """
@@ -196,8 +198,8 @@ def reference_structure_to_cif_string(
     source_content: str,
     filename: str,
 ) -> str:
-    """Serialize the reference and restore selected metadata from source mmCIF.
-
+    """
+    Serialize the reference and restore selected metadata from source mmCIF.
     Gemmi does not reproduce every source category during serialization, so
     entity, chemical-component and modified-residue categories are copied
     from the input document.

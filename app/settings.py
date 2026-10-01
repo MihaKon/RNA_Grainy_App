@@ -16,7 +16,7 @@ MODELS_IMAGES_DIR = STATIC_DIR / "images"
 PRESETS_DIR = STATIC_DIR / "presets"
 CITATIONS_DIR = BASE_DIR / "coarse_grain" / "metadata" / "citations.json"
 
-
+PDB_MAX_ATOM_COUNT = 99999
 BYTES_PER_KIB = 1024
 BYTES_PER_MIB = 1024**2
 BYTES_PER_GIB = 1024**3
