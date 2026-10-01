@@ -1,3 +1,6 @@
+from collections import defaultdict
+from typing import Any
+
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from gemmi import Structure
@@ -11,11 +14,86 @@ from app.models.form import (
     SupportedFormats,
 )
 from app.rcsb import fetch_rcsb_file
+from app.services.doc import DocsContextBuilder
+from app.services.structure_serialization import (
+    coarse_structure_to_cif_string,
+    coarse_structure_to_pdb_string,
+    reference_structure_to_cif_string,
+    reference_structure_to_pdb_string,
+)
 from app.services.structures import StructureProcessor
 from app.services.workspaces import WorkspaceManager
 from app.settings import BYTES_PER_MIB, MAX_FILE_UPLOAD_SIZE, PRESETS_DIR, TEMPLATES
 
 router = APIRouter(prefix="/upload", tags=["upload"])
+
+
+def build_comparison_context(
+    request: Request,
+    workspace_id: str,
+    filename: str,
+    file_format: SupportedFormats,
+    selected_model: str,
+    atom_counts: dict[str, int],
+    selected_models: list[int],
+    selected_chains: list[str],
+    custom_model_data: dict | None = None,
+) -> defaultdict[str, Any]:
+    original_format = file_format.normalize_format()
+
+    model_data = DocsContextBuilder.get_model(selected_model, custom_model_data)
+    original_atom_count = atom_counts["original"]
+    coarse_atom_count = atom_counts["coarse"]
+    is_pdb_available = coarse_atom_count <= 99999
+    reduction = (
+        1 - (coarse_atom_count / original_atom_count) if original_atom_count > 0 else 0
+    )
+
+    reference_url = str(
+        request.url_for(
+            "get_result_file", workspace_id=workspace_id, file_type="reference"
+        ).include_query_params(file_format=original_format.value)
+    )
+    coarse_mmcif_url = str(
+        request.url_for(
+            "get_result_file", workspace_id=workspace_id, file_type="coarse"
+        ).include_query_params(file_format=COARSE_FILE_FORMAT.value)
+    )
+
+    coarse_pdb_url = str(
+        request.url_for(
+            "get_result_file", workspace_id=workspace_id, file_type="coarse"
+        ).include_query_params(file_format=SupportedFormats.PDB.value)
+    )
+
+    consumed_url = str(
+        request.url_for(
+            "mark_result_as_consumed",
+            workspace_id=workspace_id,
+        )
+    )
+
+    initial_data = {
+        "reference_url": reference_url,
+        "coarse_mmcif_url": coarse_mmcif_url,
+        "coarse_pdb_url": coarse_pdb_url if is_pdb_available else None,
+        "consumed_url": consumed_url,
+        "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
+        "workspace_id": workspace_id,
+        "filename": filename,
+        "atom_counts": {
+            "original": original_atom_count,
+            "coarse": coarse_atom_count,
+            "reduction": f"{reduction:.2%}",
+        },
+        "selected_chains": selected_chains,
+        "selected_models": selected_models,
+        "model": model_data,
+        "is_pdb_available": is_pdb_available,
+    }
+
+    context: defaultdict[str, Any] = defaultdict(list, initial_data)
+    return context
 
 
 def process_structure_and_get_metadata(
@@ -52,17 +130,17 @@ async def save_structures(
     original_format = file_format.normalize_format()
 
     if original_format == SupportedFormats.PDB:
-        original_content = StructureProcessor.structure_to_pdb_string(
-            structure=original_structure, minimal_metadata=False
+        original_content = reference_structure_to_pdb_string(
+            structure=original_structure
         )
     else:
-        original_content = StructureProcessor.reference_structure_to_cif_string(
+        original_content = reference_structure_to_cif_string(
             structure=original_structure,
             source_content=source_content,
             filename=filename,
         )
 
-    coarse_mmcif_content = StructureProcessor.coarse_structure_to_cif_string(
+    coarse_mmcif_content = coarse_structure_to_cif_string(
         structure=coarse_structure,
         model_name=model_name,
         filename=filename,
@@ -71,9 +149,8 @@ async def save_structures(
     coarse_pdb_content: str | None = None
 
     if StructureProcessor.get_structure_atom_count(coarse_structure) <= 99999:
-        coarse_pdb_content = StructureProcessor.structure_to_pdb_string(
+        coarse_pdb_content = coarse_structure_to_pdb_string(
             structure=coarse_structure,
-            minimal_metadata=True,
             filename=filename,
             model_name=model_name,
             source_content=source_content,
@@ -122,7 +199,7 @@ async def handle_request_and_render(
         )
     )
 
-    context = StructureProcessor.build_comparison_context(
+    context = build_comparison_context(
         request=request,
         workspace_id=workspace_id,
         filename=filename,

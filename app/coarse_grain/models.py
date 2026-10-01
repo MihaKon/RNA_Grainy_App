@@ -30,6 +30,7 @@ from app.settings import COARSE_GRAIN_MODELS_DIR
 
 logger = logging.getLogger(__name__)
 
+ModifiedResidueKey = tuple[str, str, str]  # chain, seqid, residue name
 EMPTY_ALTLOC = "\x00"
 PRIMARY_ATOM_ALTLOC = "A"
 
@@ -148,22 +149,8 @@ class BaseCoarseGrainModel(ABC):
 
         self._filter_atoms(coarse_structure)
         self._rebuild_connectivity(coarse_structure)
+        self._rebuild_polymer_metadata(coarse_structure)
 
-        coarse_structure.entities.clear()
-        coarse_structure.setup_entities()
-
-        for chain in coarse_structure[0]:
-            polymer = chain.get_polymer()
-            if polymer:
-                entity = coarse_structure.get_entity_of(polymer)
-                entity.full_sequence = polymer.extract_sequence()
-
-        for model in coarse_structure:
-            for chain in model:
-                for residue in chain:
-                    residue.label_seq = None
-
-        coarse_structure.assign_label_seq_id(force=True)
         return coarse_structure
 
     def _get_bead_name_for_bead_id(self, res_name: str, bead_id: str) -> str:
@@ -333,11 +320,28 @@ class BaseCoarseGrainModel(ABC):
 
         return conn
 
+    def _rebuild_polymer_metadata(self, structure: Structure) -> None:
+        structure.entities.clear()
+        structure.setup_entities()
+
+        for chain in structure[0]:
+            polymer = chain.get_polymer()
+            if polymer:
+                entity = structure.get_entity_of(polymer)
+                entity.full_sequence = polymer.extract_sequence()
+
+        for model in structure:
+            for chain in model:
+                for residue in chain:
+                    residue.label_seq = None
+
+        structure.assign_label_seq_id(force=True)
+
     def _get_modified_residue_parents(
         self,
         structure: Structure,
-    ) -> dict[tuple[str, str, str], str]:
-        modified_residue_parents: dict[tuple[str, str, str], str] = {}
+    ) -> dict[ModifiedResidueKey, str]:
+        modified_residue_parents: dict[ModifiedResidueKey, str] = {}
 
         for modification in structure.mod_residues:
             if modification.parent_comp_id not in self.nucleotides_config:
