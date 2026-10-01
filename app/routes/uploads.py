@@ -23,7 +23,13 @@ from app.services.structure_serialization import (
 )
 from app.services.structures import StructureProcessor
 from app.services.workspaces import WorkspaceManager
-from app.settings import BYTES_PER_MIB, MAX_FILE_UPLOAD_SIZE, PRESETS_DIR, TEMPLATES
+from app.settings import (
+    BYTES_PER_MIB,
+    MAX_FILE_UPLOAD_SIZE,
+    PDB_MAX_ATOM_COUNT,
+    PRESETS_DIR,
+    TEMPLATES,
+)
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
@@ -44,7 +50,7 @@ def build_comparison_context(
     model_data = DocsContextBuilder.get_model(selected_model, custom_model_data)
     original_atom_count = atom_counts["original"]
     coarse_atom_count = atom_counts["coarse"]
-    is_pdb_available = coarse_atom_count <= 99999
+    is_pdb_available = coarse_atom_count <= PDB_MAX_ATOM_COUNT
     reduction = (
         1 - (coarse_atom_count / original_atom_count) if original_atom_count > 0 else 0
     )
@@ -148,7 +154,10 @@ async def save_structures(
 
     coarse_pdb_content: str | None = None
 
-    if StructureProcessor.get_structure_atom_count(coarse_structure) <= 99999:
+    if (
+        StructureProcessor.get_structure_atom_count(coarse_structure)
+        <= PDB_MAX_ATOM_COUNT
+    ):
         coarse_pdb_content = coarse_structure_to_pdb_string(
             structure=coarse_structure,
             filename=filename,
