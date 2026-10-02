@@ -213,6 +213,17 @@ class BaseCoarseGrainModel(ABC):
         for number, connection in enumerate(structure.connections, start=1):
             connection.name = f"{number}"
 
+    def _are_residues_consecutive(
+        self, prev_res: Residue | None, res: Residue | None
+    ) -> bool:
+        return (
+            res is not None
+            and prev_res is not None
+            and prev_res.label_seq is not None
+            and res.label_seq is not None
+            and res.label_seq == prev_res.label_seq + 1
+        )
+
     def _connect_chain_residues(
         self, structure: Structure, chain: Chain, intra_rules: list, inter_rule: dict
     ) -> None:
@@ -229,15 +240,16 @@ class BaseCoarseGrainModel(ABC):
                 )
 
             if (
-                prev_res is not None
+                self._are_residues_consecutive(prev_res, res)
                 and inter_rule.get("tail")
                 and inter_rule.get("head")
-                and prev_res.label_seq is not None
-                and res.label_seq is not None
-                and res.label_seq == prev_res.label_seq + 1
             ):
                 self._add_inter_residue_connection(
-                    structure, prev_res, res, inter_rule, chain.name
+                    structure,
+                    prev_res,  # type: ignore
+                    res,
+                    inter_rule,
+                    chain.name,
                 )
 
             prev_res = res

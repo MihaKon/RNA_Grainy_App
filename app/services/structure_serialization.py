@@ -10,6 +10,12 @@ REFERENCE_MMCIF_CATEGORIES = (
     "_pdbx_struct_mod_residue.",
 )
 
+DEFAULT_NAME = "coarse_grained"
+
+
+def sanitize_name(value: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_-]+", "_", value).strip("_") or DEFAULT_NAME
+
 
 def base_mmcif_groups() -> MmcifOutputGroups:
     """Select mmCIF categories shared by reference and CG output."""
@@ -60,16 +66,12 @@ def set_mmcif_entry_id(
             for value in candidates
             if value and value.strip() not in ("", "?", ".")
         ),
-        "coarse_grained",
+        DEFAULT_NAME,
     )
-    safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", base_name).strip("_")
-    safe_name = safe_name or "coarse_grained"
+    safe_name = sanitize_name(base_name)
 
     if is_coarse:
-        safe_model_name = (
-            re.sub(r"[^A-Za-z0-9_-]+", "_", model_name or "coarse_grained").strip("_")
-            or "coarse_grained"
-        )
+        safe_model_name = sanitize_name(model_name or DEFAULT_NAME)
 
         coarse_id = f"{safe_name}_{safe_model_name}"
         block.name = coarse_id
@@ -124,7 +126,7 @@ def add_pdb_header_and_title(
             else ""
         )
         base_name = (
-            entry_id if entry_id not in ("", "?", ".") else filename or "coarse_grained"
+            entry_id if entry_id not in ("", "?", ".") else filename or DEFAULT_NAME
         )
         prefix.append(f"TITLE     {base_name}_{model_name}")
 
