@@ -11,9 +11,12 @@ from app.rcsb import fetch_rcsb_file
 from app.services.doc import DocsContextBuilder
 from app.services.structures import StructureProcessor
 from app.services.workspaces import WorkspaceManager
-from app.settings import BYTES_PER_MIB, MAX_FILE_UPLOAD_SIZE, PRESETS_DIR
-
-PDB_MAX_ATOM_COUNT = 99999
+from app.settings import (
+    BYTES_PER_MIB,
+    MAX_FILE_UPLOAD_SIZE,
+    PDB_MAX_ATOM_COUNT,
+    PRESETS_DIR,
+)
 
 
 @dataclass(frozen=True)
