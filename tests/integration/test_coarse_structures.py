@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from gemmi import cif, make_structure_from_block, read_pdb_string
 
+from app.coarse_grain.models import CoarseGrainModelRegistry
 from tests.integration.helpers import AtomKey, extract_data_attribute, get_atoms
 
 
@@ -14,21 +15,8 @@ from tests.integration.helpers import AtomKey, extract_data_attribute, get_atoms
 @pytest.mark.parametrize("input_format", ["pdb", "cif"])
 @pytest.mark.parametrize(
     "selected_model",
-    [
-        "SimModel",
-        "NASTModel",
-        "YUPModel",
-        "RNAJPModel",
-        "FebModel",
-        "VFoldModel",
-        "Nares2PModel",
-        "TopRNAModel",
-        "IFoldRNAModel",
-        "IsRNAOneModel",
-        "IsRNATwoModel",
-        "HireModel",
-        "custom",
-    ],
+    [model_name for model_name, _ in CoarseGrainModelRegistry.get_dropdown_options()]
+    + ["custom"],
 )
 def test_coarse_pdb_and_cif_exports_are_consistent(
     client: TestClient,

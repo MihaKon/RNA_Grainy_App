@@ -72,7 +72,6 @@ def set_mmcif_entry_id(
 
     if is_coarse:
         safe_model_name = sanitize_name(model_name or DEFAULT_NAME)
-
         coarse_id = f"{safe_name}_{safe_model_name}"
         block.name = coarse_id
         block.set_pair("_entry.id", coarse_id)
@@ -96,25 +95,16 @@ def add_pdb_header_and_title(
     """
 
     prefix: list[str] = []
-    header = None
+    lines: list[str] = []
 
     if source_format == SupportedFormats.PDB and source_content is not None:
-        header = next(
-            (line for line in source_content.splitlines() if line.startswith("HEADER")),
-            None,
-        )
+        lines = source_content.splitlines()
     elif source_format in (SupportedFormats.CIF, SupportedFormats.MMCIF):
-        generated_headers = pdb_structure.make_pdb_string(
+        lines = pdb_structure.make_pdb_string(
             options=PdbWriteOptions(headers_only=True)
-        )
-        header = next(
-            (
-                line
-                for line in generated_headers.splitlines()
-                if line.startswith("HEADER")
-            ),
-            None,
-        )
+        ).splitlines()
+
+    header = next((line for line in lines if line.startswith("HEADER")), None)
 
     if header is not None:
         prefix.append(header)
