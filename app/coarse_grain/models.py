@@ -15,6 +15,7 @@ from gemmi import (
     ConnectionList,
     ConnectionType,
     Element,
+    EntityType,
     Position,
     Residue,
     Structure,
@@ -29,6 +30,7 @@ from app.settings import COARSE_GRAIN_MODELS_DIR
 
 logger = logging.getLogger(__name__)
 
+ModifiedResidueKey = tuple[str, str, str]  # chain, seqid, residue name
 EMPTY_ALTLOC = "\x00"
 PRIMARY_ATOM_ALTLOC = "A"
 
@@ -139,11 +141,16 @@ class BaseCoarseGrainModel(ABC):
     def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
         coarse_structure = original_structure.clone()
         coarse_structure.connections = ConnectionList()
+        coarse_structure.clear_conect()
+
+        coarse_structure.setup_entities()
+        coarse_structure.assign_label_seq_id(force=True)
+        self._handle_modified_residues_as_their_parents(coarse_structure)
 
         self._filter_atoms(coarse_structure)
         self._rebuild_connectivity(coarse_structure)
+        self._rebuild_polymer_metadata(coarse_structure)
 
-        coarse_structure.setup_entities()
         return coarse_structure
 
     def _get_bead_name_for_bead_id(self, res_name: str, bead_id: str) -> str:
@@ -154,8 +161,11 @@ class BaseCoarseGrainModel(ABC):
                 f"Bead ID '{bead_id}' not found for residue '{res_name}' in model '{self.name_verbose}'."
             )
 
-    def _should_keep_residue(self, residue_name: str) -> bool:
-        return residue_name in list(self.nucleotides_config.keys())
+    def _should_keep_residue(self, residue: Residue) -> bool:
+        return (
+            residue.name in list(self.nucleotides_config.keys())
+            and residue.entity_type != EntityType.NonPolymer
+        )
 
     def _filter_atoms(self, structure: Structure) -> None:
         for model in structure:
@@ -163,7 +173,7 @@ class BaseCoarseGrainModel(ABC):
                 for res_id in range(len(chain) - 1, -1, -1):
                     res = chain[res_id]
 
-                    if not self._should_keep_residue(res.name):
+                    if not self._should_keep_residue(res):
                         del chain[res_id]
                         continue
 
@@ -200,13 +210,27 @@ class BaseCoarseGrainModel(ABC):
             for chain in model:
                 self._connect_chain_residues(structure, chain, intra_rules, inter_rule)
 
+        for number, connection in enumerate(structure.connections, start=1):
+            connection.name = f"{number}"
+
+    def _are_residues_consecutive(
+        self, prev_res: Residue | None, res: Residue | None
+    ) -> bool:
+        return (
+            res is not None
+            and prev_res is not None
+            and prev_res.label_seq is not None
+            and res.label_seq is not None
+            and res.label_seq == prev_res.label_seq + 1
+        )
+
     def _connect_chain_residues(
         self, structure: Structure, chain: Chain, intra_rules: list, inter_rule: dict
     ) -> None:
         prev_res = None
 
         for res in chain:
-            if not self._should_keep_residue(res.name):
+            if not self._should_keep_residue(res):
                 prev_res = None
                 continue
 
@@ -215,9 +239,17 @@ class BaseCoarseGrainModel(ABC):
                     structure, res, intra_rules, chain.name
                 )
 
-            if prev_res and inter_rule.get("tail") and inter_rule.get("head"):
+            if (
+                self._are_residues_consecutive(prev_res, res)
+                and inter_rule.get("tail")
+                and inter_rule.get("head")
+            ):
                 self._add_inter_residue_connection(
-                    structure, prev_res, res, inter_rule, chain.name
+                    structure,
+                    prev_res,  # type: ignore
+                    res,
+                    inter_rule,
+                    chain.name,
                 )
 
             prev_res = res
@@ -300,6 +332,63 @@ class BaseCoarseGrainModel(ABC):
 
         return conn
 
+    def _rebuild_polymer_metadata(self, structure: Structure) -> None:
+        structure.entities.clear()
+        structure.setup_entities()
+
+        for chain in structure[0]:
+            polymer = chain.get_polymer()
+            if polymer:
+                entity = structure.get_entity_of(polymer)
+                entity.full_sequence = polymer.extract_sequence()
+
+        for model in structure:
+            for chain in model:
+                for residue in chain:
+                    residue.label_seq = None
+
+        structure.assign_label_seq_id(force=True)
+
+    def _get_modified_residue_parents(
+        self,
+        structure: Structure,
+    ) -> dict[ModifiedResidueKey, str]:
+        modified_residue_parents: dict[ModifiedResidueKey, str] = {}
+
+        for modification in structure.mod_residues:
+            if modification.parent_comp_id not in self.nucleotides_config:
+                continue
+
+            key = (
+                modification.chain_name,
+                str(modification.res_id.seqid),
+                modification.res_id.name,
+            )
+            modified_residue_parents[key] = modification.parent_comp_id
+
+        return modified_residue_parents
+
+    def _handle_modified_residues_as_their_parents(self, structure: Structure) -> None:
+        modified_residue_parents = self._get_modified_residue_parents(structure)
+
+        for model in structure:
+            for chain in model:
+                for residue in chain:
+                    parent_name = modified_residue_parents.get(
+                        (
+                            chain.name,
+                            str(residue.seqid),
+                            residue.name,
+                        )
+                    )
+
+                    if (
+                        parent_name is not None
+                        and residue.entity_type != EntityType.NonPolymer
+                    ):
+                        residue.name = parent_name
+                        residue.het_flag = "A"
+
 
 class CalculateBeadModel(BaseCoarseGrainModel):
     @property
@@ -314,7 +403,7 @@ class CalculateBeadModel(BaseCoarseGrainModel):
                 for res_id in range(len(chain) - 1, -1, -1):
                     res = chain[res_id]
 
-                    if not self._should_keep_residue(res.name):
+                    if not self._should_keep_residue(res):
                         del chain[res_id]
                         continue
 
