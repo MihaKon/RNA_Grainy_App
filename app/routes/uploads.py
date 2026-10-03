@@ -1,3 +1,6 @@
+from collections import defaultdict
+from typing import Any
+
 from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from gemmi import Structure
@@ -11,11 +14,92 @@ from app.models.form import (
     SupportedFormats,
 )
 from app.rcsb import fetch_rcsb_file
+from app.services.doc import DocsContextBuilder
+from app.services.structure_serialization import (
+    coarse_structure_to_cif_string,
+    coarse_structure_to_pdb_string,
+    reference_structure_to_cif_string,
+    reference_structure_to_pdb_string,
+)
 from app.services.structures import StructureProcessor
 from app.services.workspaces import WorkspaceManager
-from app.settings import BYTES_PER_MIB, MAX_FILE_UPLOAD_SIZE, PRESETS_DIR, TEMPLATES
+from app.settings import (
+    BYTES_PER_MIB,
+    MAX_FILE_UPLOAD_SIZE,
+    PDB_MAX_ATOM_COUNT,
+    PRESETS_DIR,
+    TEMPLATES,
+)
 
 router = APIRouter(prefix="/upload", tags=["upload"])
+
+
+def build_comparison_context(
+    request: Request,
+    workspace_id: str,
+    filename: str,
+    file_format: SupportedFormats,
+    selected_model: str,
+    atom_counts: dict[str, int],
+    selected_models: list[int],
+    selected_chains: list[str],
+    custom_model_data: dict | None = None,
+) -> defaultdict[str, Any]:
+    original_format = file_format.normalize_format()
+
+    model_data = DocsContextBuilder.get_model(selected_model, custom_model_data)
+    original_atom_count = atom_counts["original"]
+    coarse_atom_count = atom_counts["coarse"]
+    is_pdb_available = coarse_atom_count <= PDB_MAX_ATOM_COUNT
+    reduction = (
+        1 - (coarse_atom_count / original_atom_count) if original_atom_count > 0 else 0
+    )
+
+    reference_url = str(
+        request.url_for(
+            "get_result_file", workspace_id=workspace_id, file_type="reference"
+        ).include_query_params(file_format=original_format.value)
+    )
+    coarse_mmcif_url = str(
+        request.url_for(
+            "get_result_file", workspace_id=workspace_id, file_type="coarse"
+        ).include_query_params(file_format=COARSE_FILE_FORMAT.value)
+    )
+
+    coarse_pdb_url = str(
+        request.url_for(
+            "get_result_file", workspace_id=workspace_id, file_type="coarse"
+        ).include_query_params(file_format=SupportedFormats.PDB.value)
+    )
+
+    consumed_url = str(
+        request.url_for(
+            "mark_result_as_consumed",
+            workspace_id=workspace_id,
+        )
+    )
+
+    initial_data = {
+        "reference_url": reference_url,
+        "coarse_mmcif_url": coarse_mmcif_url,
+        "coarse_pdb_url": coarse_pdb_url if is_pdb_available else None,
+        "consumed_url": consumed_url,
+        "file_format": [original_format.value, COARSE_FILE_FORMAT.value],
+        "workspace_id": workspace_id,
+        "filename": filename,
+        "atom_counts": {
+            "original": original_atom_count,
+            "coarse": coarse_atom_count,
+            "reduction": f"{reduction:.2%}",
+        },
+        "selected_chains": selected_chains,
+        "selected_models": selected_models,
+        "model": model_data,
+        "is_pdb_available": is_pdb_available,
+    }
+
+    context: defaultdict[str, Any] = defaultdict(list, initial_data)
+    return context
 
 
 def process_structure_and_get_metadata(
@@ -43,34 +127,59 @@ def process_structure_and_get_metadata(
 async def save_structures(
     workspace_id: str,
     original_structure: Structure,
+    filename: str,
     file_format: SupportedFormats,
     coarse_structure: Structure,
+    source_content: str,
+    model_name: str,
 ) -> None:
     original_format = file_format.normalize_format()
 
-    original_content = StructureProcessor.structure_to_cif_string(original_structure)
+    if original_format == SupportedFormats.PDB:
+        original_content = reference_structure_to_pdb_string(
+            structure=original_structure
+        )
+    else:
+        original_content = reference_structure_to_cif_string(
+            structure=original_structure,
+            source_content=source_content,
+            filename=filename,
+        )
 
-    cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
+    coarse_mmcif_content = coarse_structure_to_cif_string(
+        structure=coarse_structure,
+        model_name=model_name,
+        filename=filename,
+    )
 
-    pdb_content: str | None = None
+    coarse_pdb_content: str | None = None
 
-    if StructureProcessor.get_structure_atom_count(coarse_structure) <= 99999:
-        pdb_content = StructureProcessor.structure_to_pdb_string(coarse_structure)
+    if (
+        StructureProcessor.get_structure_atom_count(coarse_structure)
+        <= PDB_MAX_ATOM_COUNT
+    ):
+        coarse_pdb_content = coarse_structure_to_pdb_string(
+            structure=coarse_structure,
+            filename=filename,
+            model_name=model_name,
+            source_content=source_content,
+            source_format=original_format,
+        )
 
     WorkspaceManager.setup_workspace_dir(workspace_id)
 
     try:
-        if pdb_content is not None:
+        if coarse_pdb_content is not None:
             await WorkspaceManager.create_file(
                 workspace_id,
-                pdb_content,
+                coarse_pdb_content,
                 f"coarse.{SupportedFormats.PDB.value}",
             )
         await WorkspaceManager.create_file(
             workspace_id, original_content, f"reference.{original_format.value}"
         )
         await WorkspaceManager.create_file(
-            workspace_id, cif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
+            workspace_id, coarse_mmcif_content, f"coarse.{COARSE_FILE_FORMAT.value}"
         )
     except Exception:
         WorkspaceManager.cleanup_workspace(workspace_id)
@@ -98,11 +207,8 @@ async def handle_request_and_render(
             custom_model_data,
         )
     )
-    await save_structures(
-        workspace_id, original_structure, file_format, coarse_structure
-    )
 
-    context = StructureProcessor.build_comparison_context(
+    context = build_comparison_context(
         request=request,
         workspace_id=workspace_id,
         filename=filename,
@@ -113,6 +219,17 @@ async def handle_request_and_render(
         selected_chains=chains,
         custom_model_data=custom_model_data,
     )
+
+    await save_structures(
+        workspace_id=workspace_id,
+        original_structure=original_structure,
+        filename=filename,
+        file_format=file_format,
+        coarse_structure=coarse_structure,
+        source_content=file_content,
+        model_name=context["model"]["name"],
+    )
+
     return TEMPLATES.TemplateResponse(
         request=request,
         name="comparison.html",
