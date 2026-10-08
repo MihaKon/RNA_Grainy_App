@@ -1,5 +1,5 @@
 import { screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { appConfig, coarseGrainResult, models } from "@/test/fixtures";
 import { jsonResponse, mockFetch, requestBody } from "@/test/fetchMock";
@@ -67,11 +67,8 @@ async function renderForm() {
 }
 
 describe("UploadForm", () => {
-  beforeEach(() => {
-    mockFetch(catalogRoutes);
-  });
-
   it("lists models alphabetically followed by the custom option", async () => {
+    mockFetch(catalogRoutes);
     await renderForm();
 
     const options = within(screen.getByLabelText("Coarse-grained model"))
