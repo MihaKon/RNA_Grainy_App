@@ -1,8 +1,8 @@
 import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { appConfig, coarseGrainResult, models } from "@/test/fixtures";
 import { jsonResponse, mockFetch, requestBody } from "@/test/fetchMock";
+import { appConfig, coarseGrainResult, models } from "@/test/fixtures";
 import { renderApp } from "@/test/renderApp";
 
 const catalogRoutes = {

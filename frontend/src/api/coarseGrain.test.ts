@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { coarseGrainResult } from "@/test/fixtures";
 import { jsonResponse, mockFetch, requestBody } from "@/test/fetchMock";
+import { coarseGrainResult } from "@/test/fixtures";
 
 import { coarseGrain } from "./coarseGrain";
 

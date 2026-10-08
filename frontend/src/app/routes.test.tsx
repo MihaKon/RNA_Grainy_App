@@ -1,8 +1,8 @@
 import { screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { appConfig, models } from "@/test/fixtures";
 import { jsonResponse, mockFetch } from "@/test/fetchMock";
+import { appConfig, models } from "@/test/fixtures";
 import { renderApp } from "@/test/renderApp";
 
 describe("routes", () => {
