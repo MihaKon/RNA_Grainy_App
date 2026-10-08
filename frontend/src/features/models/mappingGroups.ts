@@ -6,8 +6,6 @@ export interface MappingGroup {
   beads: readonly BeadMapping[];
 }
 
-// Residues of one type usually share their beads, so they are shown together
-// (e.g. Purine A, G); residues whose beads differ keep a table of their own.
 export function groupMapping(mapping: readonly ResidueMapping[]): MappingGroup[] {
   const groups: MappingGroup[] = [];
   const groupsByKey = new Map<string, MappingGroup>();
