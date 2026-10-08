@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { to: "/about", label: "About", end: false },
 ] as const;
 
-export function SiteHeader() {
+export function Header() {
   const scrolled = useScrolled(SCROLL_SHRINK_THRESHOLD);
   const [menuOpen, setMenuOpen] = useState(false);
 
