@@ -68,6 +68,30 @@ describe("validateUploadForm", () => {
     ).toBe("Load a custom model JSON file.");
   });
 
+  it.each(["", "1", "1,2", " 1 , 2 "])("accepts the model list %j", (models) => {
+    expect(
+      validateUploadForm({ ...validValues, models }, appConfig).models,
+    ).toBeUndefined();
+  });
+
+  it.each(["1,,2", ",1", "1,", "1 2", ","])("rejects the model list %j", (models) => {
+    expect(validateUploadForm({ ...validValues, models }, appConfig).models).toBe(
+      "Use model numbers separated by commas.",
+    );
+  });
+
+  it.each(["", "A", "A,B", " a , 1 "])("accepts the chain list %j", (chains) => {
+    expect(
+      validateUploadForm({ ...validValues, chains }, appConfig).chains,
+    ).toBeUndefined();
+  });
+
+  it.each(["A,,,B", ",A", "A,", "A B", ","])("rejects the chain list %j", (chains) => {
+    expect(validateUploadForm({ ...validValues, chains }, appConfig).chains).toBe(
+      "Use chain IDs (letters and digits) separated by commas.",
+    );
+  });
+
   it("validates the model and chain selections", () => {
     const errors = validateUploadForm(
       { ...validValues, models: "1, -2", chains: "A; B" },

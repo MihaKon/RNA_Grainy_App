@@ -22,8 +22,8 @@ export type UploadFormErrors = Partial<
 >;
 
 const PDB_ID_PATTERN = /^(?:[a-z0-9]{4}|pdb_[a-z0-9]{8})$/i;
-const MODELS_PATTERN = /^[\d,\s]*$/;
-const CHAINS_PATTERN = /^[a-z0-9,\s]*$/i;
+const MODELS_PATTERN = /^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$/;
+const CHAINS_PATTERN = /^\s*(?:[a-z0-9]+\s*(?:,\s*[a-z0-9]+\s*)*)?$/i;
 
 export function validateUploadForm(
   values: UploadFormValues,
