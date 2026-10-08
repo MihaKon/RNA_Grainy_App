@@ -68,7 +68,10 @@ async function renderForm() {
 
 describe("UploadForm", () => {
   it("lists models alphabetically followed by the custom option", async () => {
-    mockFetch(catalogRoutes);
+    mockFetch({
+      ...catalogRoutes,
+      "GET /api/models": () => jsonResponse(models.toReversed()),
+    });
     await renderForm();
 
     const options = within(screen.getByLabelText("Coarse-grained model"))
