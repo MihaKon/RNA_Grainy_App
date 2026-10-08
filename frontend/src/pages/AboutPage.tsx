@@ -1,8 +1,8 @@
-import { PageHero } from "@/components/layout/PageHero";
+import { Hero } from "@/components/layout/Hero";
 
 export function AboutPage() {
   return (
-    <PageHero
+    <Hero
       eyebrow="About"
       title={
         <>
@@ -14,6 +14,6 @@ export function AboutPage() {
         RNAgrainy is a web application for converting full-atom 3D RNA structures into
         coarse-grained representations.
       </p>
-    </PageHero>
+    </Hero>
   );
 }

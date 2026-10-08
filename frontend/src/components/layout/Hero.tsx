@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 
-interface PageHeroProps {
+interface HeroProps {
   eyebrow?: string;
   title: ReactNode;
   children?: ReactNode;
 }
 
-export function PageHero({ eyebrow, title, children }: PageHeroProps) {
+export function Hero({ eyebrow, title, children }: HeroProps) {
   return (
     <section className="mx-auto max-w-3xl px-4 pt-16 pb-10 text-center">
       {eyebrow && <p className="mb-3 eyebrow">{eyebrow}</p>}

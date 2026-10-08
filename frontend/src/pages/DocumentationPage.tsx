@@ -1,8 +1,8 @@
-import { PageHero } from "@/components/layout/PageHero";
+import { Hero } from "@/components/layout/Hero";
 
 export function DocumentationPage() {
   return (
-    <PageHero
+    <Hero
       eyebrow="Documentation"
       title={
         <>
@@ -14,6 +14,6 @@ export function DocumentationPage() {
         Descriptions, atom mapping rules, and references for every supported
         coarse-grained RNA model.
       </p>
-    </PageHero>
+    </Hero>
   );
 }

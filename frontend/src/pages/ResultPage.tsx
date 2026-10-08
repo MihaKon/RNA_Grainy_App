@@ -2,7 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router";
 
 import type { CoarseGrainResult } from "@/api/types";
-import { PageHero } from "@/components/layout/PageHero";
+import { Hero } from "@/components/layout/Hero";
 import { buttonClasses } from "@/components/ui/buttonStyles";
 import { formatBeadsPerResidue, formatPercent } from "@/lib/format";
 
@@ -25,7 +25,7 @@ export function ResultPage() {
 
   if (!result) {
     return (
-      <PageHero
+      <Hero
         eyebrow="Result"
         title={
           <>
@@ -40,7 +40,7 @@ export function ResultPage() {
         <Link to="/" className="mt-4 inline-block text-accent hover:text-accent-hover">
           ← New structure
         </Link>
-      </PageHero>
+      </Hero>
     );
   }
 

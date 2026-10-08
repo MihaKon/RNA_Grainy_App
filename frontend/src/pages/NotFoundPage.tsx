@@ -1,10 +1,10 @@
 import { Link } from "react-router";
 
-import { PageHero } from "@/components/layout/PageHero";
+import { Hero } from "@/components/layout/Hero";
 
 export function NotFoundPage() {
   return (
-    <PageHero
+    <Hero
       eyebrow="Error 404"
       title={
         <>
@@ -15,6 +15,6 @@ export function NotFoundPage() {
       <Link to="/" className="text-accent hover:text-accent-hover">
         ← Back to RNAgrainy
       </Link>
-    </PageHero>
+    </Hero>
   );
 }
