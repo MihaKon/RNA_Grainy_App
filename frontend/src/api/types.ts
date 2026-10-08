@@ -1,5 +1,3 @@
-// Mirrors the response models in app/models/api.py.
-
 export interface AppConfig {
   supported_file_formats: string[];
   preset_ids: string[];
