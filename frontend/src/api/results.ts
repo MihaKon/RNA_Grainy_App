@@ -25,14 +25,12 @@ export async function fetchResultStructures(
   try {
     await apiFetch(files.consumed_url, { method: "POST" });
   } catch (error) {
-    // The cleanup worker removes unconsumed workspaces, so the result stays usable.
     console.warn("Could not mark the result as consumed.", error);
   }
 
   return { reference, coarseMmcif, coarsePdb };
 }
 
-// The workspace is deleted once consumed, so the files can be fetched exactly once.
 export const resultStructuresQueryOptions = (result: CoarseGrainResult) =>
   queryOptions({
     queryKey: ["results", result.workspace_id, "structures"],
