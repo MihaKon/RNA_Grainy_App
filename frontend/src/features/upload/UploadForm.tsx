@@ -111,7 +111,8 @@ function UploadFormContent({ config, models }: UploadFormContentProps) {
       {
         source,
         modelId: values.modelId,
-        customModelJson: values.customModel?.json,
+        customModelJson:
+          values.modelId === CUSTOM_MODEL_ID ? values.customModel?.json : undefined,
         models: values.models,
         chains: values.chains,
       },

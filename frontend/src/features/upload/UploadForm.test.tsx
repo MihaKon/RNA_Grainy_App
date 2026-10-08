@@ -10,6 +10,56 @@ const catalogRoutes = {
   "GET /api/models": () => jsonResponse(models),
 };
 
+const coarseGrainRoutes = {
+  ...catalogRoutes,
+  "POST /api/coarse-grain/file": () => jsonResponse(coarseGrainResult),
+  "POST /api/coarse-grain/rcsb": () => jsonResponse(coarseGrainResult),
+  "POST /api/coarse-grain/preset": () => jsonResponse(coarseGrainResult),
+};
+
+type SourceKind = "file" | "rcsb" | "preset";
+type User = Awaited<ReturnType<typeof renderForm>>["user"];
+
+const structureFile = new File(["ATOM"], "1EHZ.pdb");
+
+const SOURCE_FIELDS: Record<SourceKind, string> = {
+  file: "file",
+  rcsb: "rcsb_id",
+  preset: "preset_id",
+};
+
+const EXPECTED_SOURCE_VALUES: Record<SourceKind, File | string> = {
+  file: structureFile,
+  rcsb: "1EHZ",
+  preset: "1MNX",
+};
+
+async function fillSource(user: User, kind: SourceKind) {
+  switch (kind) {
+    case "file":
+      await user.click(screen.getByRole("tab", { name: "Upload file" }));
+      await user.upload(screen.getByLabelText(/choose a file/i), structureFile);
+      break;
+    case "rcsb":
+      await user.click(screen.getByRole("tab", { name: "PDB ID" }));
+      await user.type(screen.getByRole("textbox", { name: "PDB ID" }), "1ehz");
+      break;
+    case "preset":
+      await user.click(screen.getByRole("tab", { name: "Example" }));
+      await user.click(screen.getByRole("radio", { name: "1MNX" }));
+      break;
+  }
+}
+
+async function loadCustomModel(user: User, definition: string) {
+  await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "custom");
+  await user.upload(
+    screen.getByLabelText("Custom model JSON file"),
+    new File([definition], "model.json", { type: "application/json" }),
+  );
+  await screen.findByText("Two-bead model");
+}
+
 async function renderForm() {
   const app = renderApp("/");
   await screen.findByRole("button", { name: "Coarse-grain structure" });
@@ -117,6 +167,58 @@ describe("UploadForm", () => {
     await screen.findByText("Model report");
     const body = requestBody(fetchMock);
     expect(body.get("rcsb_id")).toBe("1EHZ");
+    expect(body.get("selected_model")).toBe("custom");
+    expect(body.get("custom_model_data")).toBe(definition);
+  });
+
+  it.each<[SourceKind, SourceKind]>([
+    ["file", "preset"],
+    ["preset", "file"],
+    ["rcsb", "file"],
+    ["file", "rcsb"],
+  ])("sends only the new source after switching from %s to %s", async (first, last) => {
+    const fetchMock = mockFetch(coarseGrainRoutes);
+    const { user } = await renderForm();
+
+    await fillSource(user, first);
+    await fillSource(user, last);
+    await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "SimModel");
+    await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
+
+    await screen.findByText("Model report");
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toBe(`/api/coarse-grain/${last}`);
+    const body = requestBody(fetchMock);
+    expect(body.get(SOURCE_FIELDS[last])).toEqual(EXPECTED_SOURCE_VALUES[last]);
+    expect(body.has(SOURCE_FIELDS[first])).toBe(false);
+  });
+
+  it("drops a loaded custom model after switching to a published one", async () => {
+    const fetchMock = mockFetch(coarseGrainRoutes);
+    const { user } = await renderForm();
+
+    await fillSource(user, "preset");
+    await loadCustomModel(user, JSON.stringify({ model_name: "Two-bead model" }));
+    await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "SimModel");
+    await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
+
+    await screen.findByText("Model report");
+    const body = requestBody(fetchMock);
+    expect(body.get("selected_model")).toBe("SimModel");
+    expect(body.has("custom_model_data")).toBe(false);
+  });
+
+  it("sends a custom model loaded after a published one was selected", async () => {
+    const fetchMock = mockFetch(coarseGrainRoutes);
+    const { user } = await renderForm();
+    const definition = JSON.stringify({ model_name: "Two-bead model" });
+
+    await fillSource(user, "preset");
+    await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "SimModel");
+    await loadCustomModel(user, definition);
+    await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
+
+    await screen.findByText("Model report");
+    const body = requestBody(fetchMock);
     expect(body.get("selected_model")).toBe("custom");
     expect(body.get("custom_model_data")).toBe(definition);
   });
