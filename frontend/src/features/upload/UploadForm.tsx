@@ -15,7 +15,7 @@ import { formatBeadsPerResidue, formatBytes, formatList } from "@/lib/format";
 import type { ResultLocationState } from "@/pages/ResultPage";
 
 import { CustomModelInput } from "./CustomModelInput";
-import { ExamplePicker } from "./ExamplePicker";
+import { PresetPicker } from "./PresetPicker";
 import { StructureFileInput } from "./StructureFileInput";
 import {
   hasErrors,
@@ -170,7 +170,7 @@ function UploadFormContent({ config, models }: UploadFormContentProps) {
               />
             )}
             {values.sourceKind === "preset" && (
-              <ExamplePicker
+              <PresetPicker
                 presetIds={config.preset_ids}
                 value={values.presetId}
                 error={errors.source}

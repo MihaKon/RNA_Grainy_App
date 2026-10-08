@@ -2,19 +2,14 @@ import { useId } from "react";
 
 import { cn } from "@/lib/cn";
 
-interface ExamplePickerProps {
+interface PresetPickerProps {
   presetIds: readonly string[];
   value: string;
   error?: string | undefined;
   onChange: (presetId: string) => void;
 }
 
-export function ExamplePicker({
-  presetIds,
-  value,
-  error,
-  onChange,
-}: ExamplePickerProps) {
+export function PresetPicker({ presetIds, value, error, onChange }: PresetPickerProps) {
   const groupId = useId();
   const labelId = `${groupId}-label`;
   const messageId = `${groupId}-message`;
