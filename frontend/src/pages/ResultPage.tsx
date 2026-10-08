@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from "react-router";
 
 import type { CoarseGrainResult } from "@/api/types";
 import { Hero } from "@/components/layout/Hero";
-import { buttonClasses } from "@/components/ui/buttonStyles";
+import { DownloadButton } from "@/components/ui/Button";
 import { formatBeadsPerResidue, formatPercent } from "@/lib/format";
 
 export interface ResultLocationState {
@@ -84,21 +84,20 @@ export function ResultPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           {files.coarse_pdb_url && (
-            <a
+            <DownloadButton
               href={files.coarse_pdb_url}
               download={`${downloadName}.pdb`}
-              className={buttonClasses("primary")}
             >
               Download PDB
-            </a>
+            </DownloadButton>
           )}
-          <a
+          <DownloadButton
             href={files.coarse_mmcif_url}
             download={`${downloadName}.cif`}
-            className={buttonClasses(files.coarse_pdb_url ? "ghost" : "primary")}
+            variant={files.coarse_pdb_url ? "ghost" : "primary"}
           >
             Download mmCIF
-          </a>
+          </DownloadButton>
         </div>
       </div>
 
