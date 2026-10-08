@@ -122,6 +122,22 @@ The application is available at:
 http://127.0.0.1:5050
 ```
 
+### Start the React frontend
+
+With the backend running, start the frontend in a third terminal:
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+The frontend is available at:
+
+```text
+http://127.0.0.1:5173
+```
+
 ## Authors
 
 ### Development

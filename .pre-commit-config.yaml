@@ -46,3 +46,35 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-push]
+
+      - id: frontend-format
+        name: Check frontend formatting
+        entry: npm --prefix frontend run format:check
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        stages: [pre-commit]
+
+      - id: frontend-lint
+        name: Lint frontend
+        entry: npm --prefix frontend run lint
+        language: system
+        pass_filenames: false
+        files: ^frontend/.*\.(ts|tsx|js)$
+        stages: [pre-commit]
+
+      - id: frontend-typecheck
+        name: Typecheck frontend
+        entry: npm --prefix frontend run typecheck
+        language: system
+        pass_filenames: false
+        files: ^frontend/.*\.(ts|tsx|json)$
+        stages: [pre-commit]
+
+      - id: frontend-test
+        name: Run frontend tests
+        entry: npm --prefix frontend test
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        stages: [pre-push]
