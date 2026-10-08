@@ -1,4 +1,4 @@
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -30,18 +30,4 @@ export function Button({
   return (
     <button type={type} className={cn(buttonClasses(variant), className)} {...props} />
   );
-}
-
-interface DownloadButtonProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
-  href: string;
-  download: string;
-  variant?: ButtonVariant;
-}
-
-export function DownloadButton({
-  variant = "primary",
-  className,
-  ...props
-}: DownloadButtonProps) {
-  return <a className={cn(buttonClasses(variant), className)} {...props} />;
 }
