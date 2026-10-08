@@ -21,7 +21,6 @@ export type UploadFormErrors = Partial<
   Record<"source" | "model" | "models" | "chains", string>
 >;
 
-// Classic 4-character IDs and extended wwPDB IDs such as pdb_00001ehz.
 const PDB_ID_PATTERN = /^(?:[a-z0-9]{4}|pdb_[a-z0-9]{8})$/i;
 const MODELS_PATTERN = /^[\d,\s]*$/;
 const CHAINS_PATTERN = /^[a-z0-9,\s]*$/i;
