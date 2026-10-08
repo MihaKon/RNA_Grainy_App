@@ -7,14 +7,20 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default defineConfig([
+  // Build output
   globalIgnores(["dist"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
+      // Core JavaScript mistakes
       js.configs.recommended,
+      // Type-aware TypeScript checks: unsafe any, floating promises, etc.
       tseslint.configs.strictTypeChecked,
+      // Consistent TypeScript style
       tseslint.configs.stylisticTypeChecked,
+      // Rules of Hooks and complete effect dependencies
       reactHooks.configs.flat.recommended,
+      // Component files export only components, so hot reload keeps state
       reactRefresh.configs.vite,
     ],
     languageOptions: {
@@ -25,13 +31,16 @@ export default defineConfig([
       },
     },
     rules: {
+      // Type-only imports use `import type`
       "@typescript-eslint/consistent-type-imports": "error",
     },
   },
+  // Config files run in Node
   {
     files: ["**/*.js"],
     extends: [js.configs.recommended],
     languageOptions: { globals: globals.node },
   },
+  // Turns off rules that conflict with Prettier
   prettier,
 ]);
