@@ -1,7 +1,6 @@
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
 import "@fontsource/bebas-neue";
-import "@fontsource-variable/newsreader/wght-italic.css";
 import "@/styles/index.css";
 
 import { StrictMode } from "react";

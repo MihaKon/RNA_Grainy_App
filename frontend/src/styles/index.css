@@ -11,14 +11,10 @@
   --color-red: #d6280a;
   --color-red-deep: #a61d04;
   --color-gold: #f9d616;
-  --color-gold-deep: #d9b500;
-  --color-gold-icon: #b8960a;
-  --color-gold-text: #a07800;
   --color-ink: #0a2238;
   --color-ink-2: #244763;
   --color-ink-3: #5a7793;
   --color-surface: #f8ffff;
-  --color-paper: #f6f1e4;
   --color-line-soft: color-mix(in oklab, var(--color-ink) 13%, transparent);
 
   --color-accent: var(--color-blue);
@@ -27,7 +23,6 @@
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
   --font-display: "Bebas Neue", "Arial Narrow", sans-serif;
-  --font-serif: "Newsreader Variable", Georgia, serif;
 
   --text-hero: 3.5rem;
   --text-hero--line-height: 0.95;
