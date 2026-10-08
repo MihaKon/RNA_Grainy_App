@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { RnaPolisMark } from "@/components/brand/RnaPolisMark";
 import { GITHUB_REPOSITORY_URL } from "@/lib/links";
 
-export function SiteFooter() {
+export function Footer() {
   return (
     <footer className="bg-blue-ink text-white/80">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 lg:grid-cols-[1fr_auto] lg:px-8">
