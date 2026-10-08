@@ -46,7 +46,6 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
     const container = containerRef.current;
     if (!container) return;
 
-    // Mol* mounts its own React root, so every mount gets a fresh target element.
     const target = document.createElement("div");
     target.className = "absolute inset-0";
     container.append(target);
