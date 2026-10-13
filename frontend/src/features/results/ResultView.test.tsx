@@ -23,10 +23,10 @@ function mockResultFiles() {
   });
 }
 
-function renderResult() {
+function renderResult(result = coarseGrainResult) {
   return renderApp({
-    pathname: `/results/${coarseGrainResult.workspace_id}`,
-    state: { result: coarseGrainResult },
+    pathname: `/results/${result.workspace_id}`,
+    state: { result },
   });
 }
 
@@ -65,6 +65,32 @@ describe("ResultView", () => {
     const anchor = click.mock.contexts[0] as HTMLAnchorElement;
     expect(anchor.download).toBe("1EHZ_SimRNA.pdb");
     expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
+  });
+
+  it("offers only mmCIF when the PDB file is unavailable", async () => {
+    mockResultFiles();
+    const { user } = renderResult({
+      ...coarseGrainResult,
+      files: { ...files, coarse_pdb_url: null },
+    });
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+
+    expect(await screen.findByText("Viewer showing reference")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Download PDB" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "PDB output is unavailable for structures with 100,000 or more atoms.",
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Download mmCIF" }));
+
+    const anchor = click.mock.contexts[0] as HTMLAnchorElement;
+    expect(anchor.download).toBe("1EHZ_SimRNA.cif");
   });
 
   it("links citation markers in the model description", async () => {
