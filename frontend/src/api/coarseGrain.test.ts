@@ -20,7 +20,7 @@ describe("coarseGrain", () => {
     });
 
     expect(result).toEqual(coarseGrainResult);
-    const body = requestBody(fetchMock);
+    const body = requestBody(fetchMock, "/api/coarse-grain/file");
     expect(body.get("file")).toBeInstanceOf(File);
     expect(body.get("selected_model")).toBe("SimModel");
     expect(body.get("models")).toBe("1, 2");
@@ -43,7 +43,7 @@ describe("coarseGrain", () => {
 
     await coarseGrain({ source, modelId: "custom", customModelJson: "{}" });
 
-    const body = requestBody(fetchMock);
+    const body = requestBody(fetchMock, url);
     expect(body.get(field)).toBe(value);
     expect(body.get("custom_model_data")).toBe("{}");
   });

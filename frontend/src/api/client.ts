@@ -13,13 +13,10 @@ const SERVER_UNAVAILABLE_MESSAGE =
   "The server is currently unavailable. Please try again in a moment.";
 const SERVER_UNAVAILABLE_STATUSES = new Set([502, 503, 504]);
 
-export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers = new Headers(init?.headers);
-  headers.set("Accept", "application/json");
-
+export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   let response: Response;
   try {
-    response = await fetch(path, { ...init, headers });
+    response = await fetch(path, init);
   } catch {
     throw new ApiError(SERVER_UNAVAILABLE_MESSAGE, 0);
   }
@@ -27,7 +24,14 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
   if (!response.ok) {
     throw new ApiError(await readErrorDetail(response), response.status);
   }
+  return response;
+}
 
+export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  headers.set("Accept", "application/json");
+
+  const response = await apiFetch(path, { ...init, headers });
   return (await response.json()) as T;
 }
 
