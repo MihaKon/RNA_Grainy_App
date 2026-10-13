@@ -31,6 +31,7 @@ export async function fetchResultStructures(
   return { reference, coarseMmcif, coarsePdb };
 }
 
+// Once consumed, the workspace is deleted and the files cannot be fetched again.
 export const resultStructuresQueryOptions = (result: CoarseGrainResult) =>
   queryOptions({
     queryKey: ["results", result.workspace_id, "structures"],
