@@ -5,8 +5,7 @@ import {
   type BeadScope,
   type BeadStrategy,
   residuesForScope,
-  SCOPE_ATOMS,
-  SCOPE_RESIDUES,
+  SCOPES,
 } from "./atoms";
 
 export interface BeadDraft {
@@ -322,7 +321,7 @@ export function toDefinition(draft: ModelDraft): CustomModelDefinition {
   const mappings = new Map<BeadScope, MappingEntry>();
 
   for (const bead of draft.beads) {
-    const residues = SCOPE_RESIDUES[bead.scope];
+    const residues = SCOPES[bead.scope].residues;
     let entry = defaultMapping;
     if (residues) {
       entry = mappings.get(bead.scope) ?? {
@@ -422,8 +421,12 @@ function inferScope(residues: string[], atoms: string[]): BeadScope {
   if (scope && scope !== "all") return scope;
 
   if (atoms.length > 0) {
-    if (atoms.every((atom) => SCOPE_ATOMS.phosphate.includes(atom))) return "phosphate";
-    if (atoms.every((atom) => SCOPE_ATOMS.sugar.includes(atom))) return "sugar";
+    if (atoms.every((atom) => SCOPES.phosphate.atoms.includes(atom))) {
+      return "phosphate";
+    }
+    if (atoms.every((atom) => SCOPES.sugar.atoms.includes(atom))) {
+      return "sugar";
+    }
   }
   return "all";
 }

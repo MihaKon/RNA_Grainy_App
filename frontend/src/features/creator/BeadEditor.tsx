@@ -9,8 +9,7 @@ import {
   BEAD_SCOPES,
   BEAD_STRATEGIES,
   type BeadStrategy,
-  SCOPE_ATOMS,
-  SCOPE_LABELS,
+  SCOPES,
   STRATEGY_LABELS,
 } from "./atoms";
 import { ChipGroup } from "./ChipGroup";
@@ -106,13 +105,13 @@ export function BeadEditor({ bead, issues, dispatch }: BeadEditorProps) {
               dispatch({ type: "setBeadScope", key, scope });
             }}
           >
-            {SCOPE_LABELS[scope]}
+            {SCOPES[scope].label}
           </ToggleButton>
         ))}
       </ChipGroup>
 
       <ChipGroup legend="Atoms" hint={STRATEGY_HINTS[bead.strategy]}>
-        {SCOPE_ATOMS[bead.scope].map((atom) => (
+        {SCOPES[bead.scope].atoms.map((atom) => (
           <ToggleButton
             key={atom}
             pressed={bead.atoms.includes(atom)}
