@@ -7,24 +7,23 @@ export interface MappingGroup {
 }
 
 export function groupMapping(mapping: readonly ResidueMapping[]): MappingGroup[] {
-  const groups: MappingGroup[] = [];
-  const groupsByKey = new Map<string, MappingGroup>();
+  const groupsByType = new Map<string, Map<string, MappingGroup>>();
 
   for (const { residue, residue_type: residueType, beads } of mapping) {
-    const key = JSON.stringify([residueType, beads]);
-    const group = groupsByKey.get(key);
+    let typeGroups = groupsByType.get(residueType);
+    if (!typeGroups) {
+      typeGroups = new Map();
+      groupsByType.set(residueType, typeGroups);
+    }
+
+    const key = JSON.stringify(beads);
+    const group = typeGroups.get(key);
     if (group) {
       group.residues.push(residue);
     } else {
-      const newGroup = { residueType, residues: [residue], beads };
-      groupsByKey.set(key, newGroup);
-      groups.push(newGroup);
+      typeGroups.set(key, { residueType, residues: [residue], beads });
     }
   }
 
-  return groups.sort(
-    (a, b) =>
-      groups.findIndex((group) => group.residueType === a.residueType) -
-      groups.findIndex((group) => group.residueType === b.residueType),
-  );
+  return [...groupsByType.values()].flatMap((typeGroups) => [...typeGroups.values()]);
 }
