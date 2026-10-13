@@ -116,7 +116,7 @@ describe("UploadForm", () => {
     await user.type(screen.getByLabelText("Chains"), "A");
     await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
 
-    expect(await screen.findByText("Model report")).toBeInTheDocument();
+    expect(await screen.findByText("Conversion summary")).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(
       `/results/${coarseGrainResult.workspace_id}`,
     );
@@ -142,7 +142,7 @@ describe("UploadForm", () => {
     );
     await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
 
-    await screen.findByText("Model report");
+    await screen.findByText("Conversion summary");
     expect(requestBody(fetchMock, "/api/coarse-grain/file").get("file")).toEqual(file);
   });
 
@@ -164,7 +164,7 @@ describe("UploadForm", () => {
     expect(await screen.findByText("Two-bead model")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
 
-    await screen.findByText("Model report");
+    await screen.findByText("Conversion summary");
     const body = requestBody(fetchMock, "/api/coarse-grain/rcsb");
     expect(body.get("rcsb_id")).toBe("1EHZ");
     expect(body.get("selected_model")).toBe("custom");
@@ -185,7 +185,7 @@ describe("UploadForm", () => {
     await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "SimModel");
     await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
 
-    await screen.findByText("Model report");
+    await screen.findByText("Conversion summary");
     const urls = fetchMock.mock.calls.map(([input]) => input);
     expect(urls).not.toContain(`/api/coarse-grain/${first}`);
     const body = requestBody(fetchMock, `/api/coarse-grain/${last}`);
@@ -202,7 +202,7 @@ describe("UploadForm", () => {
     await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "SimModel");
     await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
 
-    await screen.findByText("Model report");
+    await screen.findByText("Conversion summary");
     const body = requestBody(fetchMock, "/api/coarse-grain/preset");
     expect(body.get("selected_model")).toBe("SimModel");
     expect(body.has("custom_model_data")).toBe(false);
@@ -218,7 +218,7 @@ describe("UploadForm", () => {
     await loadCustomModel(user, definition);
     await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
 
-    await screen.findByText("Model report");
+    await screen.findByText("Conversion summary");
     const body = requestBody(fetchMock, "/api/coarse-grain/preset");
     expect(body.get("selected_model")).toBe("custom");
     expect(body.get("custom_model_data")).toBe(definition);

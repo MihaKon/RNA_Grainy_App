@@ -43,7 +43,7 @@ describe("ResultView", () => {
     renderResult();
 
     expect(await screen.findByText("Viewer showing reference")).toBeInTheDocument();
-    const report = screen.getByRole("region", { name: "Model report" });
+    const report = screen.getByRole("region", { name: "Conversion summary" });
     expect(within(report).getByText("1,821")).toBeInTheDocument();
     expect(within(report).getByText("310")).toBeInTheDocument();
     expect(within(report).getByText("82.98%")).toBeInTheDocument();

@@ -4,22 +4,22 @@ import { formatBeadsPerResidue, formatPercent } from "@/lib/format";
 export function ModelReport({ result }: { result: CoarseGrainResult }) {
   const { atom_counts: atomCounts, model } = result;
   const rows = [
-    ["Model", model.name],
-    ["Resolution", formatBeadsPerResidue(model.beads_per_residue)],
-    ["Reference atoms", atomCounts.original.toLocaleString("en-US")],
-    ["Coarse-grained beads", atomCounts.coarse.toLocaleString("en-US")],
+    ["CG model", model.name],
+    ["CG resolution", formatBeadsPerResidue(model.beads_per_residue)],
+    ["Input models", result.selected_models.join(", ") || "All"],
+    ["Input chains", result.selected_chains.join(", ") || "All"],
+    ["Input atoms", atomCounts.original.toLocaleString("en-US")],
+    ["CG beads", atomCounts.coarse.toLocaleString("en-US")],
     ["Atom reduction", formatPercent(atomCounts.reduction)],
-    ["Models", result.selected_models.join(", ") || "All"],
-    ["Chains", result.selected_chains.join(", ") || "All"],
   ] as const;
 
   return (
     <section
-      aria-labelledby="model-report"
+      aria-labelledby="conversion-summary"
       className="rounded-md border border-line-soft bg-white p-5"
     >
-      <h2 id="model-report" className="eyebrow">
-        Model report
+      <h2 id="conversion-summary" className="eyebrow">
+        Conversion summary
       </h2>
       <dl className="mt-3">
         {rows.map(([label, value]) => (
