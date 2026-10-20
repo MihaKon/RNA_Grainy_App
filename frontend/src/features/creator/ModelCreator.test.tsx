@@ -152,4 +152,17 @@ describe("ModelCreator", () => {
     expect(issue).not.toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Use model" })).toBeEnabled();
   });
+
+  it("blocks a model that exceeds the byte size limit", async () => {
+    const { user, dialog } = await openCreator();
+
+    await user.click(within(dialog).getByLabelText("Model name"));
+    await user.paste("€".repeat(2500));
+
+    expect(
+      within(dialog).getByText("The model definition exceeds the 8 KiB limit."),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Use model" })).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Export JSON" })).toBeDisabled();
+  });
 });

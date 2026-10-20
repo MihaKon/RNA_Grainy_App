@@ -8,6 +8,7 @@ import { type TabItem, Tabs } from "@/components/ui/Tabs";
 import { TextField } from "@/components/ui/TextField";
 import {
   CustomModelFileError,
+  customModelSizeIssues,
   type LoadedCustomModel,
   readCustomModelFile,
 } from "@/features/upload/customModel";
@@ -56,10 +57,10 @@ export function ModelCreator({
 
   const json = serializeDefinition(toDefinition(draft));
   const issues = validateDraft(draft);
-  const maxChars = config.custom_model_json_max_chars;
-  const tooLong = json.length > maxChars;
-  const issueCount =
-    issues.model.length + Object.values(issues.beads).flat().length + (tooLong ? 1 : 0);
+  const sizeIssues = customModelSizeIssues(json, config);
+  const modelIssues = [...issues.model, ...sizeIssues];
+  const tooLarge = sizeIssues.length > 0;
+  const issueCount = modelIssues.length + Object.values(issues.beads).flat().length;
 
   const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -116,7 +117,7 @@ export function ModelCreator({
             >
               Import JSON
             </Button>
-            <Button variant="ghost" disabled={tooLong} onClick={handleExport}>
+            <Button variant="ghost" disabled={tooLarge} onClick={handleExport}>
               Export JSON
             </Button>
             <Button variant="ghost" onClick={onCancel}>
@@ -143,9 +144,9 @@ export function ModelCreator({
                 Resolve {issueCount} {issueCount === 1 ? "issue" : "issues"} before
                 using the model.
               </p>
-              {issues.model.length > 0 && (
+              {modelIssues.length > 0 && (
                 <ul className="mt-1 list-disc pl-4">
-                  {issues.model.map((issue) => (
+                  {modelIssues.map((issue) => (
                     <li key={issue}>{issue}</li>
                   ))}
                 </ul>
@@ -231,11 +232,11 @@ export function ModelCreator({
               <p
                 className={cn(
                   "font-mono text-label",
-                  tooLong ? "text-red-deep" : "text-ink-3",
+                  tooLarge ? "text-red-deep" : "text-ink-3",
                 )}
               >
                 {json.length.toLocaleString("en-US")} /{" "}
-                {maxChars.toLocaleString("en-US")} characters
+                {config.custom_model_json_max_chars.toLocaleString("en-US")} characters
               </p>
             </div>
             <pre className="max-h-[70dvh] overflow-auto rounded-md border border-line-soft bg-white p-4 font-mono text-xs text-ink-2">
