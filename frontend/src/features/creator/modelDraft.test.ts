@@ -377,6 +377,27 @@ describe("validateDraft", () => {
     ).toEqual(["N2 is missing from A, C, U."]);
   });
 
+  it("reports connections to beads that some residues do not define", () => {
+    let draft = reduce(createDefaultDraft(), { type: "addBead" });
+    const newBead = draft.beads.at(-1)?.key ?? "";
+    draft = reduce(
+      draft,
+      { type: "setBeadScope", key: newBead, scope: "purine" },
+      { type: "toggleAtom", key: newBead, atom: "N7" },
+      { type: "updateBead", key: newBead, patch: { name: "N7" } },
+      { type: "toggleIntraConnection", first: "A2", second: "A8" },
+      { type: "setInterConnection", end: "target", beadId: "A8" },
+    );
+
+    expect(validateDraft(draft)).toMatchObject({
+      model: [
+        "Connection A2–A8: bead A8 is not defined for C, U.",
+        "Inter-residue connection A2 → A8: bead A8 is not defined for C, U.",
+      ],
+      invalidConnections: false,
+    });
+  });
+
   it("reports and removes invalid connections", () => {
     const definition = {
       ...toDefinition(createDefaultDraft()),

@@ -395,6 +395,33 @@ export function validateDraft(draft: ModelDraft): DraftIssues {
   }
   issues.invalidConnections = intraIssues.length > 0 || missingInter.length > 0;
 
+  // The backend connects beads in every residue, so both ends must exist in all of them.
+  const covered = new Map<string, Set<Residue>>();
+  for (const bead of draft.beads) {
+    const residues = covered.get(bead.beadId) ?? new Set<Residue>();
+    residuesForScope(bead.scope).forEach((residue) => residues.add(residue));
+    covered.set(bead.beadId, residues);
+  }
+  const partialEnds = (label: string, ends: (string | null)[]) => {
+    for (const beadId of new Set(ends.filter((end) => end !== null))) {
+      const residues = covered.get(beadId);
+      if (!residues) continue;
+      const missing = ALL_RESIDUES.filter((residue) => !residues.has(residue));
+      if (missing.length > 0) {
+        issues.model.push(
+          `${label}: bead ${beadId} is not defined for ${missing.join(", ")}.`,
+        );
+      }
+    }
+  };
+  draft.intraResidue.forEach(([a, b]) => {
+    partialEnds(`Connection ${a}–${b}`, [a, b]);
+  });
+  partialEnds(`Inter-residue connection ${source ?? "?"} → ${target ?? "?"}`, [
+    source,
+    target,
+  ]);
+
   return issues;
 }
 
