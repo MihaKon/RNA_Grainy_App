@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 interface DrawerProps {
   open: boolean;
@@ -17,7 +18,8 @@ export function Drawer({ open, labelledBy, onClose, children }: DrawerProps) {
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
-  return (
+  // Portaled out of any surrounding form: Enter in a drawer field would submit it.
+  return createPortal(
     <dialog
       ref={dialogRef}
       aria-labelledby={labelledBy}
@@ -31,6 +33,7 @@ export function Drawer({ open, labelledBy, onClose, children }: DrawerProps) {
       className="m-0 h-auto max-h-[92dvh] w-full max-w-none overflow-y-auto border-b border-line-soft bg-surface p-0 text-ink-2 backdrop:bg-ink/45"
     >
       {open && children}
-    </dialog>
+    </dialog>,
+    document.body,
   );
 }

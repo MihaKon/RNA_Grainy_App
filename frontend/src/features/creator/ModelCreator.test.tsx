@@ -165,4 +165,23 @@ describe("ModelCreator", () => {
     expect(within(dialog).getByRole("button", { name: "Use model" })).toBeDisabled();
     expect(within(dialog).getByRole("button", { name: "Export JSON" })).toBeDisabled();
   });
+
+  it("keeps editing when Enter is pressed in a creator field", async () => {
+    const { user } = renderApp("/");
+    await user.click(await screen.findByRole("tab", { name: "Example" }));
+    await user.click(screen.getByRole("radio", { name: "1EHZ" }));
+    await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "custom");
+    await user.click(screen.getByRole("button", { name: "Open creator" }));
+    await user.click(screen.getByRole("button", { name: "Use model" }));
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const dialog = screen.getByRole("dialog", { name: "Model creator" });
+
+    await user.type(within(dialog).getByLabelText("Model name"), " v2{Enter}");
+
+    expect(screen.getByRole("dialog", { name: "Model creator" })).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      "/api/coarse-grain/preset",
+      expect.anything(),
+    );
+  });
 });
