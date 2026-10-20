@@ -128,7 +128,7 @@ describe("ModelCreator", () => {
     expect(await within(dialog).findByDisplayValue("Imported")).toBeInTheDocument();
   });
 
-  it("removes imported connections to undefined beads", async () => {
+  it("removes invalid imported connections", async () => {
     const { user, dialog } = await openCreator();
     const imported = {
       ...toDefinition(createDefaultDraft()),
@@ -146,7 +146,7 @@ describe("ModelCreator", () => {
 
     await user.click(
       within(dialog).getByRole("button", {
-        name: "Remove connections to undefined beads",
+        name: "Remove invalid connections",
       }),
     );
     expect(issue).not.toBeInTheDocument();

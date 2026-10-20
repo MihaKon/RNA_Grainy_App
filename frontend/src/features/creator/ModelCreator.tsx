@@ -151,15 +151,15 @@ export function ModelCreator({
                   ))}
                 </ul>
               )}
-              {issues.missingConnections && (
+              {issues.invalidConnections && (
                 <Button
                   variant="ghost"
                   className="mt-2"
                   onClick={() => {
-                    dispatch({ type: "removeMissingConnections" });
+                    dispatch({ type: "removeInvalidConnections" });
                   }}
                 >
-                  Remove connections to undefined beads
+                  Remove invalid connections
                 </Button>
               )}
             </Alert>

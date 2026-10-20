@@ -72,7 +72,7 @@ export type DraftAction =
   | { type: "toggleIntraConnection"; first: string; second: string }
   | { type: "setInterConnection"; end: keyof InterResidueDraft; beadId: string }
   | { type: "clearInterConnection" }
-  | { type: "removeMissingConnections" };
+  | { type: "removeInvalidConnections" };
 
 let beadKeyCounter = 0;
 
@@ -129,6 +129,22 @@ export function hasIntraConnection(draft: ModelDraft, first: string, second: str
 function isDefinedBead(draft: ModelDraft): (beadId: string | null) => boolean {
   const beadIds = new Set(uniqueBeadIds(draft));
   return (beadId) => beadId === null || beadIds.has(beadId);
+}
+
+// The connectivity matrix cannot show these, so they only come from imports.
+function intraConnectionIssues(draft: ModelDraft): (string | null)[] {
+  const isDefined = isDefinedBead(draft);
+  return draft.intraResidue.map(([a, b], index) => {
+    const label = `Connection ${a}–${b}`;
+    const missing = [...new Set([a, b])].filter((beadId) => !isDefined(beadId));
+    if (missing.length > 0)
+      return `${label} uses undefined bead ${missing.join(", ")}.`;
+    if (a === b) return `${label} connects a bead to itself.`;
+    const first = draft.intraResidue.findIndex(
+      ([c, d]) => (c === a && d === b) || (c === b && d === a),
+    );
+    return first === index ? null : `${label} is listed twice.`;
+  });
 }
 
 export function draftReducer(draft: ModelDraft, action: DraftAction): ModelDraft {
@@ -235,12 +251,15 @@ export function draftReducer(draft: ModelDraft, action: DraftAction): ModelDraft
     case "clearInterConnection":
       return { ...draft, interResidue: { source: null, target: null } };
 
-    case "removeMissingConnections": {
+    case "removeInvalidConnections": {
+      const intraIssues = intraConnectionIssues(draft);
       const isDefined = isDefinedBead(draft);
       const { source, target } = draft.interResidue;
       return {
         ...draft,
-        intraResidue: draft.intraResidue.filter((pair) => pair.every(isDefined)),
+        intraResidue: draft.intraResidue.filter(
+          (_, index) => intraIssues[index] === null,
+        ),
         interResidue:
           isDefined(source) && isDefined(target)
             ? draft.interResidue
@@ -288,11 +307,11 @@ function renameConnections(draft: ModelDraft, from: string, to: string): ModelDr
 export interface DraftIssues {
   beads: Record<string, string[]>;
   model: string[];
-  missingConnections: boolean;
+  invalidConnections: boolean;
 }
 
 export function validateDraft(draft: ModelDraft): DraftIssues {
-  const issues: DraftIssues = { beads: {}, model: [], missingConnections: false };
+  const issues: DraftIssues = { beads: {}, model: [], invalidConnections: false };
   const beadsByResidue = new Map<string, string>();
   const namesByResidue = new Map<string, string>();
 
@@ -349,23 +368,16 @@ export function validateDraft(draft: ModelDraft): DraftIssues {
     issues.model.push("Choose both beads of the inter-residue connection.");
   }
 
+  const intraIssues = intraConnectionIssues(draft).filter((issue) => issue !== null);
   const isDefined = isDefinedBead(draft);
-  const connections = [
-    ...draft.intraResidue.map(([a, b]) => ({
-      label: `Connection ${a}–${b}`,
-      ends: [a, b],
-    })),
-    {
-      label: `Inter-residue connection ${source ?? "?"} → ${target ?? "?"}`,
-      ends: [source, target],
-    },
-  ];
-  for (const { label, ends } of connections) {
-    const missing = ends.filter((beadId) => !isDefined(beadId));
-    if (missing.length === 0) continue;
-    issues.missingConnections = true;
-    issues.model.push(`${label} uses undefined bead ${missing.join(", ")}.`);
+  const missingInter = [source, target].filter((beadId) => !isDefined(beadId));
+  issues.model.push(...intraIssues);
+  if (missingInter.length > 0) {
+    issues.model.push(
+      `Inter-residue connection ${source ?? "?"} → ${target ?? "?"} uses undefined bead ${missingInter.join(", ")}.`,
+    );
   }
+  issues.invalidConnections = intraIssues.length > 0 || missingInter.length > 0;
 
   return issues;
 }

@@ -207,7 +207,7 @@ describe("validateDraft", () => {
     expect(validateDraft(createDefaultDraft())).toEqual({
       beads: {},
       model: [],
-      missingConnections: false,
+      invalidConnections: false,
     });
   });
 
@@ -260,13 +260,15 @@ describe("validateDraft", () => {
     ]);
   });
 
-  it("reports and removes connections to undefined beads", () => {
+  it("reports and removes invalid connections", () => {
     const definition = {
       ...toDefinition(createDefaultDraft()),
       connectivity: {
         intra_residue: [
           ["A1", "A2"],
           ["A1", "B9"],
+          ["A3", "A3"],
+          ["A2", "A1"],
         ],
         inter_residue: [{ source: "A5", target: "B9" }],
       },
@@ -276,17 +278,19 @@ describe("validateDraft", () => {
     expect(validateDraft(draft)).toMatchObject({
       model: [
         "Connection A1–B9 uses undefined bead B9.",
+        "Connection A3–A3 connects a bead to itself.",
+        "Connection A2–A1 is listed twice.",
         "Inter-residue connection A5 → B9 uses undefined bead B9.",
       ],
-      missingConnections: true,
+      invalidConnections: true,
     });
 
-    const cleaned = reduce(draft, { type: "removeMissingConnections" });
+    const cleaned = reduce(draft, { type: "removeInvalidConnections" });
     expect(cleaned.intraResidue).toEqual([["A1", "A2"]]);
     expect(cleaned.interResidue).toEqual({ source: null, target: null });
     expect(validateDraft(cleaned)).toMatchObject({
       model: [],
-      missingConnections: false,
+      invalidConnections: false,
     });
   });
 });
