@@ -204,7 +204,11 @@ describe("draftReducer", () => {
 
 describe("validateDraft", () => {
   it("accepts the default model", () => {
-    expect(validateDraft(createDefaultDraft())).toEqual({ beads: {}, model: [] });
+    expect(validateDraft(createDefaultDraft())).toEqual({
+      beads: {},
+      model: [],
+      missingConnections: false,
+    });
   });
 
   it("reports beads without atoms and overlapping bead IDs", () => {
@@ -228,5 +232,46 @@ describe("validateDraft", () => {
     expect(validateDraft(draft).model).toEqual([
       "Choose both beads of the inter-residue connection.",
     ]);
+  });
+
+  it("reports imported atoms that the editor cannot select", () => {
+    const definition = toDefinition(createDefaultDraft());
+    definition.default_mapping.config.atom_centers.A4 = ["C2", "N2"];
+    const draft = fromDefinition(definition as unknown as Record<string, unknown>);
+
+    expect(validateDraft(draft).beads[beadKey(draft, "A4")]).toEqual([
+      "Direct mapping uses exactly one atom.",
+      "N2 is not available for All bases.",
+    ]);
+  });
+
+  it("reports and removes connections to undefined beads", () => {
+    const definition = {
+      ...toDefinition(createDefaultDraft()),
+      connectivity: {
+        intra_residue: [
+          ["A1", "A2"],
+          ["A1", "B9"],
+        ],
+        inter_residue: [{ source: "A5", target: "B9" }],
+      },
+    };
+    const draft = fromDefinition(definition);
+
+    expect(validateDraft(draft)).toMatchObject({
+      model: [
+        "Connection A1–B9 uses undefined bead B9.",
+        "Inter-residue connection A5 → B9 uses undefined bead B9.",
+      ],
+      missingConnections: true,
+    });
+
+    const cleaned = reduce(draft, { type: "removeMissingConnections" });
+    expect(cleaned.intraResidue).toEqual([["A1", "A2"]]);
+    expect(cleaned.interResidue).toEqual({ source: null, target: null });
+    expect(validateDraft(cleaned)).toMatchObject({
+      model: [],
+      missingConnections: false,
+    });
   });
 });

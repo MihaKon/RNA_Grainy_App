@@ -127,4 +127,29 @@ describe("ModelCreator", () => {
 
     expect(await within(dialog).findByDisplayValue("Imported")).toBeInTheDocument();
   });
+
+  it("removes imported connections to undefined beads", async () => {
+    const { user, dialog } = await openCreator();
+    const imported = {
+      ...toDefinition(createDefaultDraft()),
+      connectivity: { intra_residue: [["A1", "B9"]], inter_residue: [] },
+    };
+
+    await user.upload(
+      within(dialog).getByLabelText("Import model JSON file"),
+      new File([JSON.stringify(imported)], "imported.json"),
+    );
+    const issue = await within(dialog).findByText(
+      "Connection A1–B9 uses undefined bead B9.",
+    );
+    expect(within(dialog).getByRole("button", { name: "Use model" })).toBeDisabled();
+
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: "Remove connections to undefined beads",
+      }),
+    );
+    expect(issue).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Use model" })).toBeEnabled();
+  });
 });

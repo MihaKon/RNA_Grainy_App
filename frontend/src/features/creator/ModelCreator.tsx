@@ -150,6 +150,17 @@ export function ModelCreator({
                   ))}
                 </ul>
               )}
+              {issues.missingConnections && (
+                <Button
+                  variant="ghost"
+                  className="mt-2"
+                  onClick={() => {
+                    dispatch({ type: "removeMissingConnections" });
+                  }}
+                >
+                  Remove connections to undefined beads
+                </Button>
+              )}
             </Alert>
           )}
 

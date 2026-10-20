@@ -71,7 +71,8 @@ export type DraftAction =
   | { type: "toggleAtom"; key: string; atom: string }
   | { type: "toggleIntraConnection"; first: string; second: string }
   | { type: "setInterConnection"; end: keyof InterResidueDraft; beadId: string }
-  | { type: "clearInterConnection" };
+  | { type: "clearInterConnection" }
+  | { type: "removeMissingConnections" };
 
 let beadKeyCounter = 0;
 
@@ -122,6 +123,12 @@ export function hasIntraConnection(draft: ModelDraft, first: string, second: str
   return draft.intraResidue.some(
     ([a, b]) => (a === first && b === second) || (a === second && b === first),
   );
+}
+
+// Imported definitions can connect bead IDs that no bead defines.
+function isDefinedBead(draft: ModelDraft): (beadId: string | null) => boolean {
+  const beadIds = new Set(uniqueBeadIds(draft));
+  return (beadId) => beadId === null || beadIds.has(beadId);
 }
 
 export function draftReducer(draft: ModelDraft, action: DraftAction): ModelDraft {
@@ -227,6 +234,19 @@ export function draftReducer(draft: ModelDraft, action: DraftAction): ModelDraft
 
     case "clearInterConnection":
       return { ...draft, interResidue: { source: null, target: null } };
+
+    case "removeMissingConnections": {
+      const isDefined = isDefinedBead(draft);
+      const { source, target } = draft.interResidue;
+      return {
+        ...draft,
+        intraResidue: draft.intraResidue.filter((pair) => pair.every(isDefined)),
+        interResidue:
+          isDefined(source) && isDefined(target)
+            ? draft.interResidue
+            : { source: null, target: null },
+      };
+    }
   }
 }
 
@@ -268,10 +288,11 @@ function renameConnections(draft: ModelDraft, from: string, to: string): ModelDr
 export interface DraftIssues {
   beads: Record<string, string[]>;
   model: string[];
+  missingConnections: boolean;
 }
 
 export function validateDraft(draft: ModelDraft): DraftIssues {
-  const issues: DraftIssues = { beads: {}, model: [] };
+  const issues: DraftIssues = { beads: {}, model: [], missingConnections: false };
   const beadsByResidue = new Map<string, string>();
 
   if (!draft.name.trim()) issues.model.push("Enter a model name.");
@@ -282,6 +303,17 @@ export function validateDraft(draft: ModelDraft): DraftIssues {
     if (!bead.beadId.trim()) beadIssues.push("Enter a bead ID.");
     if (!bead.name.trim()) beadIssues.push("Enter a bead name.");
     if (bead.atoms.length === 0) beadIssues.push("Select at least one atom.");
+    if (bead.strategy === "direct" && bead.atoms.length > 1) {
+      beadIssues.push("Direct mapping uses exactly one atom.");
+    }
+
+    const { label, atoms } = SCOPES[bead.scope];
+    const unavailable = bead.atoms.filter((atom) => !atoms.includes(atom));
+    if (unavailable.length > 0) {
+      beadIssues.push(
+        `${unavailable.join(", ")} ${unavailable.length === 1 ? "is" : "are"} not available for ${label}.`,
+      );
+    }
 
     const conflicts = residuesForScope(bead.scope).filter(
       (residue) => beadsByResidue.get(`${bead.beadId}:${residue}`) !== undefined,
@@ -301,6 +333,24 @@ export function validateDraft(draft: ModelDraft): DraftIssues {
   const { source, target } = draft.interResidue;
   if ((source === null) !== (target === null)) {
     issues.model.push("Choose both beads of the inter-residue connection.");
+  }
+
+  const isDefined = isDefinedBead(draft);
+  const connections = [
+    ...draft.intraResidue.map(([a, b]) => ({
+      label: `Connection ${a}–${b}`,
+      ends: [a, b],
+    })),
+    {
+      label: `Inter-residue connection ${source ?? "?"} → ${target ?? "?"}`,
+      ends: [source, target],
+    },
+  ];
+  for (const { label, ends } of connections) {
+    const missing = ends.filter((beadId) => !isDefined(beadId));
+    if (missing.length === 0) continue;
+    issues.missingConnections = true;
+    issues.model.push(`${label} uses undefined bead ${missing.join(", ")}.`);
   }
 
   return issues;
