@@ -222,6 +222,21 @@ describe("validateDraft", () => {
     ]);
   });
 
+  it("reports bead names used twice in a residue", () => {
+    let draft = reduce(createDefaultDraft(), { type: "addBead" });
+    const newBead = draft.beads.at(-1)?.key ?? "";
+    draft = reduce(
+      draft,
+      { type: "updateBead", key: newBead, patch: { name: "N9" } },
+      { type: "setBeadScope", key: newBead, scope: "adenine" },
+      { type: "toggleAtom", key: newBead, atom: "N7" },
+    );
+
+    expect(validateDraft(draft).beads[newBead]).toEqual([
+      "Bead name N9 is already used for A.",
+    ]);
+  });
+
   it("requires both ends of the inter-residue connection", () => {
     const draft = reduce(
       createDefaultDraft(),

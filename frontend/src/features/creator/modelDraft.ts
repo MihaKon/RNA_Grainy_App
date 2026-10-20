@@ -294,6 +294,7 @@ export interface DraftIssues {
 export function validateDraft(draft: ModelDraft): DraftIssues {
   const issues: DraftIssues = { beads: {}, model: [], missingConnections: false };
   const beadsByResidue = new Map<string, string>();
+  const namesByResidue = new Map<string, string>();
 
   if (!draft.name.trim()) issues.model.push("Enter a model name.");
   if (draft.beads.length === 0) issues.model.push("Add at least one bead.");
@@ -325,6 +326,19 @@ export function validateDraft(draft: ModelDraft): DraftIssues {
     }
     for (const residue of residuesForScope(bead.scope)) {
       beadsByResidue.set(`${bead.beadId}:${residue}`, bead.key);
+    }
+
+    // The backend looks atoms up by name, so a residue needs unique bead names.
+    const nameConflicts = residuesForScope(bead.scope).filter((residue) =>
+      namesByResidue.has(`${bead.name}:${residue}`),
+    );
+    if (bead.name.trim() && nameConflicts.length > 0) {
+      beadIssues.push(
+        `Bead name ${bead.name} is already used for ${nameConflicts.join(", ")}.`,
+      );
+    }
+    for (const residue of residuesForScope(bead.scope)) {
+      namesByResidue.set(`${bead.name}:${residue}`, bead.key);
     }
 
     if (beadIssues.length > 0) issues.beads[bead.key] = beadIssues;
