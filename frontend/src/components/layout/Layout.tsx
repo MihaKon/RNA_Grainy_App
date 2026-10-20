@@ -20,8 +20,6 @@ export function Layout() {
   );
 }
 
-// Every full page load starts with the "default" key, so key it by path instead;
-// otherwise one page would restore the scroll position saved for another.
 function getScrollKey(location: Location): string {
   return location.key === "default" ? location.pathname : location.key;
 }
