@@ -28,7 +28,7 @@ function beadKey(draft: ModelDraft, beadId: string, index = 0): string {
 }
 
 describe("toDefinition", () => {
-  it("builds the same definition as the previous creator for the default model", () => {
+  it("builds the SimRNA definition for the default model", () => {
     const config = (entries: [string, string, string][]) => ({
       bead_names: Object.fromEntries(entries.map(([id, name]) => [id, name])),
       atom_centers: Object.fromEntries(entries.map(([id, , atom]) => [id, [atom]])),
@@ -43,7 +43,7 @@ describe("toDefinition", () => {
         residues: ["A", "G", "C", "U"],
         config: config([
           ["A1", "P", "P"],
-          ["A2", "C4", "C4'"],
+          ["A2", "C4'", "C4'"],
           ["A4", "C2", "C2"],
         ]),
       },
@@ -71,7 +71,7 @@ describe("toDefinition", () => {
           ["A4", "A5"],
           ["A5", "A3"],
         ],
-        inter_residue: [{ source: "A5", target: "A1" }],
+        inter_residue: [{ source: "A2", target: "A1" }],
       },
     });
   });
@@ -155,7 +155,7 @@ describe("draftReducer", () => {
     });
 
     expect(draft.intraResidue[0]).toEqual(["P1", "A2"]);
-    expect(draft.interResidue).toEqual({ source: "A5", target: "P1" });
+    expect(draft.interResidue).toEqual({ source: "A2", target: "P1" });
   });
 
   it("leaves connections alone when a shared bead ID is renamed", () => {

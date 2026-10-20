@@ -97,7 +97,7 @@ export function createDefaultDraft(): ModelDraft {
     description: "Custom Model based on SimRNA.",
     beads: [
       direct("A1", "P", "phosphate", "P"),
-      direct("A2", "C4", "sugar", "C4'"),
+      direct("A2", "C4'", "sugar", "C4'"),
       direct("A3", "N9", "purine", "N9"),
       direct("A3", "N1", "pyrimidine", "N1"),
       direct("A4", "C2", "all", "C2"),
@@ -111,7 +111,7 @@ export function createDefaultDraft(): ModelDraft {
       ["A4", "A5"],
       ["A5", "A3"],
     ],
-    interResidue: { source: "A5", target: "A1" },
+    interResidue: { source: "A2", target: "A1" },
   };
 }
 
