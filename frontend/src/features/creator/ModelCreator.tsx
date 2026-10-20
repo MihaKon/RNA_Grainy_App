@@ -18,6 +18,8 @@ import { downloadTextFile } from "@/lib/download";
 import { BeadEditor } from "./BeadEditor";
 import { ConnectivityEditor } from "./ConnectivityEditor";
 import {
+  createDefaultDraft,
+  createEmptyDraft,
   draftReducer,
   fromDefinition,
   type ModelDraft,
@@ -109,6 +111,22 @@ export function ModelCreator({
               className="sr-only"
               onChange={(event) => void handleImport(event)}
             />
+            <Button
+              variant="ghost"
+              onClick={() => {
+                dispatch({ type: "replace", draft: createEmptyDraft() });
+              }}
+            >
+              Start from scratch
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                dispatch({ type: "replace", draft: createDefaultDraft() });
+              }}
+            >
+              Load SimRNA template
+            </Button>
             <Button
               variant="ghost"
               onClick={() => {

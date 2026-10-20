@@ -119,6 +119,19 @@ export function createDefaultDraft(): ModelDraft {
   };
 }
 
+export function createEmptyDraft(): ModelDraft {
+  return draftReducer(
+    {
+      name: "",
+      description: "",
+      beads: [],
+      intraResidue: [],
+      interResidue: { source: null, target: null },
+    },
+    { type: "addBead" },
+  );
+}
+
 export function uniqueBeadIds(draft: ModelDraft): string[] {
   return [...new Set(draft.beads.map((bead) => bead.beadId))];
 }

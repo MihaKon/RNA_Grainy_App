@@ -224,4 +224,27 @@ describe("ModelCreator", () => {
       screen.getByText("The creator supports residues A, G, C and U, not PSU."),
     ).toBeInTheDocument();
   });
+
+  it("starts from scratch and reloads the SimRNA template", async () => {
+    const { user, dialog } = await openCreator();
+    const nameField = within(dialog).getByRole("textbox", { name: "Model name" });
+
+    await user.click(
+      within(dialog).getByRole("button", { name: "Start from scratch" }),
+    );
+    expect(nameField).toHaveValue("");
+    expect(
+      within(dialog)
+        .getAllByRole("article")
+        .map((bead) => bead.ariaLabel),
+    ).toEqual(["Bead A1"]);
+    expect(within(dialog).getByRole("button", { name: "Use model" })).toBeDisabled();
+
+    await user.click(
+      within(dialog).getByRole("button", { name: "Load SimRNA template" }),
+    );
+    expect(nameField).toHaveValue("Custom Model");
+    expect(within(dialog).getAllByRole("article")).toHaveLength(7);
+    expect(within(dialog).getByRole("button", { name: "Use model" })).toBeEnabled();
+  });
 });
