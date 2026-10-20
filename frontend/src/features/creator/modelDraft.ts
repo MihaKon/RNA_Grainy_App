@@ -466,11 +466,22 @@ export function resolveBeads(
     const strategies = stringRecord(config.strategies);
     const beads = new Map<string, ResolvedBead>();
     for (const [beadId, name] of Object.entries(stringRecord(config.bead_names))) {
-      const strategy = strategies[beadId];
+      const listedStrategy = strategies[beadId];
+      const strategy = isStrategy(listedStrategy) ? listedStrategy : "direct";
+      const atoms = stringList(atomCenters[beadId]);
+      // The backend skips atoms the residue lacks, and the bead itself when a direct
+      // mapping's atom or every center atom is missing.
+      const present = atoms.filter(
+        (atom) => residuesWithoutAtom(atom, [residue]).length === 0,
+      );
+      const missingDirectAtom =
+        strategy === "direct" && atoms[0] !== undefined && present[0] !== atoms[0];
+      if (missingDirectAtom || (atoms.length > 0 && present.length === 0)) continue;
+
       beads.set(beadId, {
         name,
-        atoms: stringList(atomCenters[beadId]),
-        strategy: isStrategy(strategy) ? strategy : "direct",
+        atoms: present,
+        strategy,
         description: descriptions[beadId] ?? "",
       });
     }

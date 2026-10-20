@@ -159,6 +159,35 @@ describe("fromDefinition", () => {
     expect(resolveBeads(toJson(toDefinition(draft)))).toEqual(resolveBeads(definition));
   });
 
+  it("splits beads that use atoms only some of their residues have", () => {
+    const definition = {
+      default_mapping: mapping(["A", "G", "C", "U"], { A1: ["P"] }),
+      mapping: [
+        {
+          residues: ["C", "U"],
+          config: {
+            bead_names: { A3: "PY" },
+            atom_centers: { A3: ["N3", "N4", "O4"] },
+            strategies: { A3: "center_of_mass" },
+          },
+        },
+        mapping(["A", "G"], { A2: ["N6"] }),
+      ],
+    };
+    const draft = fromDefinition(definition);
+
+    expect(
+      draft.beads.map(({ beadId, scope, atoms }) => [beadId, scope, atoms]),
+    ).toEqual([
+      ["A1", "phosphate", ["P"]],
+      ["A2", "adenine", ["N6"]],
+      ["A3", "cytosine", ["N3", "N4"]],
+      ["A3", "uracil", ["N3", "O4"]],
+    ]);
+    expect(validateDraft(draft).beads).toEqual({});
+    expect(resolveBeads(toJson(toDefinition(draft)))).toEqual(resolveBeads(definition));
+  });
+
   it("rejects residues the creator cannot edit", () => {
     expect(() =>
       fromDefinition({ default_mapping: mapping(["A", "PSU"], { A1: ["P"] }) }),
@@ -329,15 +358,23 @@ describe("validateDraft", () => {
     ]);
   });
 
-  it("reports imported atoms that are missing from some residues", () => {
+  it("reports imported direct beads with several atoms", () => {
     const definition = toDefinition(createDefaultDraft());
-    definition.default_mapping.config.atom_centers.A4 = ["C2", "N2"];
-    const draft = fromDefinition(definition as unknown as Record<string, unknown>);
+    definition.default_mapping.config.atom_centers.A1 = ["P", "OP1"];
+    const draft = fromDefinition(toJson(definition));
 
-    expect(validateDraft(draft).beads[beadKey(draft, "A4")]).toEqual([
+    expect(validateDraft(draft).beads[beadKey(draft, "A1")]).toEqual([
       "Direct mapping uses exactly one atom.",
-      "N2 is missing from A, C, U.",
     ]);
+  });
+
+  it("reports atoms that some residues of the bead lack", () => {
+    const draft = createDefaultDraft();
+    const key = beadKey(draft, "A4");
+
+    expect(
+      validateDraft(reduce(draft, { type: "toggleAtom", key, atom: "N2" })).beads[key],
+    ).toEqual(["N2 is missing from A, C, U."]);
   });
 
   it("reports and removes invalid connections", () => {
