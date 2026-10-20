@@ -17,6 +17,7 @@ import { downloadTextFile } from "@/lib/download";
 
 import { BeadEditor } from "./BeadEditor";
 import { ConnectivityEditor } from "./ConnectivityEditor";
+import { CreatorGuide } from "./CreatorGuide";
 import {
   createDefaultDraft,
   createEmptyDraft,
@@ -203,6 +204,10 @@ export function ModelCreator({
             />
           </div>
 
+          <Disclosure title="User guide">
+            <CreatorGuide />
+          </Disclosure>
+
           <div className="overflow-hidden rounded-md border border-line-soft bg-white">
             <Tabs
               label="Model definition"
@@ -213,9 +218,6 @@ export function ModelCreator({
             >
               {tab === "beads" ? (
                 <div className="flex flex-col gap-4">
-                  <Disclosure title="How beads work">
-                    <BeadRules />
-                  </Disclosure>
                   {draft.beads.map((bead) => (
                     <BeadEditor
                       key={bead.key}
@@ -263,25 +265,6 @@ export function ModelCreator({
           </div>
         </aside>
       </div>
-    </div>
-  );
-}
-
-function BeadRules() {
-  return (
-    <div className="flex flex-col gap-3 text-sm text-ink-2">
-      <p>
-        <strong className="font-medium text-ink">Bead ID</strong> identifies the bead
-        when building the structure and defining connections.{" "}
-        <strong className="font-medium text-ink">Bead name</strong> becomes the atom
-        name shown in the coarse-grained structure.
-      </p>
-      <p>
-        To place a bead on different atoms depending on the residue, add several beads
-        with the same ID and different scopes, e.g. one bead{" "}
-        <code className="font-mono">A3</code> for purines and another for pyrimidines.
-        Connections defined for an ID apply to all beads that share it.
-      </p>
     </div>
   );
 }
