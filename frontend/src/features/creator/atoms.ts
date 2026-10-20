@@ -16,13 +16,18 @@ interface ScopeDefinition {
   atoms: readonly string[];
 }
 
+// A bead must find its atoms in every residue it applies to.
+function sharedAtoms(residues: readonly Residue[]): string[] {
+  const [first = [], ...rest] = residues.map((residue) => BASE_ATOMS[residue]);
+  return first.filter((atom) => rest.every((atoms) => atoms.includes(atom)));
+}
+
 function baseScope(label: string, residues: readonly Residue[]): ScopeDefinition {
-  const atoms = new Set(residues.flatMap((residue) => BASE_ATOMS[residue]));
-  return { label, residues, atoms: [...atoms] };
+  return { label, residues, atoms: sharedAtoms(residues) };
 }
 
 const SCOPE_DEFINITIONS = {
-  all: { label: "All bases", atoms: ["N1", "C2", "N3", "C4", "C5", "C6", "N2"] },
+  all: { label: "All bases", atoms: sharedAtoms(ALL_RESIDUES) },
   phosphate: { label: "Phosphate", atoms: ["P", "OP1", "OP2"] },
   sugar: {
     label: "Sugar",
