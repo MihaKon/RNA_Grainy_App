@@ -1,6 +1,6 @@
 export const ALL_RESIDUES = ["A", "G", "C", "U"] as const;
 
-type Residue = (typeof ALL_RESIDUES)[number];
+export type Residue = (typeof ALL_RESIDUES)[number];
 
 const BASE_ATOMS: Record<Residue, readonly string[]> = {
   A: ["N1", "C2", "N3", "C4", "C5", "C6", "N6", "N7", "C8", "N9"],
@@ -57,6 +57,17 @@ export type BeadStrategy = keyof typeof STRATEGY_LABELS;
 
 export const BEAD_STRATEGIES = Object.keys(STRATEGY_LABELS) as BeadStrategy[];
 
-export function residuesForScope(scope: BeadScope): readonly string[] {
+export function residuesForScope(scope: BeadScope): readonly Residue[] {
   return SCOPES[scope].residues ?? ALL_RESIDUES;
+}
+
+const BASE_ATOM_NAMES = new Set(Object.values(BASE_ATOMS).flat());
+
+// Only base atoms differ between residues; backbone and other atom names are not checked.
+export function residuesWithoutAtom(
+  atom: string,
+  residues: readonly Residue[],
+): Residue[] {
+  if (!BASE_ATOM_NAMES.has(atom)) return [];
+  return residues.filter((residue) => !BASE_ATOMS[residue].includes(atom));
 }

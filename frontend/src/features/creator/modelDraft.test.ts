@@ -6,6 +6,7 @@ import {
   draftReducer,
   fromDefinition,
   type ModelDraft,
+  resolveBeads,
   toDefinition,
   validateDraft,
 } from "./modelDraft";
@@ -16,6 +17,21 @@ const withoutKeys = (draft: ModelDraft) => ({
     .map(({ key, ...bead }) => bead)
     .sort((a, b) => `${a.beadId}:${a.scope}`.localeCompare(`${b.beadId}:${b.scope}`)),
 });
+
+const BUILT_IN_MODELS = Object.fromEntries(
+  Object.entries(
+    import.meta.glob<Record<string, unknown>>(
+      "../../../../app/coarse_grain/models/*.json",
+      {
+        eager: true,
+        import: "default",
+      },
+    ),
+  ).map(([path, definition]) => [path.split("/").at(-1) ?? path, definition]),
+);
+
+const toJson = (definition: unknown) =>
+  JSON.parse(JSON.stringify(definition)) as Record<string, unknown>;
 
 function reduce(draft: ModelDraft, ...actions: DraftAction[]): ModelDraft {
   return actions.reduce(draftReducer, draft);
@@ -92,6 +108,70 @@ describe("fromDefinition", () => {
 
     expect(withoutKeys(fromDefinition(definition))).toEqual(withoutKeys(draft));
   });
+
+  const mapping = (residues: string[], beads: Record<string, string[]>) => ({
+    residues,
+    config: {
+      bead_names: Object.fromEntries(Object.keys(beads).map((id) => [id, id])),
+      atom_centers: beads,
+    },
+  });
+
+  it("resolves residue-specific overrides of the default mapping", () => {
+    const draft = fromDefinition({
+      default_mapping: mapping(["A", "G", "C", "U"], { A3: ["N1"] }),
+      mapping: [mapping(["A", "G"], { A3: ["N9"] })],
+    });
+
+    expect(draft.beads.map(({ scope, atoms }) => [scope, atoms])).toEqual([
+      ["purine", ["N9"]],
+      ["pyrimidine", ["N1"]],
+    ]);
+    expect(validateDraft(draft).beads).toEqual({});
+  });
+
+  it("keeps overrides that change only the atoms of a default bead", () => {
+    const draft = fromDefinition({
+      default_mapping: mapping(["A", "G", "C", "U"], { A3: ["C2"] }),
+      mapping: [{ residues: ["A", "G"], config: { atom_centers: { A3: ["N9"] } } }],
+    });
+
+    expect(
+      draft.beads.map(({ beadId, scope, atoms }) => [beadId, scope, atoms]),
+    ).toEqual([
+      ["A3", "purine", ["N9"]],
+      ["A3", "pyrimidine", ["C2"]],
+    ]);
+  });
+
+  it("splits residue sets without a scope into one bead per residue", () => {
+    const definition = {
+      default_mapping: mapping(["A", "G", "C", "U"], { A1: ["P"] }),
+      mapping: [mapping(["A", "C"], { A2: ["N1"] })],
+    };
+    const draft = fromDefinition(definition);
+
+    expect(draft.beads.map(({ beadId, scope }) => [beadId, scope])).toEqual([
+      ["A1", "phosphate"],
+      ["A2", "adenine"],
+      ["A2", "cytosine"],
+    ]);
+    expect(resolveBeads(toJson(toDefinition(draft)))).toEqual(resolveBeads(definition));
+  });
+
+  it("rejects residues the creator cannot edit", () => {
+    expect(() =>
+      fromDefinition({ default_mapping: mapping(["A", "PSU"], { A1: ["P"] }) }),
+    ).toThrow("The creator supports residues A, G, C and U, not PSU.");
+  });
+
+  it.each(Object.entries(BUILT_IN_MODELS))(
+    "keeps the meaning of %s through import and export",
+    (_, definition) => {
+      const exported = toJson(toDefinition(fromDefinition(definition)));
+      expect(resolveBeads(exported)).toEqual(resolveBeads(definition));
+    },
+  );
 
   it("tolerates missing and malformed sections", () => {
     const draft = fromDefinition({
@@ -249,14 +329,14 @@ describe("validateDraft", () => {
     ]);
   });
 
-  it("reports imported atoms that the editor cannot select", () => {
+  it("reports imported atoms that are missing from some residues", () => {
     const definition = toDefinition(createDefaultDraft());
     definition.default_mapping.config.atom_centers.A4 = ["C2", "N2"];
     const draft = fromDefinition(definition as unknown as Record<string, unknown>);
 
     expect(validateDraft(draft).beads[beadKey(draft, "A4")]).toEqual([
       "Direct mapping uses exactly one atom.",
-      "N2 is not available for All bases.",
+      "N2 is missing from A, C, U.",
     ]);
   });
 

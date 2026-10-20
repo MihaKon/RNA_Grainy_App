@@ -184,4 +184,44 @@ describe("ModelCreator", () => {
       expect.anything(),
     );
   });
+
+  it("shows imported atoms that the scope does not offer", async () => {
+    const { user, dialog } = await openCreator();
+    const imported = toDefinition(createDefaultDraft());
+    imported.default_mapping.config.atom_centers.A1 = ["P", "O1P"];
+    imported.default_mapping.config.strategies.A1 = "center_of_mass";
+
+    await user.upload(
+      within(dialog).getByLabelText("Import model JSON file"),
+      new File([serializeDefinition(imported)], "imported.json"),
+    );
+
+    const bead = await within(dialog).findByRole("article", { name: "Bead A1" });
+    const extraAtom = within(bead).getByRole("button", { name: "O1P" });
+    expect(extraAtom).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(extraAtom);
+    expect(within(bead).queryByRole("button", { name: "O1P" })).not.toBeInTheDocument();
+  });
+
+  it("explains why a loaded model cannot be edited", async () => {
+    const { user } = renderApp("/");
+    await user.selectOptions(
+      await screen.findByLabelText("Coarse-grained model"),
+      "custom",
+    );
+    const definition = toDefinition(createDefaultDraft());
+    definition.default_mapping.residues.push("PSU");
+    await user.upload(
+      screen.getByLabelText("Custom model JSON file"),
+      new File([serializeDefinition(definition)], "modified.json"),
+    );
+
+    await user.click(await screen.findByRole("button", { name: "Edit" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("The creator supports residues A, G, C and U, not PSU."),
+    ).toBeInTheDocument();
+  });
 });

@@ -28,6 +28,12 @@ const STRATEGY_HINTS: Record<BeadStrategy, string> = {
 };
 
 export function BeadEditor({ bead, issues, dispatch }: BeadEditorProps) {
+  // Imported beads can use atoms the scope does not offer; keep them visible to deselect.
+  const scopeAtoms = SCOPES[bead.scope].atoms;
+  const atomChoices = [
+    ...scopeAtoms,
+    ...bead.atoms.filter((atom) => !scopeAtoms.includes(atom)),
+  ];
   const { key } = bead;
 
   return (
@@ -111,7 +117,7 @@ export function BeadEditor({ bead, issues, dispatch }: BeadEditorProps) {
       </ChipGroup>
 
       <ChipGroup legend="Atoms" hint={STRATEGY_HINTS[bead.strategy]}>
-        {SCOPES[bead.scope].atoms.map((atom) => (
+        {atomChoices.map((atom) => (
           <ToggleButton
             key={atom}
             pressed={bead.atoms.includes(atom)}

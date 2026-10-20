@@ -47,11 +47,18 @@ export function CustomModelInput({ config, value, onChange }: CustomModelInputPr
   };
 
   const openCreator = () => {
-    setCreatorDraft(
-      value
-        ? fromDefinition(JSON.parse(value.json) as Record<string, unknown>)
-        : createDefaultDraft(),
-    );
+    if (!value) {
+      setCreatorDraft(createDefaultDraft());
+      return;
+    }
+    try {
+      setCreatorDraft(
+        fromDefinition(JSON.parse(value.json) as Record<string, unknown>),
+      );
+    } catch (error) {
+      if (!(error instanceof CustomModelFileError)) throw error;
+      setReadError(error.message);
+    }
   };
 
   return (

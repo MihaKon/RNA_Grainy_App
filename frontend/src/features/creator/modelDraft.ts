@@ -1,10 +1,14 @@
+import { CustomModelFileError } from "@/features/upload/customModel";
+
 import {
   ALL_RESIDUES,
   BEAD_SCOPES,
   BEAD_STRATEGIES,
   type BeadScope,
   type BeadStrategy,
+  type Residue,
   residuesForScope,
+  residuesWithoutAtom,
   SCOPES,
 } from "./atoms";
 
@@ -327,12 +331,11 @@ export function validateDraft(draft: ModelDraft): DraftIssues {
       beadIssues.push("Direct mapping uses exactly one atom.");
     }
 
-    const { label, atoms } = SCOPES[bead.scope];
-    const unavailable = bead.atoms.filter((atom) => !atoms.includes(atom));
-    if (unavailable.length > 0) {
-      beadIssues.push(
-        `${unavailable.join(", ")} ${unavailable.length === 1 ? "is" : "are"} not available for ${label}.`,
-      );
+    for (const atom of bead.atoms) {
+      const missing = residuesWithoutAtom(atom, residuesForScope(bead.scope));
+      if (missing.length > 0) {
+        beadIssues.push(`${atom} is missing from ${missing.join(", ")}.`);
+      }
     }
 
     const conflicts = residuesForScope(bead.scope).filter(
@@ -430,36 +433,88 @@ export function serializeDefinition(definition: CustomModelDefinition): string {
   return JSON.stringify(definition, null, 2);
 }
 
-export function fromDefinition(definition: Record<string, unknown>): ModelDraft {
-  const beads: BeadDraft[] = [];
+interface ResolvedBead {
+  name: string;
+  atoms: string[];
+  strategy: BeadStrategy;
+  description: string;
+}
 
-  const addBeads = (entry: unknown) => {
+// Mirrors _build_nucleotide_config() in app/coarse_grain/models.py: each residue starts
+// from the default mapping, and every mapping entry for it overrides single keys.
+export function resolveBeads(
+  definition: Record<string, unknown>,
+): Map<Residue, Map<string, ResolvedBead>> {
+  const configs = new Map<Residue, Record<string, Record<string, unknown>>>();
+  const apply = (entry: unknown) => {
     if (!isRecord(entry) || !isRecord(entry.config)) return;
-    const residues = stringList(entry.residues);
-    const config = entry.config;
-    const names = stringRecord(config.bead_names);
-    const atomCenters = isRecord(config.atom_centers) ? config.atom_centers : {};
-    const descriptions = stringRecord(config.description);
-    const strategies = stringRecord(config.strategies);
-
-    for (const [beadId, name] of Object.entries(names)) {
-      const atoms = stringList(atomCenters[beadId]);
-      const strategy = strategies[beadId];
-      beads.push(
-        createBead({
-          beadId,
-          name,
-          scope: inferScope(residues, atoms),
-          strategy: isStrategy(strategy) ? strategy : "direct",
-          description: descriptions[beadId] ?? "",
-          atoms,
-        }),
-      );
+    for (const residue of entryResidues(entry)) {
+      const config = configs.get(residue) ?? {};
+      for (const [field, values] of Object.entries(entry.config)) {
+        if (isRecord(values)) config[field] = { ...config[field], ...values };
+      }
+      configs.set(residue, config);
     }
   };
+  apply(definition.default_mapping);
+  if (Array.isArray(definition.mapping)) definition.mapping.forEach(apply);
 
-  addBeads(definition.default_mapping);
-  if (Array.isArray(definition.mapping)) definition.mapping.forEach(addBeads);
+  const resolved = new Map<Residue, Map<string, ResolvedBead>>();
+  for (const [residue, config] of configs) {
+    const atomCenters = config.atom_centers ?? {};
+    const descriptions = stringRecord(config.description);
+    const strategies = stringRecord(config.strategies);
+    const beads = new Map<string, ResolvedBead>();
+    for (const [beadId, name] of Object.entries(stringRecord(config.bead_names))) {
+      const strategy = strategies[beadId];
+      beads.set(beadId, {
+        name,
+        atoms: stringList(atomCenters[beadId]),
+        strategy: isStrategy(strategy) ? strategy : "direct",
+        description: descriptions[beadId] ?? "",
+      });
+    }
+    resolved.set(residue, beads);
+  }
+  return resolved;
+}
+
+function entryResidues(entry: Record<string, unknown>): Residue[] {
+  return stringList(entry.residues).map((name) => {
+    const residue = ALL_RESIDUES.find((candidate) => candidate === name.toUpperCase());
+    if (!residue) {
+      throw new CustomModelFileError(
+        `The creator supports residues A, G, C and U, not ${name}.`,
+      );
+    }
+    return residue;
+  });
+}
+
+export function fromDefinition(definition: Record<string, unknown>): ModelDraft {
+  const resolved = resolveBeads(definition);
+
+  // Residues that define a bead identically share one bead in the creator.
+  const groups = new Map<
+    string,
+    { beadId: string; bead: ResolvedBead; residues: Residue[] }
+  >();
+  for (const residue of ALL_RESIDUES) {
+    for (const [beadId, bead] of resolved.get(residue) ?? []) {
+      const key = JSON.stringify([beadId, bead]);
+      const group = groups.get(key) ?? { beadId, bead, residues: [] };
+      group.residues.push(residue);
+      groups.set(key, group);
+    }
+  }
+
+  const beads = [...groups.values()].flatMap(({ beadId, bead, residues }) => {
+    const scope = scopeForResidues(residues, bead.atoms);
+    if (scope) return [createBead({ beadId, ...bead, scope })];
+    return residues.map((residue) =>
+      createBead({ beadId, ...bead, scope: BASE_SCOPES[residue] }),
+    );
+  });
 
   const connectivity = isRecord(definition.connectivity) ? definition.connectivity : {};
   const intraResidue = Array.isArray(connectivity.intra_residue)
@@ -486,25 +541,30 @@ export function fromDefinition(definition: Record<string, unknown>): ModelDraft 
   };
 }
 
-function inferScope(residues: string[], atoms: string[]): BeadScope {
-  const residueKey = residues
-    .map((residue) => residue.toUpperCase())
-    .sort()
-    .join();
-  const scope = BEAD_SCOPES.find(
-    (candidate) => [...residuesForScope(candidate)].sort().join() === residueKey,
-  );
-  if (scope && scope !== "all") return scope;
+const BASE_SCOPES: Record<Residue, BeadScope> = {
+  A: "adenine",
+  G: "guanine",
+  C: "cytosine",
+  U: "uracil",
+};
 
-  if (atoms.length > 0) {
-    if (atoms.every((atom) => SCOPES.phosphate.atoms.includes(atom))) {
-      return "phosphate";
-    }
-    if (atoms.every((atom) => SCOPES.sugar.atoms.includes(atom))) {
-      return "sugar";
-    }
+function scopeForResidues(
+  residues: readonly Residue[],
+  atoms: readonly string[],
+): BeadScope | undefined {
+  if (residues.length === ALL_RESIDUES.length) {
+    // All, phosphate and sugar beads cover every residue; pick the one offering most atoms.
+    const overlap = (scope: BeadScope) =>
+      atoms.filter((atom) => SCOPES[scope].atoms.includes(atom)).length;
+    return BEAD_SCOPES.filter((scope) => !SCOPES[scope].residues).reduce(
+      (best, scope) => (overlap(scope) > overlap(best) ? scope : best),
+    );
   }
-  return "all";
+  const key = [...residues].sort().join();
+  return BEAD_SCOPES.find(
+    (scope) =>
+      SCOPES[scope].residues && [...residuesForScope(scope)].sort().join() === key,
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
