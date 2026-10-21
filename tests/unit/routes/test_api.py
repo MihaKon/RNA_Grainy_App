@@ -73,6 +73,42 @@ class TestListModels:
             ]
 
 
+class TestValidateCustomModel:
+    def test_accepts_a_valid_definition(
+        self, client: TestClient, test_data_dir: Path
+    ) -> None:
+        response = client.post(
+            "/api/models/custom/validate",
+            data={
+                "custom_model_data": (test_data_dir / "custom_model.json").read_text()
+            },
+        )
+
+        assert response.status_code == 204
+
+    @pytest.mark.parametrize(
+        ("custom_model_data", "detail"),
+        [
+            ("{", "Invalid JSON format."),
+            (
+                json.dumps({"unexpected_field": True}),
+                "Invalid custom model: default_mapping: Field required",
+            ),
+            ("x" * 10_000, "Custom model JSON upload size is too large."),
+        ],
+    )
+    def test_rejects_an_invalid_definition(
+        self, client: TestClient, custom_model_data: str, detail: str
+    ) -> None:
+        response = client.post(
+            "/api/models/custom/validate",
+            data={"custom_model_data": custom_model_data},
+        )
+
+        assert response.status_code == 422
+        assert response.json() == {"detail": detail}
+
+
 class TestCoarseGrainPreset:
     def test_returns_result_with_downloadable_files(
         self, client: TestClient, isolated_workspace_storage: Path

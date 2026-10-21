@@ -1,6 +1,8 @@
 import { FileJson, PencilRuler, X } from "lucide-react";
 import { type ChangeEvent, useId, useRef, useState } from "react";
 
+import { getErrorMessage } from "@/api/client";
+import { validateCustomModel } from "@/api/coarseGrain";
 import type { AppConfig } from "@/api/types";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
@@ -27,6 +29,7 @@ export function CustomModelInput({ config, value, onChange }: CustomModelInputPr
   const creatorTitleId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [readError, setReadError] = useState<string | null>(null);
+  const [rejectedModel, setRejectedModel] = useState<LoadedCustomModel | null>(null);
   const [creatorDraft, setCreatorDraft] = useState<ModelDraft | null>(null);
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -34,29 +37,44 @@ export function CustomModelInput({ config, value, onChange }: CustomModelInputPr
     event.target.value = "";
     if (!file) return;
 
+    let model: LoadedCustomModel;
     try {
-      onChange(await readCustomModelFile(file, config));
-      setReadError(null);
+      model = await readCustomModelFile(file, config);
     } catch (error) {
+      setRejectedModel(null);
       setReadError(
         error instanceof CustomModelFileError
           ? error.message
           : "Could not read the file.",
       );
+      return;
     }
+
+    // The creator can import a rejected definition, so offer it as the way to fix one.
+    try {
+      await validateCustomModel(model.json);
+    } catch (error) {
+      setRejectedModel(model);
+      setReadError(getErrorMessage(error));
+      return;
+    }
+    onChange(model);
+    setRejectedModel(null);
+    setReadError(null);
   };
 
-  const openCreator = () => {
-    if (!value) {
+  const openCreator = (model: LoadedCustomModel | null) => {
+    if (!model) {
       setCreatorDraft(createDefaultDraft());
       return;
     }
     try {
       setCreatorDraft(
-        fromDefinition(JSON.parse(value.json) as Record<string, unknown>),
+        fromDefinition(JSON.parse(model.json) as Record<string, unknown>),
       );
     } catch (error) {
       if (!(error instanceof CustomModelFileError)) throw error;
+      setRejectedModel(null);
       setReadError(error.message);
     }
   };
@@ -81,7 +99,12 @@ export function CustomModelInput({ config, value, onChange }: CustomModelInputPr
             <p className="truncate font-mono text-label text-ink-3">{value.origin}</p>
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <Button variant="ghost" onClick={openCreator}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                openCreator(value);
+              }}
+            >
               Edit
             </Button>
             <button
@@ -102,7 +125,12 @@ export function CustomModelInput({ config, value, onChange }: CustomModelInputPr
             Build a model in the creator or load a definition exported as JSON.
           </p>
           <div className="flex flex-wrap gap-2">
-            <Button variant="ghost" onClick={openCreator}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                openCreator(null);
+              }}
+            >
               <PencilRuler aria-hidden="true" className="size-4" />
               Open creator
             </Button>
@@ -120,9 +148,22 @@ export function CustomModelInput({ config, value, onChange }: CustomModelInputPr
       )}
 
       {readError && (
-        <p role="alert" className="text-xs text-red-deep">
-          {readError}
-        </p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <p role="alert" className="text-xs text-red-deep">
+            {readError}
+          </p>
+          {rejectedModel && (
+            <button
+              type="button"
+              onClick={() => {
+                openCreator(rejectedModel);
+              }}
+              className="text-xs font-medium text-accent hover:text-accent-hover"
+            >
+              Fix in creator
+            </button>
+          )}
+        </div>
       )}
 
       <Drawer
@@ -140,6 +181,7 @@ export function CustomModelInput({ config, value, onChange }: CustomModelInputPr
             onApply={(model) => {
               onChange(model);
               setReadError(null);
+              setRejectedModel(null);
               setCreatorDraft(null);
             }}
             onCancel={() => {

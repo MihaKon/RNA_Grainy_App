@@ -1,6 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { createDefaultDraft, toDefinition } from "@/features/creator/modelDraft";
 import { jsonResponse, mockFetch, requestBody } from "@/test/fetchMock";
 import { appConfig, coarseGrainResult, models } from "@/test/fixtures";
 import { renderApp } from "@/test/renderApp";
@@ -8,6 +9,7 @@ import { renderApp } from "@/test/renderApp";
 const catalogRoutes = {
   "GET /api/config": () => jsonResponse(appConfig),
   "GET /api/models": () => jsonResponse(models),
+  "POST /api/models/custom/validate": () => new Response(null, { status: 204 }),
 };
 
 const coarseGrainRoutes = {
@@ -222,6 +224,71 @@ describe("UploadForm", () => {
     const body = requestBody(fetchMock, "/api/coarse-grain/preset");
     expect(body.get("selected_model")).toBe("custom");
     expect(body.get("custom_model_data")).toBe(definition);
+  });
+
+  it("does not load a custom model the server rejects", async () => {
+    mockFetch({
+      ...catalogRoutes,
+      "POST /api/models/custom/validate": () =>
+        jsonResponse(
+          { detail: "Invalid custom model: default_mapping: Field required" },
+          422,
+        ),
+    });
+    const { user } = await renderForm();
+
+    await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "custom");
+    await user.upload(
+      screen.getByLabelText("Custom model JSON file"),
+      new File(['{"model_name": "Broken"}'], "model.json", {
+        type: "application/json",
+      }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Invalid custom model: default_mapping: Field required",
+    );
+    expect(screen.queryByText("Custom model loaded")).not.toBeInTheDocument();
+  });
+
+  it("opens a rejected custom model in the creator to fix it", async () => {
+    mockFetch({
+      ...catalogRoutes,
+      "POST /api/models/custom/validate": () =>
+        jsonResponse(
+          {
+            detail:
+              "Invalid custom model: Connection A1–B9: bead B9 is not defined for A, G, C, U.",
+          },
+          422,
+        ),
+    });
+    const { user } = await renderForm();
+    const definition = {
+      ...toDefinition(createDefaultDraft()),
+      model_name: "Broken",
+      connectivity: { intra_residue: [["A1", "B9"]], inter_residue: [] },
+    };
+
+    await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "custom");
+    await user.upload(
+      screen.getByLabelText("Custom model JSON file"),
+      new File([JSON.stringify(definition)], "broken.json"),
+    );
+    await user.click(await screen.findByRole("button", { name: "Fix in creator" }));
+
+    const dialog = screen.getByRole("dialog", { name: "Model creator" });
+    expect(within(dialog).getByRole("textbox", { name: "Model name" })).toHaveValue(
+      "Broken",
+    );
+    await user.click(
+      within(dialog).getByRole("button", { name: "Remove invalid connections" }),
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Use model" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByText("Custom model loaded")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("shows the server error message", async () => {

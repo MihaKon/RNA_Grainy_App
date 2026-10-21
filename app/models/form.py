@@ -48,6 +48,30 @@ def describe_custom_model_error(error: ValidationError) -> str:
     return f"Invalid custom model: {f'{path}: ' if path else ''}{message}"
 
 
+def parse_custom_model_json(v: dict | str | None) -> dict | None:
+    """Check a custom model definition against the size limits and the schema."""
+    if not v or (isinstance(v, str) and v.strip() == ""):
+        return None
+
+    if isinstance(v, str):
+        if len(v.encode("utf-8")) > JSON_MAX_UPLOAD_SIZE:
+            raise ValueError("Custom model JSON upload size is too large.")
+        if len(v) > JSON_MAX_CHARS:
+            raise ValueError("Custom model JSON is too large.")
+        try:
+            data = json.loads(v)
+        except json.JSONDecodeError:
+            raise ValueError("Invalid JSON format.")
+    else:
+        data = v
+
+    try:
+        CustomModelDefinition.model_validate(data)
+    except ValidationError as e:
+        raise ValueError(describe_custom_model_error(e))
+    return data
+
+
 class UploadBase(BaseModel):
     selected_model: str
     custom_model_data: dict | str | None = None
@@ -70,26 +94,7 @@ class UploadBase(BaseModel):
     @field_validator("custom_model_data", mode="before")
     @classmethod
     def validate_json_structure(cls, v: str | None) -> dict | None:
-        if not v or (isinstance(v, str) and v.strip() == ""):
-            return None
-
-        if isinstance(v, str):
-            if len(v.encode("utf-8")) > JSON_MAX_UPLOAD_SIZE:
-                raise ValueError("Custom model JSON upload size is too large.")
-            if len(v) > JSON_MAX_CHARS:
-                raise ValueError("Custom model JSON is too large.")
-            try:
-                data = json.loads(v)
-            except json.JSONDecodeError:
-                raise ValueError("Invalid JSON format.")
-        else:
-            data = v
-
-        try:
-            CustomModelDefinition.model_validate(data)
-        except ValidationError as e:
-            raise ValueError(describe_custom_model_error(e))
-        return data
+        return parse_custom_model_json(v)
 
     @field_validator("models", mode="before")
     @classmethod
