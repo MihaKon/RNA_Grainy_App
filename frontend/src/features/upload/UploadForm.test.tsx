@@ -226,6 +226,26 @@ describe("UploadForm", () => {
     expect(body.get("custom_model_data")).toBe(definition);
   });
 
+  it("lets the same file be chosen again after a reset", async () => {
+    const fetchMock = mockFetch(coarseGrainRoutes);
+    const { user } = await renderForm();
+    const fileInput = screen.getByLabelText<HTMLInputElement>(/choose a file/i);
+
+    await user.upload(fileInput, structureFile);
+    expect(fileInput.value).not.toBe("");
+    await user.click(screen.getByRole("button", { name: "Reset" }));
+
+    expect(fileInput.value).toBe("");
+    await user.upload(fileInput, structureFile);
+    expect(screen.getByText("1EHZ.pdb")).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "SimModel");
+    await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
+    await screen.findByText("Conversion summary");
+    expect(requestBody(fetchMock, "/api/coarse-grain/file").get("file")).toEqual(
+      structureFile,
+    );
+  });
+
   it("does not load a custom model the server rejects", async () => {
     mockFetch({
       ...catalogRoutes,
