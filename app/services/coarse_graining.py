@@ -120,7 +120,7 @@ async def coarse_grain_structure(
 
     outcome = CoarseGrainingOutcome(
         workspace_id=WorkspaceManager.create_workspace_id(),
-        original_atom_count=StructureProcessor.get_structure_atom_count(
+        original_atom_count=StructureProcessor.get_polymer_atom_count(
             original_structure
         ),
         coarse_atom_count=StructureProcessor.get_structure_atom_count(coarse_structure),

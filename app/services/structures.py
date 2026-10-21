@@ -1,4 +1,5 @@
 from gemmi import (
+    EntityType,
     Structure,
     cif,
     make_structure_from_block,
@@ -30,6 +31,16 @@ class StructureProcessor:
     def get_structure_atom_count(structure: Structure) -> int:
         atom_counts = structure[0].count_atom_sites()
         return atom_counts
+
+    @staticmethod
+    def get_polymer_atom_count(structure: Structure) -> int:
+        """Count first-model atoms of polymer residues, leaving out water and ligands."""
+        return sum(
+            len(residue)
+            for chain in structure[0]
+            for residue in chain
+            if residue.entity_type == EntityType.Polymer
+        )
 
     @staticmethod
     def parse_structure(

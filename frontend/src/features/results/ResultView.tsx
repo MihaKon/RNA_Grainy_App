@@ -105,8 +105,8 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
           <Alert severity="info">
             <ul className="flex list-disc flex-col gap-1 pl-4">
               <li>
-                Reference atoms are counted from the first model and all chains unless a
-                selection was made.
+                Input atoms are the polymer atoms of the first model, across all chains
+                unless a selection was made. Water, ions and ligands are not counted.
               </li>
               {structures?.coarsePdbFailed ? (
                 <li>

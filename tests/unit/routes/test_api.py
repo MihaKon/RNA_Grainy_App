@@ -159,6 +159,23 @@ class TestCoarseGrainPreset:
         assert model["image_url"] is None
 
 
+class TestAtomCounts:
+    def test_input_atoms_leave_out_water_and_ions(
+        self, client: TestClient, test_data_dir: Path
+    ) -> None:
+        structure = test_data_dir / "1EHZ.pdb"
+
+        response = client.post(
+            "/api/coarse-grain/file",
+            files={"file": (structure.name, structure.read_bytes(), "text/plain")},
+            data={"selected_model": "SimModel"},
+        )
+
+        assert response.status_code == 200
+        # 1,821 atom sites: 1,652 RNA atoms, 160 waters and 9 magnesium ions.
+        assert response.json()["atom_counts"]["original"] == 1652
+
+
 class TestCoarseGrainFile:
     @pytest.mark.parametrize(
         ("fixture_name", "reference_format"),
@@ -182,6 +199,26 @@ class TestCoarseGrainFile:
         assert response.status_code == 200
         assert response.json()["filename"] == "1GCT"
         assert response.json()["reference_format"] == reference_format
+
+    @pytest.mark.parametrize(
+        ("filename", "is_cif"),
+        [("1EHZ.pdb", False), ("1EHZ.cif", True)],
+    )
+    def test_reference_keeps_the_uploaded_format(
+        self, client: TestClient, test_data_dir: Path, filename: str, is_cif: bool
+    ) -> None:
+        structure = test_data_dir / filename
+
+        response = client.post(
+            "/api/coarse-grain/file",
+            files={"file": (filename, structure.read_bytes(), "text/plain")},
+            data={"selected_model": "SimModel"},
+        )
+
+        assert response.status_code == 200
+        reference = client.get(response.json()["files"]["reference_url"]).text
+        assert reference.startswith("data_") is is_cif
+        assert ("\nATOM  " in reference) is not is_cif
 
     def test_unsupported_format_returns_json_error(
         self, client: TestClient, empty_file: io.BytesIO
