@@ -1,5 +1,6 @@
 import "molstar/build/viewer/theme/dark.css";
 
+import type { Trajectory } from "molstar/lib/mol-model/structure";
 import { PluginConfig } from "molstar/lib/mol-plugin/config";
 import type { BuiltInTrajectoryFormat } from "molstar/lib/mol-plugin-state/formats/trajectory";
 import { createPluginUI } from "molstar/lib/mol-plugin-ui";
@@ -23,7 +24,10 @@ export interface StructureInput {
 
 export interface MolstarViewer {
   readonly failedStructures: readonly StructureId[];
+  /** Model numbers in file order; switching models uses their index. */
+  readonly modelNumbers: readonly number[];
   setVisibility(id: StructureId, visible: boolean): void;
+  setModel(index: number): Promise<void>;
   setRepresentation(type: RepresentationType): Promise<void>;
   setColorMode(id: StructureId, colorMode: ColorMode): Promise<void>;
   dispose(): void;
@@ -33,7 +37,13 @@ type StructureSelector = Awaited<
   ReturnType<PluginUIContext["builders"]["structure"]["createStructure"]>
 >;
 
+type ModelSelector = Awaited<
+  ReturnType<PluginUIContext["builders"]["structure"]["createModel"]>
+>;
+
 interface StructureEntry {
+  model: ModelSelector;
+  modelNumbers: readonly number[];
   structure: StructureSelector;
   representation: StateObjectSelector | undefined;
   representationType: RepresentationType;
@@ -126,6 +136,8 @@ export async function createMolstarViewer(
       const structure = await plugin.builders.structure.createStructure(model);
 
       entries.set(input.id, {
+        model,
+        modelNumbers: readModelNumbers(trajectory.data),
         structure,
         representation: undefined,
         representationType: "ball-and-stick",
@@ -159,8 +171,21 @@ export async function createMolstarViewer(
     throw new AggregateError(errors, "None of the structures could be loaded.");
   }
 
+  // Both files hold the same selected models, so either one gives the numbers.
+  const modelNumbers = entries.values().next().value?.modelNumbers ?? [1];
+
   return {
     failedStructures,
+    modelNumbers,
+    async setModel(index) {
+      const update = plugin.build();
+      for (const entry of entries.values()) {
+        if (index < entry.modelNumbers.length) {
+          update.to(entry.model).update({ modelIndex: index });
+        }
+      }
+      await update.commit();
+    },
     setVisibility(id, visible) {
       const entry = getEntry(id);
       entry.visible = visible;
@@ -184,4 +209,12 @@ export async function createMolstarViewer(
       plugin.dispose();
     },
   };
+}
+
+function readModelNumbers(trajectory: Trajectory | undefined): number[] {
+  if (!trajectory) return [1];
+  return Array.from({ length: trajectory.frameCount }, (_, index) => {
+    const frame = trajectory.getFrameAtIndex(index);
+    return "modelNum" in frame ? frame.modelNum : index + 1;
+  });
 }

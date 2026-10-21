@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ResultStructures } from "@/api/results";
@@ -19,7 +20,9 @@ const structures: ResultStructures = {
 function fakeViewer(overrides: Partial<MolstarViewer> = {}): MolstarViewer {
   return {
     failedStructures: [],
+    modelNumbers: [1],
     setVisibility: vi.fn(),
+    setModel: vi.fn(() => Promise.resolve()),
     setRepresentation: vi.fn(() => Promise.resolve()),
     setColorMode: vi.fn(() => Promise.resolve()),
     dispose: vi.fn(),
@@ -47,6 +50,35 @@ describe("StructureViewer", () => {
     expect(screen.getByRole("button", { name: "Coarse-grained" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "All-atom" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "By element" })).toBeDisabled();
+  });
+
+  it("switches between the models of a multi-model structure", async () => {
+    const setModel = vi.fn(() => Promise.resolve());
+    createMolstarViewer.mockResolvedValue(
+      fakeViewer({ modelNumbers: [2, 5, 7], setModel }),
+    );
+    const user = userEvent.setup();
+    renderViewer();
+
+    const modelSelect = await screen.findByRole("combobox", { name: "Model" });
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "2 (1 of 3)",
+      "5 (2 of 3)",
+      "7 (3 of 3)",
+    ]);
+
+    await user.selectOptions(modelSelect, "5 (2 of 3)");
+
+    expect(setModel).toHaveBeenCalledWith(1);
+    expect(modelSelect).toHaveValue("1");
+  });
+
+  it("hides the model switch for a single-model structure", async () => {
+    createMolstarViewer.mockResolvedValue(fakeViewer());
+    renderViewer();
+
+    expect(await screen.findByRole("button", { name: "Cartoon" })).toBeEnabled();
+    expect(screen.queryByRole("combobox", { name: "Model" })).not.toBeInTheDocument();
   });
 
   it("reports that the viewer failed only when no structure can be loaded", async () => {

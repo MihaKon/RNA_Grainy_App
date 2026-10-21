@@ -43,6 +43,8 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
     useState<RepresentationType>("ball-and-stick");
   const [colorByElement, setColorByElement] = useState(false);
   const [failedStructures, setFailedStructures] = useState<readonly StructureId[]>([]);
+  const [modelNumbers, setModelNumbers] = useState<readonly number[]>([]);
+  const [modelIndex, setModelIndex] = useState(0);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -79,6 +81,7 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
           console.error(`Could not load the ${id} structure into the viewer.`);
         }
         setFailedStructures(viewer.failedStructures);
+        setModelNumbers(viewer.modelNumbers);
         setStatus("ready");
       },
       (error: unknown) => {
@@ -118,6 +121,12 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
     runViewerAction(async (viewer) => {
       await viewer.setRepresentation(type);
       setRepresentation(type);
+    });
+
+  const changeModel = (index: number) =>
+    runViewerAction(async (viewer) => {
+      await viewer.setModel(index);
+      setModelIndex(index);
     });
 
   const toggleElementColors = () =>
@@ -192,6 +201,24 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
             </ToggleButton>
           ))}
         </ControlGroup>
+
+        {modelNumbers.length > 1 && (
+          <label className="flex items-center gap-2">
+            <span className="eyebrow">Model</span>
+            <select
+              value={modelIndex}
+              disabled={controlsDisabled}
+              onChange={(event) => void changeModel(Number(event.target.value))}
+              className="cursor-pointer rounded border-[1.5px] border-line-soft bg-white px-2 py-1 font-mono text-label tracking-[0.12em] text-ink-2 hover:border-accent disabled:opacity-50"
+            >
+              {modelNumbers.map((modelNumber, index) => (
+                <option key={index} value={index}>
+                  {modelNumber} ({index + 1} of {modelNumbers.length})
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <ControlGroup label="All-atom color">
           <ToggleButton
