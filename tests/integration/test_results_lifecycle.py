@@ -3,17 +3,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-
-def extract_data_attribute(html: str, attribute: str) -> str:
-    match = re.search(
-        rf'{attribute}="([^"]+)"',
-        html,
-    )
-
-    if match is None:
-        raise AssertionError(f"Missing HTML attribute: {attribute}")
-
-    return match.group(1)
+from tests.integration.helpers import extract_data_attribute
 
 
 def test_results_lifecycle(
