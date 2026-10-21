@@ -97,6 +97,27 @@ describe("ResultView", () => {
     expect(anchor.download).toBe("1EHZ_SimRNA.cif");
   });
 
+  it("shows the result and disables the PDB download when only the PDB file fails", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    mockFetch({
+      [`GET ${files.reference_url}`]: () => new Response("reference"),
+      [`GET ${files.coarse_mmcif_url}`]: () => new Response("coarse mmcif"),
+      [`GET ${files.coarse_pdb_url ?? ""}`]: () =>
+        jsonResponse({ detail: "Server error." }, 500),
+      [`POST ${files.consumed_url}`]: () => new Response(null, { status: 204 }),
+    });
+    renderResult();
+
+    expect(await screen.findByText("Viewer showing reference")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Download PDB" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Download mmCIF" })).toBeEnabled();
+    expect(
+      screen.getByText(
+        "The PDB file could not be downloaded. The mmCIF file is still available.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("links citation markers in the model description", async () => {
     mockResultFiles();
     const { user } = renderResult();

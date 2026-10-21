@@ -108,7 +108,12 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
                 Reference atoms are counted from the first model and all chains unless a
                 selection was made.
               </li>
-              {pdbAvailable ? (
+              {structures?.coarsePdbFailed ? (
+                <li>
+                  The PDB file could not be downloaded. The mmCIF file is still
+                  available.
+                </li>
+              ) : pdbAvailable ? (
                 <li>
                   Chain names may be shortened in PDB files of large structures. Check
                   the output before further use.

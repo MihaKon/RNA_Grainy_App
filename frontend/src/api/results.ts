@@ -7,10 +7,24 @@ export interface ResultStructures {
   reference: string;
   coarseMmcif: string;
   coarsePdb: string | null;
+  coarsePdbFailed: boolean;
 }
 
 async function fetchText(url: string): Promise<string> {
   return (await apiFetch(url)).text();
+}
+
+// The PDB file is optional, so a failed download must not hide the mmCIF result.
+async function fetchOptionalText(url: string | null): Promise<string | null> {
+  if (!url) {
+    return null;
+  }
+  try {
+    return await fetchText(url);
+  } catch (error) {
+    console.warn("Could not download the optional PDB file.", error);
+    return null;
+  }
 }
 
 export async function fetchResultStructures(
@@ -19,7 +33,7 @@ export async function fetchResultStructures(
   const [reference, coarseMmcif, coarsePdb] = await Promise.all([
     fetchText(files.reference_url),
     fetchText(files.coarse_mmcif_url),
-    files.coarse_pdb_url ? fetchText(files.coarse_pdb_url) : null,
+    fetchOptionalText(files.coarse_pdb_url),
   ]);
 
   try {
@@ -28,7 +42,12 @@ export async function fetchResultStructures(
     console.warn("Could not mark the result as consumed.", error);
   }
 
-  return { reference, coarseMmcif, coarsePdb };
+  return {
+    reference,
+    coarseMmcif,
+    coarsePdb,
+    coarsePdbFailed: files.coarse_pdb_url !== null && coarsePdb === null,
+  };
 }
 
 // The server removes a consumed workspace after a grace period (about an hour), so
