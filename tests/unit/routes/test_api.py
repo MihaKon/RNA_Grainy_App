@@ -138,6 +138,62 @@ class TestCoarseGrainPreset:
         assert response.status_code == 422
         assert response.json() == {"detail": "Required: selected_model"}
 
+    def test_unknown_model_returns_json_error(self, client: TestClient) -> None:
+        response = client.post(
+            "/api/coarse-grain/preset",
+            data={"preset_id": "1EHZ", "selected_model": "NonExistentModel"},
+        )
+
+        assert response.status_code == 422
+        assert response.json() == {
+            "detail": "Unknown coarse-grained model: NonExistentModel."
+        }
+
+    def test_custom_model_without_definition_returns_json_error(
+        self, client: TestClient
+    ) -> None:
+        response = client.post(
+            "/api/coarse-grain/preset",
+            data={"preset_id": "1EHZ", "selected_model": "custom"},
+        )
+
+        assert response.status_code == 422
+        assert response.json() == {
+            "detail": "Custom model selected but no definition was provided."
+        }
+
+    @pytest.mark.parametrize(
+        ("definition", "detail"),
+        [
+            (
+                {"model_name": "Example"},
+                "Invalid custom model: default_mapping: Field required",
+            ),
+            (
+                {"unexpected_field": True},
+                "Invalid custom model: default_mapping: Field required",
+            ),
+            (
+                [],
+                "Invalid custom model: Input should be a valid dictionary or instance of CustomModelDefinition",
+            ),
+        ],
+    )
+    def test_incomplete_custom_model_returns_json_error(
+        self, client: TestClient, definition: object, detail: str
+    ) -> None:
+        response = client.post(
+            "/api/coarse-grain/preset",
+            data={
+                "preset_id": "1EHZ",
+                "selected_model": "custom",
+                "custom_model_data": json.dumps(definition),
+            },
+        )
+
+        assert response.status_code == 422
+        assert response.json() == {"detail": detail}
+
     def test_custom_model_description_is_returned_verbatim(
         self, client: TestClient, test_data_dir: Path
     ) -> None:

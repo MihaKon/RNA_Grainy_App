@@ -5,8 +5,9 @@ import re
 from enum import StrEnum
 
 from fastapi import UploadFile
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ValidationError, field_validator, model_validator
 
+from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.models.custom_model import CustomModelDefinition
 from app.settings import ALLOWED_PRESET_IDS, JSON_MAX_CHARS, JSON_MAX_UPLOAD_SIZE
 
@@ -37,11 +38,34 @@ def is_numbers_letters_and_commas(text: str) -> bool:
     return bool(re.fullmatch(pattern, text))
 
 
+CUSTOM_MODEL_ID = "custom"
+
+
+def describe_custom_model_error(error: ValidationError) -> str:
+    first_error = error.errors()[0]
+    message = str(first_error["msg"]).removeprefix("Value error, ")
+    path = ".".join(str(part) for part in first_error["loc"])
+    return f"Invalid custom model: {f'{path}: ' if path else ''}{message}"
+
+
 class UploadBase(BaseModel):
     selected_model: str
     custom_model_data: dict | str | None = None
     models: str | list[int]
     chains: str | list[str]
+
+    @field_validator("selected_model")
+    @classmethod
+    def validate_selected_model(cls, v: str) -> str:
+        if v != CUSTOM_MODEL_ID and v not in CoarseGrainModelRegistry._registry:
+            raise ValueError(f"Unknown coarse-grained model: {v}.")
+        return v
+
+    @model_validator(mode="after")
+    def require_custom_model_data(self) -> UploadBase:
+        if self.selected_model == CUSTOM_MODEL_ID and self.custom_model_data is None:
+            raise ValueError("Custom model selected but no definition was provided.")
+        return self
 
     @field_validator("custom_model_data", mode="before")
     @classmethod
@@ -63,11 +87,9 @@ class UploadBase(BaseModel):
 
         try:
             CustomModelDefinition.model_validate(data)
-            return data
-        except json.JSONDecodeError:
-            raise ValueError("Invalid JSON format.")
-        except Exception as e:
-            raise ValueError(f"Invalid Custom Model structure: {e}")
+        except ValidationError as e:
+            raise ValueError(describe_custom_model_error(e))
+        return data
 
     @field_validator("models", mode="before")
     @classmethod

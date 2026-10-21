@@ -25,7 +25,7 @@ from app.coarse_grain.geometry import (
     calculate_center_of_mass,
     calculate_geometric_center,
 )
-from app.exceptions import InvalidModelParametersError
+from app.exceptions import InvalidModelParametersError, ModelLoadingError
 from app.settings import COARSE_GRAIN_MODELS_DIR
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class CoarseGrainModelRegistry:
     def get_model(cls, class_name: str) -> type[BaseCoarseGrainModel]:
         if class_name not in cls._registry:
             available = list(cls._registry.keys())
-            raise KeyError(
+            raise ModelLoadingError(
                 f"Model '{class_name}' not found. Available models: {available}"
             )
 
