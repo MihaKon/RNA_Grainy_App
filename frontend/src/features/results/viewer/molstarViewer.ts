@@ -22,6 +22,7 @@ export interface StructureInput {
 }
 
 export interface MolstarViewer {
+  readonly failedStructures: readonly StructureId[];
   setVisibility(id: StructureId, visible: boolean): void;
   setRepresentation(type: RepresentationType): Promise<void>;
   setColorMode(id: StructureId, colorMode: ColorMode): Promise<void>;
@@ -111,12 +112,12 @@ export async function createMolstarViewer(
     applyVisibility(entry);
   };
 
-  try {
-    for (const input of structures) {
-      const data = await plugin.builders.data.rawData(
-        { data: input.data, label: input.id },
-        { state: { isGhost: true } },
-      );
+  const loadStructure = async (input: StructureInput) => {
+    const data = await plugin.builders.data.rawData(
+      { data: input.data, label: input.id },
+      { state: { isGhost: true } },
+    );
+    try {
       const trajectory = await plugin.builders.structure.parseTrajectory(
         data,
         input.format,
@@ -134,13 +135,32 @@ export async function createMolstarViewer(
         visible: true,
       });
       await updateRepresentation(input.id, "ball-and-stick", "uniform");
+    } catch (error) {
+      entries.delete(input.id);
+      await plugin.build().delete(data).commit();
+      throw error;
     }
-  } catch (error) {
+  };
+
+  // Each structure loads on its own, so one unreadable file still shows the other.
+  const failedStructures: StructureId[] = [];
+  const errors: unknown[] = [];
+  for (const input of structures) {
+    try {
+      await loadStructure(input);
+    } catch (error) {
+      failedStructures.push(input.id);
+      errors.push(error);
+    }
+  }
+
+  if (entries.size === 0) {
     plugin.dispose();
-    throw error;
+    throw new AggregateError(errors, "None of the structures could be loaded.");
   }
 
   return {
+    failedStructures,
     setVisibility(id, visible) {
       const entry = getEntry(id);
       entry.visible = visible;

@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import type { ResultStructures } from "@/api/results";
+import { Alert } from "@/components/ui/Alert";
 import { ToggleButton } from "@/components/ui/ToggleButton";
 
 import {
@@ -41,6 +42,7 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
   const [representation, setRepresentation] =
     useState<RepresentationType>("ball-and-stick");
   const [colorByElement, setColorByElement] = useState(false);
+  const [failedStructures, setFailedStructures] = useState<readonly StructureId[]>([]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -73,6 +75,10 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
           return;
         }
         viewerRef.current = viewer;
+        for (const id of viewer.failedStructures) {
+          console.error(`Could not load the ${id} structure into the viewer.`);
+        }
+        setFailedStructures(viewer.failedStructures);
         setStatus("ready");
       },
       (error: unknown) => {
@@ -124,6 +130,9 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
     });
 
   const controlsDisabled = status !== "ready" || busy;
+  const failedLabels = STRUCTURE_TOGGLES.filter(({ id }) =>
+    failedStructures.includes(id),
+  ).map(({ label }) => label.toLowerCase());
 
   return (
     <div className="flex flex-col gap-3">
@@ -143,13 +152,20 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
         )}
       </div>
 
+      {failedLabels.length > 0 && (
+        <Alert severity="error">
+          The {failedLabels.join(" and ")} structure could not be displayed. The
+          downloads are not affected.
+        </Alert>
+      )}
+
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <ControlGroup label="Show">
           {STRUCTURE_TOGGLES.map(({ id, label }) => (
             <ToggleButton
               key={id}
-              pressed={visible[id]}
-              disabled={controlsDisabled}
+              pressed={visible[id] && !failedStructures.includes(id)}
+              disabled={controlsDisabled || failedStructures.includes(id)}
               onClick={() => {
                 toggleStructure(id);
               }}
@@ -180,7 +196,7 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
         <ControlGroup label="All-atom color">
           <ToggleButton
             pressed={colorByElement}
-            disabled={controlsDisabled}
+            disabled={controlsDisabled || failedStructures.includes("reference")}
             onClick={() => void toggleElementColors()}
           >
             By element
