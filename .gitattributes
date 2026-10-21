@@ -1,0 +1,4 @@
+# Collapse structure files in GitHub diffs and leave them out of language stats.
+*.pdb linguist-generated=true
+*.cif linguist-generated=true
+*.mmcif linguist-generated=true
