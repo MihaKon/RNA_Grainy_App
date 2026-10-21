@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { appConfig } from "@/test/fixtures";
 
-import { readCustomModelFile } from "./customModel";
+import { customModelSizeIssues, readCustomModelFile } from "./customModel";
 
 const jsonFile = (content: string) => new File([content], "model.json");
 
@@ -11,7 +11,7 @@ describe("readCustomModelFile", () => {
     const json = JSON.stringify({ model_name: "<b>My model</b>", mapping: [] });
 
     await expect(readCustomModelFile(jsonFile(json), appConfig)).resolves.toEqual({
-      fileName: "model.json",
+      origin: "model.json",
       name: "<b>My model</b>",
       json,
     });
@@ -50,5 +50,17 @@ describe("readCustomModelFile", () => {
         custom_model_json_max_chars: 10,
       }),
     ).rejects.toThrow("The model definition exceeds 10 characters.");
+  });
+});
+
+describe("customModelSizeIssues", () => {
+  it("measures the size in UTF-8 bytes", () => {
+    const json = JSON.stringify({ description: "€".repeat(10) });
+    const config = { ...appConfig, custom_model_json_max_size: json.length };
+
+    expect(customModelSizeIssues(json, config)).toEqual([
+      `The model definition exceeds the ${json.length.toString()} B limit.`,
+    ]);
+    expect(customModelSizeIssues(json, appConfig)).toEqual([]);
   });
 });

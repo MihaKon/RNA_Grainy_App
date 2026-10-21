@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ChevronDown } from "lucide-react";
-import { lazy, type ReactNode, Suspense } from "react";
+import { ArrowLeft } from "lucide-react";
+import { lazy, Suspense } from "react";
 import { Link } from "react-router";
 
 import { resultStructuresQueryOptions } from "@/api/results";
 import type { CoarseGrainResult } from "@/api/types";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { Disclosure } from "@/components/ui/Disclosure";
 import { AtomMappingTable } from "@/features/models/AtomMappingTable";
 import { ModelDescription } from "@/features/models/ModelDescription";
 import { downloadTextFile } from "@/lib/download";
@@ -148,22 +149,5 @@ function ViewerPlaceholder() {
     >
       Loading structures…
     </div>
-  );
-}
-
-function Disclosure({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <details className="group rounded-md border border-line-soft bg-white">
-      <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 [&::-webkit-details-marker]:hidden">
-        <span className="eyebrow">{title}</span>
-        <ChevronDown
-          aria-hidden="true"
-          className="size-4 text-ink-3 transition-transform group-open:rotate-180"
-        />
-      </summary>
-      <div className="border-t border-dashed border-line-soft px-5 py-4">
-        {children}
-      </div>
-    </details>
   );
 }

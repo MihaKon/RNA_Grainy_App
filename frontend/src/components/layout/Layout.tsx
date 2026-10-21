@@ -1,4 +1,4 @@
-import { Outlet, ScrollRestoration } from "react-router";
+import { type Location, Outlet, ScrollRestoration } from "react-router";
 
 import { CivicStripe } from "./CivicStripe";
 import { Footer } from "./Footer";
@@ -15,7 +15,11 @@ export function Layout() {
         <Outlet />
       </main>
       <Footer />
-      <ScrollRestoration />
+      <ScrollRestoration getKey={getScrollKey} />
     </div>
   );
+}
+
+function getScrollKey(location: Location): string {
+  return location.key === "default" ? location.pathname : location.key;
 }

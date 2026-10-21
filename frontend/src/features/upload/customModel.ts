@@ -2,7 +2,7 @@ import type { AppConfig } from "@/api/types";
 import { formatBytes } from "@/lib/format";
 
 export interface LoadedCustomModel {
-  fileName: string;
+  origin: string;
   name: string;
   json: string;
 }
@@ -10,6 +10,22 @@ export interface LoadedCustomModel {
 export class CustomModelFileError extends Error {}
 
 const DEFAULT_CUSTOM_MODEL_NAME = "Custom Model";
+
+// Mirrors the limits checked in app/models/form.py.
+export function customModelSizeIssues(json: string, config: AppConfig): string[] {
+  const issues: string[] = [];
+  if (new TextEncoder().encode(json).byteLength > config.custom_model_json_max_size) {
+    issues.push(
+      `The model definition exceeds the ${formatBytes(config.custom_model_json_max_size)} limit.`,
+    );
+  }
+  if (json.length > config.custom_model_json_max_chars) {
+    issues.push(
+      `The model definition exceeds ${config.custom_model_json_max_chars.toString()} characters.`,
+    );
+  }
+  return issues;
+}
 
 export async function readCustomModelFile(
   file: File,
@@ -22,11 +38,8 @@ export async function readCustomModelFile(
   }
 
   const json = await file.text();
-  if (json.length > config.custom_model_json_max_chars) {
-    throw new CustomModelFileError(
-      `The model definition exceeds ${config.custom_model_json_max_chars.toString()} characters.`,
-    );
-  }
+  const [sizeIssue] = customModelSizeIssues(json, config);
+  if (sizeIssue) throw new CustomModelFileError(sizeIssue);
 
   let definition: unknown;
   try {
@@ -50,5 +63,5 @@ export async function readCustomModelFile(
       ? definition.model_name
       : DEFAULT_CUSTOM_MODEL_NAME;
 
-  return { fileName: file.name, name, json };
+  return { origin: file.name, name, json };
 }
