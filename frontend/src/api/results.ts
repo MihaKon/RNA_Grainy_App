@@ -31,11 +31,13 @@ export async function fetchResultStructures(
   return { reference, coarseMmcif, coarsePdb };
 }
 
-// Once consumed, the workspace is deleted and the files cannot be fetched again.
+// The server removes a consumed workspace after a grace period (about an hour), so
+// keep the files for the whole session instead of fetching them again.
 export const resultStructuresQueryOptions = (result: CoarseGrainResult) =>
   queryOptions({
     queryKey: ["results", result.workspace_id, "structures"],
     queryFn: () => fetchResultStructures(result.files),
     staleTime: Infinity,
+    gcTime: Infinity,
     retry: false,
   });

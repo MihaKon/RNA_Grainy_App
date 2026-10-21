@@ -28,6 +28,12 @@ class FileProcessingError(AppException):
     pass
 
 
+class ResultNotFoundError(AppException):
+    """Exception raised when a result file is missing or has expired."""
+
+    pass
+
+
 class ModelLoadingError(AppException):
     """Exception raised for errors during model loading."""
 
@@ -47,9 +53,11 @@ def is_api_request(request: Request) -> bool:
     return request.url.path.startswith(API_PATH_PREFIX)
 
 
-def error_response(request: Request, message: str) -> Response:
-    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
-
+def error_response(
+    request: Request,
+    message: str,
+    status_code: int = status.HTTP_422_UNPROCESSABLE_CONTENT,
+) -> Response:
     if is_api_request(request):
         return JSONResponse(status_code=status_code, content={"detail": message})
 
@@ -84,6 +92,8 @@ def describe_validation_error(errors: Sequence[Any]) -> str:
 
 
 async def app_exception_handler(request: Request, exc: Exception) -> Response:
+    if isinstance(exc, ResultNotFoundError):
+        return error_response(request, str(exc), status.HTTP_404_NOT_FOUND)
     return error_response(request, str(exc))
 
 

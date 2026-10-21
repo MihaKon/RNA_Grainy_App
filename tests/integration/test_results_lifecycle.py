@@ -1,13 +1,21 @@
 import re
+import time
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
+import app.services.workspaces.cleaner as cleaner_module
+from app.services.workspaces import WorkspaceCleaner
+from app.services.workspaces.paths import CONSUMED_MARKER
+from app.settings import WORKSPACE_CONSUMED_LIFETIME
 from tests.integration.helpers import extract_data_attribute
 
 
 def test_results_lifecycle(
-    client: TestClient, isolated_workspace_storage: Path
+    client: TestClient,
+    isolated_workspace_storage: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     upload_response = client.post(
         "/upload/preset/",
@@ -74,10 +82,21 @@ def test_results_lifecycle(
     consumed_response = client.post(result_urls["consumed_url"])
     assert consumed_response.status_code == 204
     assert consumed_response.content == b""
-    assert not workspace_dir.exists()
+    assert (workspace_dir / CONSUMED_MARKER).is_file()
 
     assert all(downloaded_contents.values())
 
     second_download_response = client.get(result_urls["reference_url"])
+    assert second_download_response.status_code == 200
+    assert second_download_response.content == downloaded_contents["reference_url"]
 
-    assert second_download_response.status_code == 422
+    WorkspaceCleaner.cleanup_workspaces()
+    assert workspace_dir.is_dir()
+
+    after_grace_period = time.time() + WORKSPACE_CONSUMED_LIFETIME
+    monkeypatch.setattr(cleaner_module.time, "time", lambda: after_grace_period)
+    WorkspaceCleaner.cleanup_workspaces()
+    assert not workspace_dir.exists()
+
+    expired_download_response = client.get(result_urls["reference_url"])
+    assert expired_download_response.status_code == 404
