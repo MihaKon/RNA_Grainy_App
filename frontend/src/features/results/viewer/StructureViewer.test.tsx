@@ -21,7 +21,9 @@ function fakeViewer(overrides: Partial<MolstarViewer> = {}): MolstarViewer {
   return {
     failedStructures: [],
     modelNumbers: [1],
+    hasNonPolymer: false,
     setVisibility: vi.fn(),
+    setNonPolymerVisibility: vi.fn(),
     setModel: vi.fn(() => Promise.resolve()),
     setRepresentation: vi.fn(() => Promise.resolve()),
     setColorMode: vi.fn(() => Promise.resolve()),
@@ -79,6 +81,33 @@ describe("StructureViewer", () => {
 
     expect(await screen.findByRole("button", { name: "Cartoon" })).toBeEnabled();
     expect(screen.queryByRole("combobox", { name: "Model" })).not.toBeInTheDocument();
+  });
+
+  it("hides water, ions and ligands until they are switched on", async () => {
+    const setNonPolymerVisibility = vi.fn();
+    createMolstarViewer.mockResolvedValue(
+      fakeViewer({ hasNonPolymer: true, setNonPolymerVisibility }),
+    );
+    const user = userEvent.setup();
+    renderViewer();
+
+    const toggle = await screen.findByRole("button", { name: "Water, ions & ligands" });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(toggle);
+
+    expect(setNonPolymerVisibility).toHaveBeenCalledWith(true);
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("offers no water and ligand switch for a structure without them", async () => {
+    createMolstarViewer.mockResolvedValue(fakeViewer());
+    renderViewer();
+
+    expect(await screen.findByRole("button", { name: "Cartoon" })).toBeEnabled();
+    expect(
+      screen.queryByRole("button", { name: "Water, ions & ligands" }),
+    ).not.toBeInTheDocument();
   });
 
   it("reports that the viewer failed only when no structure can be loaded", async () => {

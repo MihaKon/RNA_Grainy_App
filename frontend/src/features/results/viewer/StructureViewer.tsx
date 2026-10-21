@@ -45,6 +45,8 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
   const [failedStructures, setFailedStructures] = useState<readonly StructureId[]>([]);
   const [modelNumbers, setModelNumbers] = useState<readonly number[]>([]);
   const [modelIndex, setModelIndex] = useState(0);
+  const [hasNonPolymer, setHasNonPolymer] = useState(false);
+  const [nonPolymerVisible, setNonPolymerVisible] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -82,6 +84,7 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
         }
         setFailedStructures(viewer.failedStructures);
         setModelNumbers(viewer.modelNumbers);
+        setHasNonPolymer(viewer.hasNonPolymer);
         setStatus("ready");
       },
       (error: unknown) => {
@@ -115,6 +118,11 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
     const nextVisible = !visible[id];
     viewerRef.current?.setVisibility(id, nextVisible);
     setVisible((current) => ({ ...current, [id]: nextVisible }));
+  };
+
+  const toggleNonPolymer = () => {
+    viewerRef.current?.setNonPolymerVisibility(!nonPolymerVisible);
+    setNonPolymerVisible(!nonPolymerVisible);
   };
 
   const changeRepresentation = (type: RepresentationType) =>
@@ -187,6 +195,15 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
               {label}
             </ToggleButton>
           ))}
+          {hasNonPolymer && (
+            <ToggleButton
+              pressed={nonPolymerVisible}
+              disabled={controlsDisabled}
+              onClick={toggleNonPolymer}
+            >
+              Water, ions &amp; ligands
+            </ToggleButton>
+          )}
         </ControlGroup>
 
         <ControlGroup label="Style">
