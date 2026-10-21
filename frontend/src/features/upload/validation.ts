@@ -40,14 +40,32 @@ export function validateUploadForm(
     errors.model = "Load a custom model JSON file.";
   }
 
-  if (!MODELS_PATTERN.test(values.models)) {
-    errors.models = "Use model numbers separated by commas.";
-  }
+  const modelsError = validateModels(values.models);
+  if (modelsError) errors.models = modelsError;
   if (!CHAINS_PATTERN.test(values.chains)) {
     errors.chains = "Use chain IDs (letters and digits) separated by commas.";
   }
 
   return errors;
+}
+
+function validateModels(models: string): string | undefined {
+  if (!MODELS_PATTERN.test(models)) {
+    return "Use model numbers separated by commas.";
+  }
+  const numbers = models
+    .split(",")
+    .map((model) => model.trim())
+    .filter(Boolean)
+    .map(Number);
+  if (numbers.some((model) => model === 0)) {
+    return "Model numbers start at 1.";
+  }
+  const repeated = numbers.find((model, index) => numbers.indexOf(model) !== index);
+  if (repeated !== undefined) {
+    return `Model ${repeated.toString()} is listed more than once.`;
+  }
+  return undefined;
 }
 
 export function hasErrors(errors: UploadFormErrors): boolean {

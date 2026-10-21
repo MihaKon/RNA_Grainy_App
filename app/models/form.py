@@ -108,7 +108,13 @@ class UploadBase(BaseModel):
                 raise ValueError(
                     "Incorrect symbols in the model selector or provided model ID is negative."
                 )
-            return [int(x.strip()) for x in v.split(",") if x.strip()]
+            models = [int(x.strip()) for x in v.split(",") if x.strip()]
+            if 0 in models:
+                raise ValueError("Model numbers start at 1.")
+            repeated = next((m for i, m in enumerate(models) if m in models[:i]), None)
+            if repeated is not None:
+                raise ValueError(f"Model {repeated} is listed more than once.")
+            return models
         raise ValueError("Models must be a string or list")
 
     @field_validator("chains", mode="before")

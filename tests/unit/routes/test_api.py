@@ -159,6 +159,33 @@ class TestCoarseGrainPreset:
         assert response.json()["selected_models"] == [1]
         assert response.json()["selected_chains"] == ["A"]
 
+    @pytest.mark.parametrize(
+        ("models", "detail"),
+        [
+            ("0", "Model numbers start at 1."),
+            ("1, 0", "Model numbers start at 1."),
+            ("1, 2, 1", "Model 1 is listed more than once."),
+            (
+                "-1",
+                "Incorrect symbols in the model selector or provided model ID is negative.",
+            ),
+            (
+                "1;2",
+                "Incorrect symbols in the model selector or provided model ID is negative.",
+            ),
+        ],
+    )
+    def test_invalid_model_numbers_return_json_error(
+        self, client: TestClient, models: str, detail: str
+    ) -> None:
+        response = client.post(
+            "/api/coarse-grain/preset",
+            data={"preset_id": "1EHZ", "selected_model": "SimModel", "models": models},
+        )
+
+        assert response.status_code == 422
+        assert response.json() == {"detail": detail}
+
     def test_unknown_preset_returns_json_error(self, client: TestClient) -> None:
         response = client.post(
             "/api/coarse-grain/preset",
