@@ -117,6 +117,12 @@ async def coarse_grain_structure(
     coarse_structure = StructureProcessor.apply_coarse_graining(
         original_structure, selected_model, custom_model_data
     )
+    if StructureProcessor.get_structure_atom_count(coarse_structure) == 0:
+        raise FileProcessingError(
+            "The selected model found no nucleotides to coarse-grain in this "
+            "structure. Check that it contains RNA and that the selected chains "
+            "and models are correct."
+        )
 
     outcome = CoarseGrainingOutcome(
         workspace_id=WorkspaceManager.create_workspace_id(),

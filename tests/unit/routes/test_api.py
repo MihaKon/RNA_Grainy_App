@@ -232,6 +232,27 @@ class TestAtomCounts:
         assert response.json()["atom_counts"]["original"] == 1652
 
 
+class TestEmptyResult:
+    def test_structure_without_nucleotides_returns_json_error(
+        self, client: TestClient, isolated_workspace_storage: Path
+    ) -> None:
+        protein = (
+            "ATOM      1  N   ALA A   1      11.104   6.134  -6.504  1.00  0.00           N\n"
+            "ATOM      2  CA  ALA A   1      11.639   6.071  -5.147  1.00  0.00           C\n"
+            "END\n"
+        )
+
+        response = client.post(
+            "/api/coarse-grain/file",
+            files={"file": ("protein.pdb", protein.encode(), "text/plain")},
+            data={"selected_model": "SimModel"},
+        )
+
+        assert response.status_code == 422
+        assert "found no nucleotides" in response.json()["detail"]
+        assert list(isolated_workspace_storage.iterdir()) == []
+
+
 class TestCoarseGrainFile:
     @pytest.mark.parametrize(
         ("fixture_name", "reference_format"),
