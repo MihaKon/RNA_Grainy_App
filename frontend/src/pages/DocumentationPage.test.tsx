@@ -1,8 +1,8 @@
 import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { models } from "@/test/fixtures";
 import { jsonResponse, mockFetch } from "@/test/fetchMock";
+import { models } from "@/test/fixtures";
 import { renderApp } from "@/test/renderApp";
 
 describe("DocumentationPage", () => {
