@@ -1,5 +1,5 @@
-import { screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ResultStructures } from "@/api/results";
 import { jsonResponse, mockFetch } from "@/test/fetchMock";
@@ -36,6 +36,10 @@ describe("ResultView", () => {
   beforeEach(() => {
     URL.createObjectURL = createObjectURL;
     URL.revokeObjectURL = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("shows the model report and the loaded structures", async () => {
@@ -93,6 +97,27 @@ describe("ResultView", () => {
     expect(anchor.download).toBe("1EHZ_SimRNA.cif");
   });
 
+  it("shows the result and disables the PDB download when only the PDB file fails", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    mockFetch({
+      [`GET ${files.reference_url}`]: () => new Response("reference"),
+      [`GET ${files.coarse_mmcif_url}`]: () => new Response("coarse mmcif"),
+      [`GET ${files.coarse_pdb_url ?? ""}`]: () =>
+        jsonResponse({ detail: "Server error." }, 500),
+      [`POST ${files.consumed_url}`]: () => new Response(null, { status: 204 }),
+    });
+    renderResult();
+
+    expect(await screen.findByText("Viewer showing reference")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Download PDB" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Download mmCIF" })).toBeEnabled();
+    expect(
+      screen.getByText(
+        "The PDB file could not be downloaded. The mmCIF file is still available.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("links citation markers in the model description", async () => {
     mockResultFiles();
     const { user } = renderResult();
@@ -105,18 +130,49 @@ describe("ResultView", () => {
     );
   });
 
-  it("explains when the result files are gone", async () => {
+  it("explains when the result files have expired", async () => {
     mockFetch({
       [`GET ${files.reference_url}`]: () =>
-        jsonResponse({ detail: "Workspace not found." }, 422),
+        jsonResponse({ detail: "Requested file does not exist or has expired." }, 404),
       [`GET ${files.coarse_mmcif_url}`]: () => new Response("coarse mmcif"),
       [`GET ${files.coarse_pdb_url ?? ""}`]: () => new Response("coarse pdb"),
     });
     renderResult();
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "The result could not be loaded.",
-    );
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("This result has expired.");
+    expect(alert).toHaveTextContent("kept for about an hour");
     expect(screen.getByRole("button", { name: "Download mmCIF" })).toBeDisabled();
+  });
+
+  it("shows the server message when the result files cannot be loaded", async () => {
+    mockFetch({
+      [`GET ${files.reference_url}`]: () =>
+        jsonResponse({ detail: "Invalid workspace ID format." }, 422),
+      [`GET ${files.coarse_mmcif_url}`]: () => new Response("coarse mmcif"),
+      [`GET ${files.coarse_pdb_url ?? ""}`]: () => new Response("coarse pdb"),
+    });
+    renderResult();
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("The result could not be loaded.");
+    expect(alert).toHaveTextContent("Invalid workspace ID format.");
+  });
+
+  it("keeps the loaded files after leaving the result page", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const fetchMock = mockResultFiles();
+    const { router, user } = renderResult();
+    await screen.findByText("Viewer showing reference");
+
+    await user.click(screen.getByRole("link", { name: /New structure/ }));
+    await act(() => vi.advanceTimersByTimeAsync(10 * 60 * 1000));
+    await act(() => router.navigate(-1));
+
+    expect(await screen.findByText("Viewer showing reference")).toBeInTheDocument();
+    const referenceFetches = fetchMock.mock.calls.filter(
+      ([url]) => url === files.reference_url,
+    );
+    expect(referenceFetches).toHaveLength(1);
   });
 });

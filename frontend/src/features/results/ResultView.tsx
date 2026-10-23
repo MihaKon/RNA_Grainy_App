@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { Link } from "react-router";
 
+import { ApiError, getErrorMessage } from "@/api/client";
 import { resultStructuresQueryOptions } from "@/api/results";
 import type { CoarseGrainResult } from "@/api/types";
 import { Alert } from "@/components/ui/Alert";
@@ -83,16 +84,7 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
       <div className="mt-8 grid gap-6 lg:grid-cols-[3fr_2fr]">
         <div>
           {structuresQuery.isError ? (
-            <Alert severity="error">
-              <p className="font-medium">The result could not be loaded.</p>
-              <p className="text-ink-2">
-                It may have expired. Please{" "}
-                <Link to="/" className="text-accent hover:text-accent-hover">
-                  process the structure again
-                </Link>
-                .
-              </p>
-            </Alert>
+            <ResultLoadError error={structuresQuery.error} />
           ) : (
             <Suspense fallback={<ViewerPlaceholder />}>
               {structures ? (
@@ -113,10 +105,15 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
           <Alert severity="info">
             <ul className="flex list-disc flex-col gap-1 pl-4">
               <li>
-                Reference atoms are counted from the first model and all chains unless a
-                selection was made.
+                Input atoms are the polymer atoms of the first model, across all chains
+                unless a selection was made. Water, ions and ligands are not counted.
               </li>
-              {pdbAvailable ? (
+              {structures?.coarsePdbFailed ? (
+                <li>
+                  The PDB file could not be downloaded. The mmCIF file is still
+                  available.
+                </li>
+              ) : pdbAvailable ? (
                 <li>
                   Chain names may be shortened in PDB files of large structures. Check
                   the output before further use.
@@ -138,6 +135,28 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function ResultLoadError({ error }: { error: Error }) {
+  const expired = error instanceof ApiError && error.status === 404;
+
+  return (
+    <Alert severity="error">
+      <p className="font-medium">
+        {expired ? "This result has expired." : "The result could not be loaded."}
+      </p>
+      <p className="text-ink-2">
+        {expired
+          ? "Result files are kept for about an hour after they are first opened. "
+          : `${getErrorMessage(error)} `}
+        Please{" "}
+        <Link to="/" className="text-accent hover:text-accent-hover">
+          process the structure again
+        </Link>
+        .
+      </p>
+    </Alert>
   );
 }
 

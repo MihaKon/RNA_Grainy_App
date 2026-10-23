@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import type { ResultStructures } from "@/api/results";
+import { Alert } from "@/components/ui/Alert";
 import { ToggleButton } from "@/components/ui/ToggleButton";
 
 import {
@@ -41,6 +42,11 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
   const [representation, setRepresentation] =
     useState<RepresentationType>("ball-and-stick");
   const [colorByElement, setColorByElement] = useState(false);
+  const [failedStructures, setFailedStructures] = useState<readonly StructureId[]>([]);
+  const [modelNumbers, setModelNumbers] = useState<readonly number[]>([]);
+  const [modelIndex, setModelIndex] = useState(0);
+  const [hasNonPolymer, setHasNonPolymer] = useState(false);
+  const [nonPolymerVisible, setNonPolymerVisible] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -73,6 +79,12 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
           return;
         }
         viewerRef.current = viewer;
+        for (const id of viewer.failedStructures) {
+          console.error(`Could not load the ${id} structure into the viewer.`);
+        }
+        setFailedStructures(viewer.failedStructures);
+        setModelNumbers(viewer.modelNumbers);
+        setHasNonPolymer(viewer.hasNonPolymer);
         setStatus("ready");
       },
       (error: unknown) => {
@@ -108,10 +120,21 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
     setVisible((current) => ({ ...current, [id]: nextVisible }));
   };
 
+  const toggleNonPolymer = () => {
+    viewerRef.current?.setNonPolymerVisibility(!nonPolymerVisible);
+    setNonPolymerVisible(!nonPolymerVisible);
+  };
+
   const changeRepresentation = (type: RepresentationType) =>
     runViewerAction(async (viewer) => {
       await viewer.setRepresentation(type);
       setRepresentation(type);
+    });
+
+  const changeModel = (index: number) =>
+    runViewerAction(async (viewer) => {
+      await viewer.setModel(index);
+      setModelIndex(index);
     });
 
   const toggleElementColors = () =>
@@ -124,6 +147,9 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
     });
 
   const controlsDisabled = status !== "ready" || busy;
+  const failedLabels = STRUCTURE_TOGGLES.filter(({ id }) =>
+    failedStructures.includes(id),
+  ).map(({ label }) => label.toLowerCase());
 
   return (
     <div className="flex flex-col gap-3">
@@ -143,13 +169,20 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
         )}
       </div>
 
+      {failedLabels.length > 0 && (
+        <Alert severity="error">
+          The {failedLabels.join(" and ")} structure could not be displayed. The
+          downloads are not affected.
+        </Alert>
+      )}
+
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <ControlGroup label="Show">
           {STRUCTURE_TOGGLES.map(({ id, label }) => (
             <ToggleButton
               key={id}
-              pressed={visible[id]}
-              disabled={controlsDisabled}
+              pressed={visible[id] && !failedStructures.includes(id)}
+              disabled={controlsDisabled || failedStructures.includes(id)}
               onClick={() => {
                 toggleStructure(id);
               }}
@@ -162,6 +195,15 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
               {label}
             </ToggleButton>
           ))}
+          {hasNonPolymer && (
+            <ToggleButton
+              pressed={nonPolymerVisible}
+              disabled={controlsDisabled}
+              onClick={toggleNonPolymer}
+            >
+              Water, ions &amp; ligands
+            </ToggleButton>
+          )}
         </ControlGroup>
 
         <ControlGroup label="Style">
@@ -177,10 +219,28 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
           ))}
         </ControlGroup>
 
+        {modelNumbers.length > 1 && (
+          <label className="flex items-center gap-2">
+            <span className="eyebrow">Model</span>
+            <select
+              value={modelIndex}
+              disabled={controlsDisabled}
+              onChange={(event) => void changeModel(Number(event.target.value))}
+              className="cursor-pointer rounded border-[1.5px] border-line-soft bg-white px-2 py-1 font-mono text-label tracking-[0.12em] text-ink-2 hover:border-accent disabled:opacity-50"
+            >
+              {modelNumbers.map((modelNumber, index) => (
+                <option key={index} value={index}>
+                  {modelNumber} ({index + 1} of {modelNumbers.length})
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
         <ControlGroup label="All-atom color">
           <ToggleButton
             pressed={colorByElement}
-            disabled={controlsDisabled}
+            disabled={controlsDisabled || failedStructures.includes("reference")}
             onClick={() => void toggleElementColors()}
           >
             By element

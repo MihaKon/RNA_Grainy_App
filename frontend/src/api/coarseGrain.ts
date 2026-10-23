@@ -1,4 +1,4 @@
-import { apiRequest } from "./client";
+import { apiFetch, apiRequest } from "./client";
 import type { CoarseGrainResult } from "./types";
 
 export type StructureSource =
@@ -47,4 +47,11 @@ function appendIfPresent(body: FormData, name: string, value: string | undefined
   if (trimmed) {
     body.append(name, trimmed);
   }
+}
+
+// The backend owns the custom model schema, so loaded files are checked there.
+export async function validateCustomModel(json: string): Promise<void> {
+  const body = new FormData();
+  body.append("custom_model_data", json);
+  await apiFetch("/api/models/custom/validate", { method: "POST", body });
 }

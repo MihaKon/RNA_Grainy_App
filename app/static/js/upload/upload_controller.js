@@ -28,6 +28,8 @@ document.addEventListener("alpine:init", () => {
     presetId: "",
     selectedModel: "",
     selectedLabel: "Select model",
+    chains: "",
+    models: "",
 
     dropdownOpen: false,
     openUp: false,

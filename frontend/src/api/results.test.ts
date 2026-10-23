@@ -50,6 +50,7 @@ describe("fetchResultStructures", () => {
       reference: "reference",
       coarseMmcif: "coarse mmcif",
       coarsePdb: "coarse pdb",
+      coarsePdbFailed: false,
     });
     expect(consumedCalls()).toHaveLength(1);
   });
@@ -65,7 +66,30 @@ describe("fetchResultStructures", () => {
     const structures = await fetchResultStructures({ ...files, coarse_pdb_url: null });
 
     expect(structures.coarsePdb).toBeNull();
+    expect(structures.coarsePdbFailed).toBe(false);
     expect(warn).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the required structures when the optional PDB download fails", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const fetchMock = mockFetch({
+      [`GET ${files.reference_url}`]: () => new Response("reference"),
+      [`GET ${files.coarse_mmcif_url}`]: () => new Response("coarse mmcif"),
+      [`GET ${files.coarse_pdb_url ?? ""}`]: () =>
+        Response.json({ detail: "Server error." }, { status: 500 }),
+      [`POST ${files.consumed_url}`]: () => new Response(null, { status: 204 }),
+    });
+
+    const structures = await fetchResultStructures(files);
+
+    expect(structures).toEqual({
+      reference: "reference",
+      coarseMmcif: "coarse mmcif",
+      coarsePdb: null,
+      coarsePdbFailed: true,
+    });
+    expect(warn).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledWith(files.consumed_url, { method: "POST" });
   });
 
   it("fails when a structure cannot be downloaded", async () => {

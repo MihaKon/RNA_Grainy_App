@@ -73,6 +73,42 @@ class TestListModels:
             ]
 
 
+class TestValidateCustomModel:
+    def test_accepts_a_valid_definition(
+        self, client: TestClient, test_data_dir: Path
+    ) -> None:
+        response = client.post(
+            "/api/models/custom/validate",
+            data={
+                "custom_model_data": (test_data_dir / "custom_model.json").read_text()
+            },
+        )
+
+        assert response.status_code == 204
+
+    @pytest.mark.parametrize(
+        ("custom_model_data", "detail"),
+        [
+            ("{", "Invalid JSON format."),
+            (
+                json.dumps({"unexpected_field": True}),
+                "Invalid custom model: default_mapping: Field required",
+            ),
+            ("x" * 10_000, "Custom model JSON upload size is too large."),
+        ],
+    )
+    def test_rejects_an_invalid_definition(
+        self, client: TestClient, custom_model_data: str, detail: str
+    ) -> None:
+        response = client.post(
+            "/api/models/custom/validate",
+            data={"custom_model_data": custom_model_data},
+        )
+
+        assert response.status_code == 422
+        assert response.json() == {"detail": detail}
+
+
 class TestCoarseGrainPreset:
     def test_returns_result_with_downloadable_files(
         self, client: TestClient, isolated_workspace_storage: Path
@@ -123,6 +159,33 @@ class TestCoarseGrainPreset:
         assert response.json()["selected_models"] == [1]
         assert response.json()["selected_chains"] == ["A"]
 
+    @pytest.mark.parametrize(
+        ("models", "detail"),
+        [
+            ("0", "Model numbers start at 1."),
+            ("1, 0", "Model numbers start at 1."),
+            ("1, 2, 1", "Model 1 is listed more than once."),
+            (
+                "-1",
+                "Incorrect symbols in the model selector or provided model ID is negative.",
+            ),
+            (
+                "1;2",
+                "Incorrect symbols in the model selector or provided model ID is negative.",
+            ),
+        ],
+    )
+    def test_invalid_model_numbers_return_json_error(
+        self, client: TestClient, models: str, detail: str
+    ) -> None:
+        response = client.post(
+            "/api/coarse-grain/preset",
+            data={"preset_id": "1EHZ", "selected_model": "SimModel", "models": models},
+        )
+
+        assert response.status_code == 422
+        assert response.json() == {"detail": detail}
+
     def test_unknown_preset_returns_json_error(self, client: TestClient) -> None:
         response = client.post(
             "/api/coarse-grain/preset",
@@ -137,6 +200,62 @@ class TestCoarseGrainPreset:
 
         assert response.status_code == 422
         assert response.json() == {"detail": "Required: selected_model"}
+
+    def test_unknown_model_returns_json_error(self, client: TestClient) -> None:
+        response = client.post(
+            "/api/coarse-grain/preset",
+            data={"preset_id": "1EHZ", "selected_model": "NonExistentModel"},
+        )
+
+        assert response.status_code == 422
+        assert response.json() == {
+            "detail": "Unknown coarse-grained model: NonExistentModel."
+        }
+
+    def test_custom_model_without_definition_returns_json_error(
+        self, client: TestClient
+    ) -> None:
+        response = client.post(
+            "/api/coarse-grain/preset",
+            data={"preset_id": "1EHZ", "selected_model": "custom"},
+        )
+
+        assert response.status_code == 422
+        assert response.json() == {
+            "detail": "Custom model selected but no definition was provided."
+        }
+
+    @pytest.mark.parametrize(
+        ("definition", "detail"),
+        [
+            (
+                {"model_name": "Example"},
+                "Invalid custom model: default_mapping: Field required",
+            ),
+            (
+                {"unexpected_field": True},
+                "Invalid custom model: default_mapping: Field required",
+            ),
+            (
+                [],
+                "Invalid custom model: Input should be a valid dictionary or instance of CustomModelDefinition",
+            ),
+        ],
+    )
+    def test_incomplete_custom_model_returns_json_error(
+        self, client: TestClient, definition: object, detail: str
+    ) -> None:
+        response = client.post(
+            "/api/coarse-grain/preset",
+            data={
+                "preset_id": "1EHZ",
+                "selected_model": "custom",
+                "custom_model_data": json.dumps(definition),
+            },
+        )
+
+        assert response.status_code == 422
+        assert response.json() == {"detail": detail}
 
     def test_custom_model_description_is_returned_verbatim(
         self, client: TestClient, test_data_dir: Path
@@ -157,6 +276,62 @@ class TestCoarseGrainPreset:
         assert model["id"] == "custom"
         assert model["description"] == json.loads(custom_model)["description"]
         assert model["image_url"] is None
+
+
+class TestAtomCounts:
+    def test_input_atoms_leave_out_water_and_ions(
+        self, client: TestClient, test_data_dir: Path
+    ) -> None:
+        structure = test_data_dir / "1EHZ.pdb"
+
+        response = client.post(
+            "/api/coarse-grain/file",
+            files={"file": (structure.name, structure.read_bytes(), "text/plain")},
+            data={"selected_model": "SimModel"},
+        )
+
+        assert response.status_code == 200
+        # 1,821 atom sites: 1,652 RNA atoms, 160 waters and 9 magnesium ions.
+        assert response.json()["atom_counts"]["original"] == 1652
+
+    @pytest.mark.parametrize(
+        ("filename", "atoms"),
+        [("rnacomposer_example1.pdb", 1497), ("R1212TS063_4.cif", 5250)],
+    )
+    def test_input_atoms_are_counted_without_entity_records(
+        self, client: TestClient, test_data_dir: Path, filename: str, atoms: int
+    ) -> None:
+        structure = test_data_dir / filename
+
+        response = client.post(
+            "/api/coarse-grain/file",
+            files={"file": (structure.name, structure.read_bytes(), "text/plain")},
+            data={"selected_model": "SimModel"},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["atom_counts"]["original"] == atoms
+
+
+class TestEmptyResult:
+    def test_structure_without_nucleotides_returns_json_error(
+        self, client: TestClient, isolated_workspace_storage: Path
+    ) -> None:
+        protein = (
+            "ATOM      1  N   ALA A   1      11.104   6.134  -6.504  1.00  0.00           N\n"
+            "ATOM      2  CA  ALA A   1      11.639   6.071  -5.147  1.00  0.00           C\n"
+            "END\n"
+        )
+
+        response = client.post(
+            "/api/coarse-grain/file",
+            files={"file": ("protein.pdb", protein.encode(), "text/plain")},
+            data={"selected_model": "SimModel"},
+        )
+
+        assert response.status_code == 422
+        assert "found no nucleotides" in response.json()["detail"]
+        assert list(isolated_workspace_storage.iterdir()) == []
 
 
 class TestCoarseGrainFile:
@@ -182,6 +357,26 @@ class TestCoarseGrainFile:
         assert response.status_code == 200
         assert response.json()["filename"] == "1GCT"
         assert response.json()["reference_format"] == reference_format
+
+    @pytest.mark.parametrize(
+        ("filename", "is_cif"),
+        [("1EHZ.pdb", False), ("1EHZ.cif", True)],
+    )
+    def test_reference_keeps_the_uploaded_format(
+        self, client: TestClient, test_data_dir: Path, filename: str, is_cif: bool
+    ) -> None:
+        structure = test_data_dir / filename
+
+        response = client.post(
+            "/api/coarse-grain/file",
+            files={"file": (filename, structure.read_bytes(), "text/plain")},
+            data={"selected_model": "SimModel"},
+        )
+
+        assert response.status_code == 200
+        reference = client.get(response.json()["files"]["reference_url"]).text
+        assert reference.startswith("data_") is is_cif
+        assert ("\nATOM  " in reference) is not is_cif
 
     def test_unsupported_format_returns_json_error(
         self, client: TestClient, empty_file: io.BytesIO

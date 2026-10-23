@@ -1,5 +1,12 @@
 import { FileUp, X } from "lucide-react";
-import { type ChangeEvent, type DragEvent, useId, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type DragEvent,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 
 import { cn } from "@/lib/cn";
 import { formatBytes } from "@/lib/format";
@@ -24,6 +31,12 @@ export function StructureFileInput({
   const [dragging, setDragging] = useState(false);
   const describedBy = error ? `${inputId}-error` : `${inputId}-hint`;
 
+  // Clear the native input when the form drops the file (e.g. on Reset), or picking
+  // the same file again fires no change event.
+  useEffect(() => {
+    if (!file && inputRef.current) inputRef.current.value = "";
+  }, [file]);
+
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange(event.target.files?.[0] ?? null);
   };
@@ -36,7 +49,6 @@ export function StructureFileInput({
   };
 
   const clearFile = () => {
-    if (inputRef.current) inputRef.current.value = "";
     onChange(null);
   };
 

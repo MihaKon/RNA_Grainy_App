@@ -74,10 +74,25 @@ describe("validateUploadForm", () => {
     ).toBeUndefined();
   });
 
-  it.each(["1,,2", ",1", "1,", "1 2", ","])("rejects the model list %j", (models) => {
+  it.each(["1,,2", ",1", "1,", "1 2", ",", "-1", "1.5"])(
+    "rejects the model list %j",
+    (models) => {
+      expect(validateUploadForm({ ...validValues, models }, appConfig).models).toBe(
+        "Use model numbers separated by commas.",
+      );
+    },
+  );
+
+  it.each(["0", "1, 0", "00"])("rejects model number zero in %j", (models) => {
     expect(validateUploadForm({ ...validValues, models }, appConfig).models).toBe(
-      "Use model numbers separated by commas.",
+      "Model numbers start at 1.",
     );
+  });
+
+  it("rejects a model listed twice", () => {
+    expect(
+      validateUploadForm({ ...validValues, models: "2, 3, 02" }, appConfig).models,
+    ).toBe("Model 2 is listed more than once.");
   });
 
   it.each(["", "A", "A,B", " a , 1 "])("accepts the chain list %j", (chains) => {

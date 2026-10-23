@@ -1,11 +1,13 @@
 import "molstar/build/viewer/theme/dark.css";
 
+import type { Trajectory } from "molstar/lib/mol-model/structure";
 import { PluginConfig } from "molstar/lib/mol-plugin/config";
 import type { BuiltInTrajectoryFormat } from "molstar/lib/mol-plugin-state/formats/trajectory";
 import { createPluginUI } from "molstar/lib/mol-plugin-ui";
 import type { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { renderReact18 } from "molstar/lib/mol-plugin-ui/react18";
 import { DefaultPluginUISpec } from "molstar/lib/mol-plugin-ui/spec";
+import { MolScriptBuilder as MS } from "molstar/lib/mol-script/language/builder";
 import type { StateObjectSelector } from "molstar/lib/mol-state";
 import { Color } from "molstar/lib/mol-util/color";
 
@@ -22,7 +24,14 @@ export interface StructureInput {
 }
 
 export interface MolstarViewer {
+  readonly failedStructures: readonly StructureId[];
+  /** Model numbers in file order; switching models uses their index. */
+  readonly modelNumbers: readonly number[];
+  /** Whether the input structure has water, ions or ligands; they start hidden. */
+  readonly hasNonPolymer: boolean;
   setVisibility(id: StructureId, visible: boolean): void;
+  setNonPolymerVisibility(visible: boolean): void;
+  setModel(index: number): Promise<void>;
   setRepresentation(type: RepresentationType): Promise<void>;
   setColorMode(id: StructureId, colorMode: ColorMode): Promise<void>;
   dispose(): void;
@@ -32,9 +41,24 @@ type StructureSelector = Awaited<
   ReturnType<PluginUIContext["builders"]["structure"]["createStructure"]>
 >;
 
+type ModelSelector = Awaited<
+  ReturnType<PluginUIContext["builders"]["structure"]["createModel"]>
+>;
+
+type ComponentSelector = Awaited<
+  ReturnType<
+    PluginUIContext["builders"]["structure"]["tryCreateComponentFromExpression"]
+  >
+>;
+
 interface StructureEntry {
-  structure: StructureSelector;
+  model: ModelSelector;
+  modelNumbers: readonly number[];
+  /** The polymer part, or the whole structure when nothing is split off. */
+  polymer: StructureSelector;
+  nonPolymer: ComponentSelector;
   representation: StateObjectSelector | undefined;
+  nonPolymerRepresentation: StateObjectSelector | undefined;
   representationType: RepresentationType;
   colorMode: ColorMode;
   color: number;
@@ -43,6 +67,14 @@ interface StructureEntry {
 }
 
 export const VIEWER_BACKGROUND = 0x002b45;
+
+const IS_POLYMER = MS.core.rel.eq([MS.ammp("entityType"), "polymer"]);
+const POLYMER_EXPRESSION = MS.struct.generator.atomGroups({
+  "entity-test": IS_POLYMER,
+});
+const NON_POLYMER_EXPRESSION = MS.struct.generator.atomGroups({
+  "entity-test": MS.core.logic.not([IS_POLYMER]),
+});
 
 export async function createMolstarViewer(
   target: HTMLElement,
@@ -77,11 +109,19 @@ export async function createMolstarViewer(
     return entry;
   };
 
+  let nonPolymerVisible = false;
+
+  const setHidden = (
+    representation: StateObjectSelector | undefined,
+    hidden: boolean,
+  ) => {
+    if (!representation) return;
+    plugin.state.data.updateCellState(representation.ref, { isHidden: hidden });
+  };
+
   const applyVisibility = (entry: StructureEntry) => {
-    if (!entry.representation) return;
-    plugin.state.data.updateCellState(entry.representation.ref, {
-      isHidden: !entry.visible,
-    });
+    setHidden(entry.representation, !entry.visible);
+    setHidden(entry.nonPolymerRepresentation, !entry.visible || !nonPolymerVisible);
   };
 
   // Replaces the structure's representation by reusing its tag, so only one is ever shown.
@@ -91,42 +131,72 @@ export async function createMolstarViewer(
     colorMode: ColorMode,
   ) => {
     const entry = getEntry(id);
-    const representation =
+    const colorProps = {
+      color: colorMode,
+      ...(colorMode === "uniform" && {
+        colorParams: { value: Color(entry.color) },
+      }),
+    };
+    entry.representation =
       await plugin.builders.structure.representation.addRepresentation(
-        entry.structure,
+        entry.polymer,
         {
           type: representationType,
           typeParams: entry.isCoarse ? { excludeTypes: ["computed"] } : {},
-          color: colorMode,
-          ...(colorMode === "uniform" && {
-            colorParams: { value: Color(entry.color) },
-          }),
+          ...colorProps,
         },
         { tag: `rnagrainy-${id}-representation` },
       );
+    // Cartoon and backbone draw nothing for small molecules, so keep them as sticks.
+    if (entry.nonPolymer) {
+      entry.nonPolymerRepresentation =
+        await plugin.builders.structure.representation.addRepresentation(
+          entry.nonPolymer,
+          { type: "ball-and-stick", ...colorProps },
+          { tag: `rnagrainy-${id}-non-polymer-representation` },
+        );
+    }
 
-    entry.representation = representation;
     entry.representationType = representationType;
     entry.colorMode = colorMode;
     applyVisibility(entry);
   };
 
-  try {
-    for (const input of structures) {
-      const data = await plugin.builders.data.rawData(
-        { data: input.data, label: input.id },
-        { state: { isGhost: true } },
-      );
+  const loadStructure = async (input: StructureInput) => {
+    const data = await plugin.builders.data.rawData(
+      { data: input.data, label: input.id },
+      { state: { isGhost: true } },
+    );
+    try {
       const trajectory = await plugin.builders.structure.parseTrajectory(
         data,
         input.format,
       );
       const model = await plugin.builders.structure.createModel(trajectory);
       const structure = await plugin.builders.structure.createStructure(model);
+      // The CG output holds only nucleotides, so only the input is split.
+      const polymer = input.isCoarse
+        ? undefined
+        : await plugin.builders.structure.tryCreateComponentFromExpression(
+            structure,
+            POLYMER_EXPRESSION,
+            "rnagrainy-polymer",
+          );
+      const nonPolymer = polymer
+        ? await plugin.builders.structure.tryCreateComponentFromExpression(
+            structure,
+            NON_POLYMER_EXPRESSION,
+            "rnagrainy-non-polymer",
+          )
+        : undefined;
 
       entries.set(input.id, {
-        structure,
+        model,
+        modelNumbers: readModelNumbers(trajectory.data),
+        polymer: polymer ?? structure,
+        nonPolymer,
         representation: undefined,
+        nonPolymerRepresentation: undefined,
         representationType: "ball-and-stick",
         colorMode: "uniform",
         color: input.color,
@@ -134,13 +204,50 @@ export async function createMolstarViewer(
         visible: true,
       });
       await updateRepresentation(input.id, "ball-and-stick", "uniform");
+    } catch (error) {
+      entries.delete(input.id);
+      await plugin.build().delete(data).commit();
+      throw error;
     }
-  } catch (error) {
-    plugin.dispose();
-    throw error;
+  };
+
+  // Each structure loads on its own, so one unreadable file still shows the other.
+  const failedStructures: StructureId[] = [];
+  const errors: unknown[] = [];
+  for (const input of structures) {
+    try {
+      await loadStructure(input);
+    } catch (error) {
+      failedStructures.push(input.id);
+      errors.push(error);
+    }
   }
 
+  if (entries.size === 0) {
+    plugin.dispose();
+    throw new AggregateError(errors, "None of the structures could be loaded.");
+  }
+
+  // Both files hold the same selected models, so either one gives the numbers.
+  const modelNumbers = entries.values().next().value?.modelNumbers ?? [1];
+
   return {
+    failedStructures,
+    modelNumbers,
+    hasNonPolymer: [...entries.values()].some((entry) => entry.nonPolymer),
+    setNonPolymerVisibility(visible) {
+      nonPolymerVisible = visible;
+      entries.forEach(applyVisibility);
+    },
+    async setModel(index) {
+      const update = plugin.build();
+      for (const entry of entries.values()) {
+        if (index < entry.modelNumbers.length) {
+          update.to(entry.model).update({ modelIndex: index });
+        }
+      }
+      await update.commit();
+    },
     setVisibility(id, visible) {
       const entry = getEntry(id);
       entry.visible = visible;
@@ -164,4 +271,12 @@ export async function createMolstarViewer(
       plugin.dispose();
     },
   };
+}
+
+function readModelNumbers(trajectory: Trajectory | undefined): number[] {
+  if (!trajectory) return [1];
+  return Array.from({ length: trajectory.frameCount }, (_, index) => {
+    const frame = trajectory.getFrameAtIndex(index);
+    return "modelNum" in frame ? frame.modelNum : index + 1;
+  });
 }

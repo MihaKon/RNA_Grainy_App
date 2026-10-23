@@ -9,6 +9,12 @@ from app.models.api import AtomCounts, CoarseGrainResult, ResultFiles
 from app.models.form import COARSE_FILE_FORMAT, SupportedFormats
 from app.rcsb import fetch_rcsb_file
 from app.services.doc import DocsContextBuilder
+from app.services.structure_serialization import (
+    coarse_structure_to_cif_string,
+    coarse_structure_to_pdb_string,
+    reference_structure_to_cif_string,
+    reference_structure_to_pdb_string,
+)
 from app.services.structures import StructureProcessor
 from app.services.workspaces import WorkspaceManager
 from app.settings import (
@@ -111,33 +117,56 @@ async def coarse_grain_structure(
     coarse_structure = StructureProcessor.apply_coarse_graining(
         original_structure, selected_model, custom_model_data
     )
+    if StructureProcessor.get_structure_atom_count(coarse_structure) == 0:
+        raise FileProcessingError(
+            "The selected model found no nucleotides to coarse-grain in this "
+            "structure. Check that it contains RNA and that the selected chains "
+            "and models are correct."
+        )
 
     outcome = CoarseGrainingOutcome(
         workspace_id=WorkspaceManager.create_workspace_id(),
-        original_atom_count=StructureProcessor.get_structure_atom_count(
+        original_atom_count=StructureProcessor.get_polymer_atom_count(
             original_structure
         ),
         coarse_atom_count=StructureProcessor.get_structure_atom_count(coarse_structure),
     )
+    model, _ = DocsContextBuilder.load_model_config(selected_model, custom_model_data)
     await _save_structures(
-        outcome, source.file_format, original_structure, coarse_structure
+        outcome, source, model.name_verbose, original_structure, coarse_structure
     )
     return outcome
 
 
 async def _save_structures(
     outcome: CoarseGrainingOutcome,
-    file_format: SupportedFormats,
+    source: StructureSource,
+    model_name: str,
     original_structure: Structure,
     coarse_structure: Structure,
 ) -> None:
     workspace_id = outcome.workspace_id
-    original_format = file_format.normalize_format()
+    original_format = source.file_format.normalize_format()
 
-    original_content = StructureProcessor.structure_to_cif_string(original_structure)
-    cif_content = StructureProcessor.structure_to_cif_string(coarse_structure)
+    if original_format == SupportedFormats.PDB:
+        original_content = reference_structure_to_pdb_string(original_structure)
+    else:
+        original_content = reference_structure_to_cif_string(
+            original_structure,
+            source_content=source.content,
+            filename=source.filename,
+        )
+    cif_content = coarse_structure_to_cif_string(
+        coarse_structure, model_name=model_name, filename=source.filename
+    )
     pdb_content = (
-        StructureProcessor.structure_to_pdb_string(coarse_structure)
+        coarse_structure_to_pdb_string(
+            coarse_structure,
+            filename=source.filename,
+            model_name=model_name,
+            source_content=source.content,
+            source_format=original_format,
+        )
         if outcome.is_pdb_available
         else None
     )

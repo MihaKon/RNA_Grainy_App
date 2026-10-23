@@ -11,6 +11,7 @@ function mockApi() {
   return mockFetch({
     "GET /api/config": () => jsonResponse(appConfig),
     "GET /api/models": () => jsonResponse(models),
+    "POST /api/models/custom/validate": () => new Response(null, { status: 204 }),
     "POST /api/coarse-grain/preset": () => jsonResponse(coarseGrainResult),
   });
 }

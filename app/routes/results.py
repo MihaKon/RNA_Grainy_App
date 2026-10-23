@@ -35,5 +35,5 @@ async def get_result_file(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def mark_result_as_consumed(workspace_id: str) -> Response:
-    WorkspaceManager.cleanup_workspace(workspace_id)
+    WorkspaceManager.mark_consumed(workspace_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
