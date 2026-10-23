@@ -1,6 +1,7 @@
 import type { ModelDocumentation } from "@/api/types";
 
 const CITATION_MARKER = /(\[\d+\])/;
+const DOI_SUFFIX = /^(.*?)\s*doi:\s*(\S+?)\.?$/;
 
 export function ModelDescription({ model }: { model: ModelDocumentation }) {
   const citationUrls = new Map(
@@ -34,23 +35,36 @@ export function ModelDescription({ model }: { model: ModelDocumentation }) {
       {model.citations.length > 0 && (
         <ol className="flex flex-col gap-2 border-t border-dashed border-line-soft pt-3">
           {model.citations.map((citation) => (
-            <li
-              key={citation.number}
-              className="flex gap-2 font-mono text-xs text-ink-3"
-            >
-              <span className="text-ink-2">[{citation.number}]</span>
-              <a
-                href={citation.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-accent"
-              >
-                {citation.text}
-              </a>
+            <li key={citation.number} className="flex gap-2 text-xs text-ink-2">
+              <span className="shrink-0 font-mono text-ink-3">[{citation.number}]</span>
+              <CitationText text={citation.text} url={citation.url} />
             </li>
           ))}
         </ol>
       )}
     </div>
+  );
+}
+
+function CitationText({ text, url }: { text: string; url: string }) {
+  const match = DOI_SUFFIX.exec(text);
+  const link = (label: string) => (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="break-all text-accent hover:text-accent-hover"
+    >
+      {label}
+    </a>
+  );
+
+  const [, reference, doi] = match ?? [];
+  if (reference === undefined || doi === undefined) return <span>{link(text)}</span>;
+
+  return (
+    <span>
+      {reference} {link(`doi:${doi}`)}
+    </span>
   );
 }

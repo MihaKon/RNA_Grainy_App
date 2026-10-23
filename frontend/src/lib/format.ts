@@ -16,10 +16,13 @@ export function formatList(items: readonly string[], conjunction = "or"): string
   return `${items.slice(0, -1).join(", ")} ${conjunction} ${items.at(-1) ?? ""}`;
 }
 
+export function formatBeadCount(beads: readonly number[]): string {
+  return formatList(beads.map(String));
+}
+
 export function formatBeadsPerResidue(beads: readonly number[]): string {
-  const count = formatList(beads.map(String));
   const isSingular = beads.length === 1 && beads[0] === 1;
-  return `${count} ${isSingular ? "bead" : "beads"} per residue`;
+  return `${formatBeadCount(beads)} ${isSingular ? "bead" : "beads"} per residue`;
 }
 
 export function formatPercent(fraction: number): string {

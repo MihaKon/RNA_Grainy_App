@@ -16,7 +16,7 @@ export const simRnaModel: ModelDocumentation = {
   citations: [
     {
       number: 1,
-      text: "Boniecki MJ et al.",
+      text: "Boniecki MJ et al. SimRNA. Nucleic Acids Research. 2016;44(7):e63. doi:10.1093/nar/gkv1479.",
       url: "https://doi.org/10.1093/nar/gkv1479",
     },
   ],
