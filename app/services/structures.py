@@ -35,6 +35,10 @@ class StructureProcessor:
     @staticmethod
     def get_polymer_atom_count(structure: Structure) -> int:
         """Count first-model atoms of polymer residues, leaving out water and ligands."""
+        # Files without entity records (e.g. from RNAComposer) leave every residue
+        # Unknown. Assign entities on a copy, so the saved reference stays as uploaded.
+        structure = structure.clone()
+        structure.setup_entities()
         return sum(
             len(residue)
             for chain in structure[0]

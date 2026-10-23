@@ -294,6 +294,24 @@ class TestAtomCounts:
         # 1,821 atom sites: 1,652 RNA atoms, 160 waters and 9 magnesium ions.
         assert response.json()["atom_counts"]["original"] == 1652
 
+    @pytest.mark.parametrize(
+        ("filename", "atoms"),
+        [("rnacomposer_example1.pdb", 1497), ("R1212TS063_4.cif", 5250)],
+    )
+    def test_input_atoms_are_counted_without_entity_records(
+        self, client: TestClient, test_data_dir: Path, filename: str, atoms: int
+    ) -> None:
+        structure = test_data_dir / filename
+
+        response = client.post(
+            "/api/coarse-grain/file",
+            files={"file": (structure.name, structure.read_bytes(), "text/plain")},
+            data={"selected_model": "SimModel"},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["atom_counts"]["original"] == atoms
+
 
 class TestEmptyResult:
     def test_structure_without_nucleotides_returns_json_error(
