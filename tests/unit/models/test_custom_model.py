@@ -76,7 +76,7 @@ def test_rejects_mappings_for_residues_outside_the_default(
 
 
 def test_rejects_a_definition_without_beads(definition: dict[str, Any]) -> None:
-    empty_config = {
+    empty_config: dict[str, dict[str, Any]] = {
         "bead_names": {},
         "atom_centers": {},
         "description": {},
