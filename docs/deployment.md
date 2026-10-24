@@ -17,14 +17,14 @@ Two users, each with one job:
 
 | User        | Purpose                                                     | Groups   |
 | ----------- | ----------------------------------------------------------- | -------- |
-| `rnagrainy` | owns `/srv/RNA_Grainy_App`, runs `git` and `docker compose` | `docker` |
+| `deploy`    | owns `/srv/RNA_Grainy_App`, runs `git` and `docker compose` | `docker` |
 | `gh-runner` | runs the GitHub Actions runner; may only start `deploy.sh`  | none     |
 
 `gh-runner` must not be in the `docker` group (that is equivalent to root) and must
 not have general `sudo` rights.
 
-If the application already belongs to another user, use that user instead of
-`rnagrainy` here, in the sudoers rule below, and in `.github/workflows/deploy.yaml`.
+If the application ever moves to another user, change the name here, in the sudoers
+rule below, and in `.github/workflows/deploy.yaml`.
 
 ```bash
 sudo useradd --create-home --shell /usr/sbin/nologin gh-runner
@@ -33,7 +33,7 @@ sudo useradd --create-home --shell /usr/sbin/nologin gh-runner
 Make sure `gh-runner` cannot change the deployment script or the checkout:
 
 ```bash
-sudo chown -R rnagrainy: /srv/RNA_Grainy_App
+sudo chown -R deploy: /srv/RNA_Grainy_App
 sudo chmod -R o-w /srv/RNA_Grainy_App
 ```
 
@@ -44,15 +44,15 @@ sudo visudo -f /etc/sudoers.d/gh-runner-deploy
 ```
 
 ```text
-gh-runner ALL=(rnagrainy) NOPASSWD: /usr/bin/bash /srv/RNA_Grainy_App/deploy.sh
+gh-runner ALL=(deploy) NOPASSWD: /usr/bin/bash /srv/RNA_Grainy_App/deploy.sh
 ```
 
 Check the path with `command -v bash`. The rule allows exactly this command, with
-these arguments, as `rnagrainy`. Test it:
+these arguments, as `deploy`. Test it:
 
 ```bash
-sudo -u gh-runner sudo --non-interactive --set-home -u rnagrainy /usr/bin/bash /srv/RNA_Grainy_App/deploy.sh
-sudo -u gh-runner sudo --non-interactive -u rnagrainy id   # must be refused
+sudo -u gh-runner sudo --non-interactive --set-home -u deploy /usr/bin/bash /srv/RNA_Grainy_App/deploy.sh
+sudo -u gh-runner sudo --non-interactive -u deploy id   # must be refused
 ```
 
 ## 3. Install the runner
