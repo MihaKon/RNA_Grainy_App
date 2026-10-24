@@ -42,19 +42,15 @@ export function AboutPage() {
   return (
     <>
       <Hero
-        eyebrow="About"
         title={
           <>
-            About <span className="text-accent">RNAgrainy</span>
+            About <span className="text-accent">the application</span>
           </>
         }
       />
 
       <div className="mx-auto flex max-w-3xl flex-col gap-12 px-4 pb-16">
-        <section aria-labelledby="about-heading" className="flex flex-col gap-4">
-          <h2 id="about-heading" className="eyebrow">
-            The application
-          </h2>
+        <section className="flex flex-col gap-4">
           <p>
             RNAgrainy is a web application for converting full-atom 3D RNA structures
             into coarse-grained representations. It supports multiple coarse-grained
