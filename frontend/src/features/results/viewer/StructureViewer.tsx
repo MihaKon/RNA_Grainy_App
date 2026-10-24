@@ -36,7 +36,13 @@ const COLOR_MODES: readonly { mode: ColorMode; label: string }[] = [
   { mode: "residue-name", label: "Residue" },
 ];
 
-type ViewerStatus = "loading" | "ready" | "error";
+type ViewerStatus = "loading" | "ready" | "unreadable" | "error";
+
+const STATUS_MESSAGES: Record<Exclude<ViewerStatus, "ready">, string> = {
+  loading: "Loading structures…",
+  unreadable: "Neither structure could be displayed.",
+  error: "The structure viewer could not be started.",
+};
 
 export function StructureViewer({ structures, referenceFormat }: StructureViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,7 +103,10 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
       },
       (error: unknown) => {
         console.error("Could not initialize the structure viewer.", error);
-        if (!disposed) setStatus("error");
+        // The viewer rejects with an AggregateError when every structure failed to load.
+        if (!disposed) {
+          setStatus(error instanceof AggregateError ? "unreadable" : "error");
+        }
       },
     );
 
@@ -166,12 +175,10 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
       >
         {status !== "ready" && (
           <p
-            role={status === "error" ? "alert" : "status"}
+            role={status === "loading" ? "status" : "alert"}
             className="absolute inset-0 z-10 flex items-center justify-center bg-white font-mono text-label tracking-[0.15em] text-ink-3 uppercase"
           >
-            {status === "error"
-              ? "The structure viewer could not be started."
-              : "Loading structures…"}
+            {STATUS_MESSAGES[status]}
           </p>
         )}
       </div>

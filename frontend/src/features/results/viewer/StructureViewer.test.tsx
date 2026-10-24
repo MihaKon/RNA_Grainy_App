@@ -118,8 +118,19 @@ describe("StructureViewer", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("reports that the viewer failed only when no structure can be loaded", async () => {
-    createMolstarViewer.mockRejectedValue(new Error("Unreadable files."));
+  it("reports when neither structure can be displayed", async () => {
+    createMolstarViewer.mockRejectedValue(
+      new AggregateError([], "None of the structures could be loaded."),
+    );
+    renderViewer();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Neither structure could be displayed.",
+    );
+  });
+
+  it("reports when the viewer itself cannot be started", async () => {
+    createMolstarViewer.mockRejectedValue(new Error("WebGL is not available."));
     renderViewer();
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
