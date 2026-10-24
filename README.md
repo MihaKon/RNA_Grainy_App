@@ -61,18 +61,13 @@ Detailed descriptions, mapping rules, and references are available in the
 
 ## Local Development
 
-The backend is a FastAPI application (`app/`) exposing a JSON API under `/api`. The
-frontend is a React + TypeScript application built with Vite (`frontend/`). In
-production, FastAPI serves the built frontend; during development, the Vite dev server
-serves it with hot reloading and proxies `/api` and `/static` to the backend.
-
 ### Tech stack
 
 - **Backend:** Python 3.12, FastAPI, Pydantic, Gemmi
 - **Frontend:** React 19, TypeScript, Vite, Tailwind CSS 4, TanStack Query, React Router,
   Mol*
 - **Tooling:** Ruff, mypy, pytest, Playwright, ESLint, Prettier, Vitest, pre-commit
-- **Deployment:** Docker (multi-stage build of the frontend and backend), GitHub Actions
+- **Deployment:** Docker, GitHub Actions
 
 ### Project structure
 
@@ -112,7 +107,7 @@ Install the following tools:
 - Python 3.12
 - Pipenv
 - Node.js 24 with npm
-- Docker with Docker Compose (optional, to run the production image)
+- Docker with Docker Compose
 
 ### Install dependencies
 

@@ -37,7 +37,6 @@ async def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
-# The frontend catches every remaining path, so it must be registered last.
 app.include_router(frontend.router)
 
 

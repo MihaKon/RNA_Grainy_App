@@ -17,7 +17,6 @@ async def serve_frontend(path: str) -> FileResponse:
     dist_dir = FRONTEND_DIST_DIR.resolve()
     requested = (dist_dir / path).resolve()
     if path and requested.is_relative_to(dist_dir) and requested.is_file():
-        # Vite fingerprints everything under assets/, so those files never change.
         if requested.is_relative_to(dist_dir / "assets"):
             return FileResponse(
                 requested, headers={"Cache-Control": IMMUTABLE_CACHE_CONTROL}
