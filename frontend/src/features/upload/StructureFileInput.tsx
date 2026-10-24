@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 
+import { labelClasses } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
 import { formatBytes } from "@/lib/format";
 
@@ -54,9 +55,7 @@ export function StructureFileInput({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium tracking-wide text-ink uppercase">
-        Structure file
-      </span>
+      <span className={labelClasses}>Structure file</span>
       <input
         ref={inputRef}
         id={inputId}

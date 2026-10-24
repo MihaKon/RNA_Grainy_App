@@ -17,6 +17,8 @@ interface FieldProps {
 export const inputClasses =
   "w-full rounded border-[1.5px] border-line-soft bg-surface px-3 py-2 font-mono text-sm text-ink transition-colors placeholder:text-ink-3/70 focus:border-accent focus:outline-none aria-invalid:border-red disabled:opacity-60";
 
+export const labelClasses = "text-sm font-medium text-ink";
+
 export function Field({ id, label, hint, error, children }: FieldProps) {
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
@@ -24,10 +26,7 @@ export function Field({ id, label, hint, error, children }: FieldProps) {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label
-        htmlFor={id}
-        className="text-sm font-medium tracking-wide text-ink uppercase"
-      >
+      <label htmlFor={id} className={labelClasses}>
         {label}
       </label>
       {children({ inputId: id, describedBy, invalid: Boolean(error) })}
