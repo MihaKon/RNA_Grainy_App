@@ -27,7 +27,7 @@ If the application already belongs to another user, use that user instead of
 `rnagrainy` here, in the sudoers rule below, and in `.github/workflows/deploy.yaml`.
 
 ```bash
-sudo useradd --create-home --shell /bin/bash gh-runner
+sudo useradd --create-home --shell /usr/sbin/nologin gh-runner
 ```
 
 Make sure `gh-runner` cannot change the deployment script or the checkout:
@@ -51,7 +51,7 @@ Check the path with `command -v bash`. The rule allows exactly this command, wit
 these arguments, as `rnagrainy`. Test it:
 
 ```bash
-sudo -u gh-runner sudo --non-interactive -u rnagrainy /usr/bin/bash /srv/RNA_Grainy_App/deploy.sh
+sudo -u gh-runner sudo --non-interactive --set-home -u rnagrainy /usr/bin/bash /srv/RNA_Grainy_App/deploy.sh
 sudo -u gh-runner sudo --non-interactive -u rnagrainy id   # must be refused
 ```
 

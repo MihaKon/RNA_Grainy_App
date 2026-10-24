@@ -28,4 +28,4 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Deploy
-        run: sudo --non-interactive -u rnagrainy /usr/bin/bash /srv/RNA_Grainy_App/deploy.sh
+        run: sudo --non-interactive --set-home -u rnagrainy /usr/bin/bash /srv/RNA_Grainy_App/deploy.sh
