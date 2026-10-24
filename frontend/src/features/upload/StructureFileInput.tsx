@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 
+import { labelClasses } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
 import { formatBytes } from "@/lib/format";
 
@@ -54,9 +55,7 @@ export function StructureFileInput({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium tracking-wide text-ink uppercase">
-        Structure file
-      </span>
+      <span className={labelClasses}>Structure file</span>
       <input
         ref={inputRef}
         id={inputId}
@@ -95,12 +94,12 @@ export function StructureFileInput({
           }}
           onDrop={handleDrop}
           className={cn(
-            "flex cursor-pointer flex-col items-center gap-1.5 rounded border-[1.5px] border-dashed bg-surface px-4 py-6 text-center transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent hover:border-accent",
+            "flex cursor-pointer flex-col items-center gap-2 rounded border-[1.5px] border-dashed bg-surface px-4 py-8 text-center transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent hover:border-accent",
             dragging ? "border-accent bg-accent/5" : "border-line-soft",
             error && "border-red",
           )}
         >
-          <FileUp aria-hidden="true" className="size-5 text-accent" />
+          <FileUp aria-hidden="true" className="size-6 text-accent" />
           <span className="text-sm text-ink">
             <span className="font-medium text-accent">Choose a file</span> or drop it
             here

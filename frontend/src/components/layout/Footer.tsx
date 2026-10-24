@@ -1,20 +1,44 @@
 import { Link } from "react-router";
 
+import putSignUrl from "@/assets/brand/put-sign-white.svg";
 import { RnaPolisMark } from "@/components/brand/RnaPolisMark";
-import { GITHUB_REPOSITORY_URL } from "@/lib/links";
+import { GITHUB_REPOSITORY_URL, RNAPOLIS_URL } from "@/lib/links";
 
 export function Footer() {
   return (
     <footer className="bg-blue-ink text-white/80">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 lg:grid-cols-[1fr_auto] lg:px-8">
-        <div className="max-w-md">
+        <div>
           <p className="eyebrow text-white/60">RNAgrainy is part of</p>
-          <RnaPolisMark className="mt-2 block text-3xl text-white" />
-          <p className="mt-4 text-sm">
-            A platform of computational tools for RNA structure research, maintained at
-            the Institute of Computing Science, Poznan University of Technology, and the
-            Department of Structural Bioinformatics, IBCH PAS.
-          </p>
+          <a
+            href={RNAPOLIS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-block opacity-90 transition-opacity hover:opacity-100"
+          >
+            <RnaPolisMark variant="horizontal-white" className="h-8" />
+          </a>
+          <div className="mt-4 flex items-center gap-6">
+            <p className="max-w-md text-sm">
+              A platform of computational tools for RNA structure research, maintained
+              at the Institute of Computing Science, Poznan University of Technology,
+              and the Department of Structural Bioinformatics, IBCH PAS.
+            </p>
+            <a
+              href="https://put.poznan.pl/en"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 opacity-90 transition-opacity hover:opacity-100"
+            >
+              <img
+                src={putSignUrl}
+                alt="Poznan University of Technology"
+                width={64}
+                height={64}
+                className="size-16"
+              />
+            </a>
+          </div>
         </div>
 
         <nav aria-label="Resources" className="flex flex-col gap-2 text-sm">

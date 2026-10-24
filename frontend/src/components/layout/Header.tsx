@@ -6,7 +6,7 @@ import { RnaPolisMark } from "@/components/brand/RnaPolisMark";
 import { GitHubIcon } from "@/components/icons/GitHubIcon";
 import { useScrolled } from "@/hooks/useScrolled";
 import { cn } from "@/lib/cn";
-import { GITHUB_REPOSITORY_URL } from "@/lib/links";
+import { GITHUB_REPOSITORY_URL, RNAPOLIS_URL } from "@/lib/links";
 
 const SCROLL_SHRINK_THRESHOLD = 40;
 
@@ -32,15 +32,14 @@ export function Header() {
           scrolled ? "h-14" : "h-20",
         )}
       >
-        <Link to="/" className="flex items-center gap-4" onClick={closeMenu}>
-          <RnaPolisMark
-            className={cn(
-              "text-blue transition-[font-size]",
-              scrolled ? "text-2xl" : "text-3xl",
-            )}
-          />
+        <div className="flex items-center gap-4">
+          <a href={RNAPOLIS_URL} target="_blank" rel="noopener noreferrer">
+            <RnaPolisMark
+              className={cn("transition-[height]", scrolled ? "h-8" : "h-11")}
+            />
+          </a>
           <span aria-hidden="true" className="h-8 w-px bg-line-soft" />
-          <span className="flex flex-col">
+          <Link to="/" className="flex flex-col" onClick={closeMenu}>
             <span
               className={cn(
                 "font-display text-ink transition-[font-size]",
@@ -54,8 +53,8 @@ export function Header() {
                 A web server for coarse-graining full-atom 3D RNA structures
               </span>
             )}
-          </span>
-        </Link>
+          </Link>
+        </div>
 
         <nav aria-label="Main" className="hidden items-center gap-6 lg:flex">
           <NavItems onNavigate={closeMenu} />
@@ -116,9 +115,9 @@ function GitHubLink() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="RNAgrainy repository on GitHub"
-      className="text-ink-2 transition-colors hover:text-accent"
+      className="text-red transition-colors hover:text-red-deep"
     >
-      <GitHubIcon className="size-5" />
+      <GitHubIcon className="size-6" />
     </a>
   );
 }

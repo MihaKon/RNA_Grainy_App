@@ -1,5 +1,6 @@
 import { useId } from "react";
 
+import { labelClasses } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
 
 interface PresetPickerProps {
@@ -16,10 +17,7 @@ export function PresetPicker({ presetIds, value, error, onChange }: PresetPicker
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span
-        id={labelId}
-        className="text-sm font-medium tracking-wide text-ink uppercase"
-      >
+      <span id={labelId} className={labelClasses}>
         Example structure
       </span>
       <div
