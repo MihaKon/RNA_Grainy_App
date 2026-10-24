@@ -5,8 +5,9 @@ import re
 from enum import StrEnum
 
 from fastapi import UploadFile
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ValidationError, field_validator, model_validator
 
+from app.coarse_grain.models import CoarseGrainModelRegistry
 from app.models.custom_model import CustomModelDefinition
 from app.settings import ALLOWED_PRESET_IDS, JSON_MAX_CHARS, JSON_MAX_UPLOAD_SIZE
 
@@ -37,37 +38,63 @@ def is_numbers_letters_and_commas(text: str) -> bool:
     return bool(re.fullmatch(pattern, text))
 
 
+CUSTOM_MODEL_ID = "custom"
+
+
+def describe_custom_model_error(error: ValidationError) -> str:
+    first_error = error.errors()[0]
+    message = str(first_error["msg"]).removeprefix("Value error, ")
+    path = ".".join(str(part) for part in first_error["loc"])
+    return f"Invalid custom model: {f'{path}: ' if path else ''}{message}"
+
+
+def parse_custom_model_json(v: dict | str | None) -> dict | None:
+    """Check a custom model definition against the size limits and the schema."""
+    if not v or (isinstance(v, str) and v.strip() == ""):
+        return None
+
+    if isinstance(v, str):
+        if len(v.encode("utf-8")) > JSON_MAX_UPLOAD_SIZE:
+            raise ValueError("Custom model JSON upload size is too large.")
+        if len(v) > JSON_MAX_CHARS:
+            raise ValueError("Custom model JSON is too large.")
+        try:
+            data = json.loads(v)
+        except json.JSONDecodeError:
+            raise ValueError("Invalid JSON format.")
+    else:
+        data = v
+
+    try:
+        CustomModelDefinition.model_validate(data)
+    except ValidationError as e:
+        raise ValueError(describe_custom_model_error(e))
+    return data
+
+
 class UploadBase(BaseModel):
     selected_model: str
     custom_model_data: dict | str | None = None
     models: str | list[int]
     chains: str | list[str]
 
+    @field_validator("selected_model")
+    @classmethod
+    def validate_selected_model(cls, v: str) -> str:
+        if v != CUSTOM_MODEL_ID and v not in CoarseGrainModelRegistry._registry:
+            raise ValueError(f"Unknown coarse-grained model: {v}.")
+        return v
+
+    @model_validator(mode="after")
+    def require_custom_model_data(self) -> UploadBase:
+        if self.selected_model == CUSTOM_MODEL_ID and self.custom_model_data is None:
+            raise ValueError("Custom model selected but no definition was provided.")
+        return self
+
     @field_validator("custom_model_data", mode="before")
     @classmethod
     def validate_json_structure(cls, v: str | None) -> dict | None:
-        if not v or (isinstance(v, str) and v.strip() == ""):
-            return None
-
-        if isinstance(v, str):
-            if len(v.encode("utf-8")) > JSON_MAX_UPLOAD_SIZE:
-                raise ValueError("Custom model JSON upload size is too large.")
-            if len(v) > JSON_MAX_CHARS:
-                raise ValueError("Custom model JSON is too large.")
-            try:
-                data = json.loads(v)
-            except json.JSONDecodeError:
-                raise ValueError("Invalid JSON format.")
-        else:
-            data = v
-
-        try:
-            CustomModelDefinition.model_validate(data)
-            return data
-        except json.JSONDecodeError:
-            raise ValueError("Invalid JSON format.")
-        except Exception as e:
-            raise ValueError(f"Invalid Custom Model structure: {e}")
+        return parse_custom_model_json(v)
 
     @field_validator("models", mode="before")
     @classmethod
@@ -81,7 +108,13 @@ class UploadBase(BaseModel):
                 raise ValueError(
                     "Incorrect symbols in the model selector or provided model ID is negative."
                 )
-            return [int(x.strip()) for x in v.split(",") if x.strip()]
+            models = [int(x.strip()) for x in v.split(",") if x.strip()]
+            if 0 in models:
+                raise ValueError("Model numbers start at 1.")
+            repeated = next((m for i, m in enumerate(models) if m in models[:i]), None)
+            if repeated is not None:
+                raise ValueError(f"Model {repeated} is listed more than once.")
+            return models
         raise ValueError("Models must be a string or list")
 
     @field_validator("chains", mode="before")

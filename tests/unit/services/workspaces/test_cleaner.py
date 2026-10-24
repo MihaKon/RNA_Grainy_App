@@ -1,10 +1,12 @@
 import logging
+import os
 from pathlib import Path
 
 import pytest
 
 import app.services.workspaces.cleaner as cleaner_module
 from app.services.workspaces import WorkspaceCleaner, WorkspaceManager
+from app.services.workspaces.paths import CONSUMED_MARKER
 
 
 def test_get_directory_size_returns_total_file_size(
@@ -125,6 +127,56 @@ def test_remove_expired_workspaces_removes_workspace_at_lifetime_limit(
     assert not workspace_dir.exists()
     assert remaining_workspaces == []
     assert removed_count == 1
+
+
+def test_scan_workspaces_reads_consumed_time(
+    isolated_workspace_storage: Path,
+) -> None:
+    workspace_id = WorkspaceManager.create_workspace_id()
+    workspace_dir = WorkspaceManager.setup_workspace_dir(workspace_id)
+    marker = workspace_dir / CONSUMED_MARKER
+    marker.touch()
+    os.utime(marker, (50.0, 50.0))
+
+    result = WorkspaceCleaner._scan_workspaces()
+
+    assert len(result) == 1
+    assert result[0].consumed_at == 50.0
+
+
+@pytest.mark.parametrize(
+    ("consumed_age", "expected_removed"),
+    [(59, False), (60, True)],
+)
+def test_remove_expired_workspaces_removes_consumed_workspace_after_grace_period(
+    isolated_workspace_storage: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    consumed_age: int,
+    expected_removed: bool,
+) -> None:
+    current_time = 1000.0
+
+    monkeypatch.setattr(cleaner_module, "WORKSPACE_MAX_LIFETIME", 600)
+    monkeypatch.setattr(cleaner_module, "WORKSPACE_CONSUMED_LIFETIME", 60)
+    monkeypatch.setattr(cleaner_module.time, "time", lambda: current_time)
+
+    workspace_id = WorkspaceManager.create_workspace_id()
+    workspace_dir = WorkspaceManager.setup_workspace_dir(workspace_id)
+
+    workspace = cleaner_module.WorkspaceSnapshot(
+        path=workspace_dir,
+        modified_at=current_time - consumed_age,
+        size=0,
+        consumed_at=current_time - consumed_age,
+    )
+
+    remaining_workspaces, removed_count = WorkspaceCleaner._remove_expired_workspaces(
+        [workspace]
+    )
+
+    assert workspace_dir.exists() is not expected_removed
+    assert removed_count == int(expected_removed)
+    assert remaining_workspaces == ([] if expected_removed else [workspace])
 
 
 def test_remove_workspaces_over_storage_limit_keeps_workspace_at_limit(

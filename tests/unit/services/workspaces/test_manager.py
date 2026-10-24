@@ -1,9 +1,15 @@
+import os
 from pathlib import Path
 
 import pytest
 
-from app.exceptions import FileProcessingError, InvalidRequestError
+from app.exceptions import (
+    FileProcessingError,
+    InvalidRequestError,
+    ResultNotFoundError,
+)
 from app.services.workspaces.manager import WorkspaceManager
+from app.services.workspaces.paths import CONSUMED_MARKER
 from app.settings import MIN_FREE_DISK_SIZE
 
 
@@ -100,7 +106,7 @@ def test_get_file_path_rejects_missing_file(
     WorkspaceManager.setup_workspace_dir(workspace_id)
 
     with pytest.raises(
-        FileProcessingError,
+        ResultNotFoundError,
         match="does not exist",
     ):
         WorkspaceManager.get_file_path(
@@ -132,3 +138,41 @@ def test_cleanup_workspace_ignores_missing_directory(
     WorkspaceManager.cleanup_workspace(workspace_id)
 
     assert not workspace_dir.exists()
+
+
+def test_mark_consumed_keeps_files_and_creates_marker(
+    isolated_workspace_storage: Path,
+) -> None:
+    workspace_id = WorkspaceManager.create_workspace_id()
+    workspace_dir = WorkspaceManager.setup_workspace_dir(workspace_id)
+    workspace_file = workspace_dir / "coarse.cif"
+    workspace_file.write_text("example content", encoding="utf-8")
+
+    WorkspaceManager.mark_consumed(workspace_id)
+
+    assert workspace_file.is_file()
+    assert (workspace_dir / CONSUMED_MARKER).is_file()
+
+
+def test_mark_consumed_keeps_first_consumed_time(
+    isolated_workspace_storage: Path,
+) -> None:
+    workspace_id = WorkspaceManager.create_workspace_id()
+    workspace_dir = WorkspaceManager.setup_workspace_dir(workspace_id)
+    marker = workspace_dir / CONSUMED_MARKER
+
+    WorkspaceManager.mark_consumed(workspace_id)
+    os.utime(marker, (100.0, 100.0))
+    WorkspaceManager.mark_consumed(workspace_id)
+
+    assert marker.stat().st_mtime == 100.0
+
+
+def test_mark_consumed_ignores_missing_workspace(
+    isolated_workspace_storage: Path,
+) -> None:
+    workspace_id = WorkspaceManager.create_workspace_id()
+
+    WorkspaceManager.mark_consumed(workspace_id)
+
+    assert not (isolated_workspace_storage / workspace_id).exists()
