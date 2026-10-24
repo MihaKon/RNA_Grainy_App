@@ -139,7 +139,7 @@ export function ModelCreator({
             <Button variant="ghost" disabled={tooLarge} onClick={handleExport}>
               Export JSON
             </Button>
-            <Button variant="ghost" onClick={onCancel}>
+            <Button variant="danger" onClick={onCancel}>
               Cancel
             </Button>
             <Button
