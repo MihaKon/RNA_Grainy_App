@@ -62,6 +62,9 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
           {pdbAvailable && (
             <Button
               disabled={!structures?.coarsePdb}
+              aria-describedby={
+                structures?.coarsePdbFailed ? "pdb-download-failed" : undefined
+              }
               onClick={() => {
                 if (structures?.coarsePdb) {
                   downloadTextFile(structures.coarsePdb, `${downloadName}.pdb`);
@@ -70,6 +73,11 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
             >
               PDB
             </Button>
+          )}
+          {structures?.coarsePdbFailed && (
+            <span id="pdb-download-failed" className="text-sm text-ink-2">
+              The PDB file could not be downloaded; use mmCIF instead.
+            </span>
           )}
         </div>
       </div>
@@ -107,13 +115,13 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
                 unless specific models or chains were selected. Water, ions and ligands
                 are not counted.
               </li>
-              <li>
-                {structures?.coarsePdbFailed
-                  ? "The PDB file could not be downloaded. The mmCIF file is still available."
-                  : pdbAvailable
+              {!structures?.coarsePdbFailed && (
+                <li>
+                  {pdbAvailable
                     ? "Chain names in PDB files of large structures may be shortened, so check the file before further use."
                     : "PDB output is unavailable for structures with 100,000 or more atoms; use mmCIF instead."}
-              </li>
+                </li>
+              )}
               <li>
                 Some beads may be skipped for incomplete residues or residues with
                 incorrect atoms, because the atoms they are built from are missing or

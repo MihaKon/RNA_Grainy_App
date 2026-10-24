@@ -124,13 +124,13 @@ describe("ResultView", () => {
     renderResult();
 
     expect(await screen.findByText("Viewer showing reference")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "PDB" })).toBeDisabled();
+    const pdbButton = screen.getByRole("button", { name: "PDB" });
+    expect(pdbButton).toBeDisabled();
+    expect(pdbButton).toHaveAccessibleDescription(
+      "The PDB file could not be downloaded; use mmCIF instead.",
+    );
     expect(screen.getByRole("button", { name: "mmCIF" })).toBeEnabled();
-    expect(
-      screen.getByText(
-        "The PDB file could not be downloaded. The mmCIF file is still available.",
-      ),
-    ).toBeInTheDocument();
+    expect(screen.queryByText(/Chain names in PDB files/)).not.toBeInTheDocument();
   });
 
   it("links citation markers in the CG model details", async () => {
