@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 import { Field, inputClasses } from "./Field";
 
 interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "id"> {
-  label: ReactNode;
+  label?: ReactNode;
   hint?: ReactNode;
   error?: string | undefined;
 }

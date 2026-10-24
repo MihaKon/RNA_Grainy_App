@@ -54,7 +54,7 @@ async function fillSource(user: User, kind: SourceKind) {
 }
 
 async function loadCustomModel(user: User, definition: string) {
-  await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "custom");
+  await user.click(screen.getByRole("button", { name: "Custom model" }));
   await user.upload(
     screen.getByLabelText("Custom model JSON file"),
     new File([definition], "model.json", { type: "application/json" }),
@@ -69,7 +69,7 @@ async function renderForm() {
 }
 
 describe("UploadForm", () => {
-  it("lists models alphabetically followed by the custom option", async () => {
+  it("lists the published models alphabetically", async () => {
     mockFetch({
       ...catalogRoutes,
       "GET /api/models": () => jsonResponse(models.toReversed()),
@@ -79,12 +79,28 @@ describe("UploadForm", () => {
     const options = within(screen.getByLabelText("Coarse-grained model"))
       .getAllByRole("option")
       .map((option) => option.textContent);
-    expect(options).toEqual([
-      "Select a model",
-      "NAST",
-      "SimRNA",
-      "Custom model (JSON)",
-    ]);
+    expect(options).toEqual(["Select a model", "NAST", "SimRNA"]);
+  });
+
+  it("switches between a published and a custom model", async () => {
+    mockFetch(catalogRoutes);
+    const { user } = await renderForm();
+
+    await user.click(screen.getByRole("button", { name: "Custom model" }));
+
+    expect(screen.getByRole("button", { name: "Custom model" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open creator" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Published model" }));
+
+    expect(screen.getByLabelText("Coarse-grained model")).toHaveValue("");
+    expect(
+      screen.queryByRole("button", { name: "Open creator" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows validation errors instead of submitting an incomplete form", async () => {
@@ -158,7 +174,7 @@ describe("UploadForm", () => {
 
     await user.click(screen.getByRole("tab", { name: "Fetch from PDB" }));
     await user.type(screen.getByRole("textbox", { name: "PDB ID" }), "1ehz");
-    await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "custom");
+    await user.click(screen.getByRole("button", { name: "Custom model" }));
     await user.upload(
       screen.getByLabelText("Custom model JSON file"),
       new File([definition], "model.json", { type: "application/json" }),
@@ -201,6 +217,7 @@ describe("UploadForm", () => {
 
     await fillSource(user, "preset");
     await loadCustomModel(user, JSON.stringify({ model_name: "Two-bead model" }));
+    await user.click(screen.getByRole("button", { name: "Published model" }));
     await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "SimModel");
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
@@ -257,7 +274,7 @@ describe("UploadForm", () => {
     });
     const { user } = await renderForm();
 
-    await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "custom");
+    await user.click(screen.getByRole("button", { name: "Custom model" }));
     await user.upload(
       screen.getByLabelText("Custom model JSON file"),
       new File(['{"model_name": "Broken"}'], "model.json", {
@@ -290,7 +307,7 @@ describe("UploadForm", () => {
       connectivity: { intra_residue: [["A1", "B9"]], inter_residue: [] },
     };
 
-    await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "custom");
+    await user.click(screen.getByRole("button", { name: "Custom model" }));
     await user.upload(
       screen.getByLabelText("Custom model JSON file"),
       new File([JSON.stringify(definition)], "broken.json"),

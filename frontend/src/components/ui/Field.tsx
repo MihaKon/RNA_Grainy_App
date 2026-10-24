@@ -8,7 +8,7 @@ export interface FieldIds {
 
 interface FieldProps {
   id: string;
-  label: ReactNode;
+  label?: ReactNode;
   hint?: ReactNode;
   error?: string | undefined;
   children: (ids: FieldIds) => ReactNode;
@@ -26,9 +26,11 @@ export function Field({ id, label, hint, error, children }: FieldProps) {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className={labelClasses}>
-        {label}
-      </label>
+      {label && (
+        <label htmlFor={id} className={labelClasses}>
+          {label}
+        </label>
+      )}
       {children({ inputId: id, describedBy, invalid: Boolean(error) })}
       {error && (
         <p id={errorId} className="text-xs text-red-deep">

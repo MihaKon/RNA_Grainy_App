@@ -16,7 +16,7 @@ def test_custom_model_html_is_shown_as_text(
     page.get_by_label(re.compile("Choose a file")).set_input_files(
         test_data_dir / "4GXY.cif"
     )
-    page.get_by_label("Coarse-grained model").select_option("custom")
+    page.get_by_role("button", name="Custom model").click()
     page.get_by_label("Custom model JSON file").set_input_files(custom_model_path)
     expect(page.get_by_text("Custom model loaded")).to_be_visible()
 
