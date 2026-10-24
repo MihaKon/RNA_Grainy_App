@@ -16,7 +16,7 @@ export function Footer() {
             rel="noopener noreferrer"
             className="mt-3 inline-block opacity-90 transition-opacity hover:opacity-100"
           >
-            <RnaPolisMark colorway="white" className="h-14" />
+            <RnaPolisMark variant="horizontal-white" className="h-8" />
           </a>
           <div className="mt-4 flex items-center gap-6">
             <p className="max-w-md text-sm">

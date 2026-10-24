@@ -1,21 +1,30 @@
-import logoUrl from "@/assets/brand/rnapolis-stacked.png";
+import horizontalWhiteUrl from "@/assets/brand/rnapolis-horizontal-white.png";
+import stackedBlueUrl from "@/assets/brand/rnapolis-stacked.png";
 import { cn } from "@/lib/cn";
 
-type RnaPolisColorway = "blue" | "white";
+const LOGOS = {
+  "stacked-blue": { src: stackedBlueUrl, width: 582, height: 505 },
+  "horizontal-white": { src: horizontalWhiteUrl, width: 479, height: 97 },
+} as const;
 
 interface RnaPolisMarkProps {
-  colorway?: RnaPolisColorway;
+  variant?: keyof typeof LOGOS;
   className?: string;
 }
 
-export function RnaPolisMark({ colorway = "blue", className }: RnaPolisMarkProps) {
+export function RnaPolisMark({
+  variant = "stacked-blue",
+  className,
+}: RnaPolisMarkProps) {
+  const { src, width, height } = LOGOS[variant];
+
   return (
     <img
-      src={logoUrl}
+      src={src}
       alt="RNAPolis"
-      width={582}
-      height={505}
-      className={cn("w-auto", colorway === "white" && "brightness-0 invert", className)}
+      width={width}
+      height={height}
+      className={cn("w-auto", className)}
     />
   );
 }
