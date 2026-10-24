@@ -20,7 +20,7 @@ def test_custom_model_html_is_shown_as_text(
     page.get_by_label("Custom model JSON file").set_input_files(custom_model_path)
     expect(page.get_by_text("Custom model loaded")).to_be_visible()
 
-    page.get_by_role("button", name="Coarse-grain structure").click()
+    page.get_by_role("button", name="Submit").click()
     expect(page.get_by_role("region", name="Conversion summary")).to_be_visible()
 
     page.get_by_text("CG model details").click()

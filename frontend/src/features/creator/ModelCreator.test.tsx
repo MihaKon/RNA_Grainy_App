@@ -45,7 +45,7 @@ describe("ModelCreator", () => {
 
     await user.click(screen.getByRole("tab", { name: "Use example" }));
     await user.click(screen.getByRole("radio", { name: "1EHZ" }));
-    await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
+    await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await screen.findByText("Conversion summary");
     expect(

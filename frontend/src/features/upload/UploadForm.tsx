@@ -265,7 +265,7 @@ function UploadFormContent({ config, models }: UploadFormContentProps) {
                   </>
                 ) : (
                   <>
-                    Coarse-grain structure
+                    Submit
                     <ArrowRight aria-hidden="true" className="size-4" />
                   </>
                 )}
