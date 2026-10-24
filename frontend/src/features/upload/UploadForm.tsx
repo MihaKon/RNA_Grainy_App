@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowRight, LoaderCircle } from "lucide-react";
-import { type ReactNode, type SubmitEvent, useState } from "react";
+import { type ReactNode, type SubmitEvent, useId, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { getErrorMessage } from "@/api/client";
@@ -9,9 +9,11 @@ import { appConfigQueryOptions, modelsQueryOptions } from "@/api/queries";
 import type { AppConfig, ModelDocumentation } from "@/api/types";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { labelClasses } from "@/components/ui/Field";
 import { SelectField } from "@/components/ui/SelectField";
 import { type TabItem, Tabs } from "@/components/ui/Tabs";
 import { TextField } from "@/components/ui/TextField";
+import { ToggleButton } from "@/components/ui/ToggleButton";
 import type { ResultLocationState } from "@/features/results/resultState";
 import { preloadStructureViewer } from "@/features/results/viewer/preload";
 import { formatBeadsPerResidue, formatBytes, formatList } from "@/lib/format";
@@ -89,6 +91,7 @@ interface UploadFormContentProps {
 
 function UploadFormContent({ config, models }: UploadFormContentProps) {
   const navigate = useNavigate();
+  const modelLabelId = useId();
   const [values, setValues] = useState(INITIAL_VALUES);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const mutation = useMutation({ mutationFn: coarseGrain });
@@ -96,6 +99,7 @@ function UploadFormContent({ config, models }: UploadFormContentProps) {
   const errors = submitAttempted ? validateUploadForm(values, config) : {};
   const sortedModels = models.toSorted((a, b) => a.name.localeCompare(b.name));
   const selectedModel = models.find((model) => model.id === values.modelId);
+  const isCustomModel = values.modelId === CUSTOM_MODEL_ID;
   const formats = config.supported_file_formats;
 
   const update = (patch: Partial<UploadFormValues>) => {
@@ -187,43 +191,69 @@ function UploadFormContent({ config, models }: UploadFormContentProps) {
           </Tabs>
 
           <div className="flex flex-col gap-5 border-t border-line-soft p-6 lg:px-8">
-            <SelectField
-              label="Coarse-grained model"
-              value={values.modelId}
-              error={errors.model}
-              hint={
-                selectedModel
-                  ? formatBeadsPerResidue(selectedModel.beads_per_residue)
-                  : undefined
-              }
-              onChange={(event) => {
-                update({ modelId: event.target.value });
-              }}
-            >
-              <option value="" disabled>
-                Select a model
-              </option>
-              <optgroup label="Published models">
-                {sortedModels.map((model) => (
-                  <option key={model.id} value={model.id}>
-                    {model.name}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Your own">
-                <option value={CUSTOM_MODEL_ID}>Custom model (JSON)</option>
-              </optgroup>
-            </SelectField>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span id={modelLabelId} className={labelClasses}>
+                  Coarse-grained model
+                </span>
+                <div role="group" aria-label="Model type" className="flex gap-1.5">
+                  <ToggleButton
+                    pressed={!isCustomModel}
+                    onClick={() => {
+                      if (isCustomModel) update({ modelId: "" });
+                    }}
+                  >
+                    Published model
+                  </ToggleButton>
+                  <ToggleButton
+                    pressed={isCustomModel}
+                    onClick={() => {
+                      update({ modelId: CUSTOM_MODEL_ID });
+                    }}
+                  >
+                    Custom model
+                  </ToggleButton>
+                </div>
+              </div>
 
-            {values.modelId === CUSTOM_MODEL_ID && (
-              <CustomModelInput
-                config={config}
-                value={values.customModel}
-                onChange={(customModel) => {
-                  update({ customModel });
-                }}
-              />
-            )}
+              {isCustomModel ? (
+                <>
+                  <CustomModelInput
+                    config={config}
+                    value={values.customModel}
+                    onChange={(customModel) => {
+                      update({ customModel });
+                    }}
+                  />
+                  {errors.model && (
+                    <p className="text-xs text-red-deep">{errors.model}</p>
+                  )}
+                </>
+              ) : (
+                <SelectField
+                  aria-labelledby={modelLabelId}
+                  value={values.modelId}
+                  error={errors.model}
+                  hint={
+                    selectedModel
+                      ? formatBeadsPerResidue(selectedModel.beads_per_residue)
+                      : undefined
+                  }
+                  onChange={(event) => {
+                    update({ modelId: event.target.value });
+                  }}
+                >
+                  <option value="" disabled>
+                    Select a model
+                  </option>
+                  {sortedModels.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.name}
+                    </option>
+                  ))}
+                </SelectField>
+              )}
+            </div>
 
             <div className="grid gap-5 lg:grid-cols-2">
               <TextField
@@ -265,7 +295,7 @@ function UploadFormContent({ config, models }: UploadFormContentProps) {
                   </>
                 ) : (
                   <>
-                    Coarse-grain structure
+                    Submit
                     <ArrowRight aria-hidden="true" className="size-4" />
                   </>
                 )}

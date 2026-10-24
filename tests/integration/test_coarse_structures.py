@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from gemmi import cif, make_structure_from_block, read_pdb_string
 
 from app.coarse_grain.models import CoarseGrainModelRegistry
-from tests.integration.helpers import AtomKey, extract_data_attribute, get_atoms
+from tests.integration.helpers import AtomKey, get_atoms
 
 
 @pytest.mark.parametrize(
@@ -39,7 +39,7 @@ def test_coarse_pdb_and_cif_exports_are_consistent(
         ).read_text(encoding="utf-8")
 
     upload_response = client.post(
-        "/upload/file/",
+        "/api/coarse-grain/file",
         data=form_data,
         files={
             "file": (
@@ -52,15 +52,10 @@ def test_coarse_pdb_and_cif_exports_are_consistent(
 
     assert upload_response.status_code == 200, upload_response.text
 
+    files = upload_response.json()["files"]
     download_urls = {
-        "pdb": extract_data_attribute(
-            upload_response.text,
-            "data-coarse-pdb-url",
-        ),
-        "cif": extract_data_attribute(
-            upload_response.text,
-            "data-coarse-cif-url",
-        ),
+        "pdb": files["coarse_pdb_url"],
+        "cif": files["coarse_mmcif_url"],
     }
 
     downloaded_contents: dict[str, bytes] = {}

@@ -19,10 +19,7 @@ function mockApi() {
 async function openCreator() {
   const app = renderApp("/");
   const { user } = app;
-  await user.selectOptions(
-    await screen.findByLabelText("Coarse-grained model"),
-    "custom",
-  );
+  await user.click(await screen.findByRole("button", { name: "Custom model" }));
   await user.click(screen.getByRole("button", { name: "Open creator" }));
   return { ...app, dialog: screen.getByRole("dialog", { name: "Model creator" }) };
 }
@@ -45,7 +42,7 @@ describe("ModelCreator", () => {
 
     await user.click(screen.getByRole("tab", { name: "Use example" }));
     await user.click(screen.getByRole("radio", { name: "1EHZ" }));
-    await user.click(screen.getByRole("button", { name: "Coarse-grain structure" }));
+    await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await screen.findByText("Conversion summary");
     expect(
@@ -85,10 +82,7 @@ describe("ModelCreator", () => {
   it("edits a model loaded from JSON and discards changes on cancel", async () => {
     const app = renderApp("/");
     const { user } = app;
-    await user.selectOptions(
-      await screen.findByLabelText("Coarse-grained model"),
-      "custom",
-    );
+    await user.click(await screen.findByRole("button", { name: "Custom model" }));
     await user.upload(
       screen.getByLabelText("Custom model JSON file"),
       new File(
@@ -171,7 +165,7 @@ describe("ModelCreator", () => {
     const { user } = renderApp("/");
     await user.click(await screen.findByRole("tab", { name: "Use example" }));
     await user.click(screen.getByRole("radio", { name: "1EHZ" }));
-    await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "custom");
+    await user.click(screen.getByRole("button", { name: "Custom model" }));
     await user.click(screen.getByRole("button", { name: "Open creator" }));
     await user.click(screen.getByRole("button", { name: "Use model" }));
     await user.click(screen.getByRole("button", { name: "Edit" }));
@@ -207,10 +201,7 @@ describe("ModelCreator", () => {
 
   it("explains why a loaded model cannot be edited", async () => {
     const { user } = renderApp("/");
-    await user.selectOptions(
-      await screen.findByLabelText("Coarse-grained model"),
-      "custom",
-    );
+    await user.click(await screen.findByRole("button", { name: "Custom model" }));
     const definition = toDefinition(createDefaultDraft());
     definition.default_mapping.residues.push("PSU");
     await user.upload(
