@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { ArrowRight, LoaderCircle } from "lucide-react";
 import { type ReactNode, type SubmitEvent, useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -145,7 +146,7 @@ function UploadFormContent({ config, models }: UploadFormContentProps) {
             onChange={(sourceKind) => {
               update({ sourceKind });
             }}
-            panelClassName="p-6"
+            panelClassName="p-6 lg:px-8"
           >
             {values.sourceKind === "file" && (
               <StructureFileInput
@@ -185,7 +186,7 @@ function UploadFormContent({ config, models }: UploadFormContentProps) {
             )}
           </Tabs>
 
-          <div className="flex flex-col gap-5 border-t border-dashed border-line-soft p-6">
+          <div className="flex flex-col gap-5 border-t border-line-soft p-6 lg:px-8">
             <SelectField
               label="Coarse-grained model"
               value={values.modelId}
@@ -255,9 +256,19 @@ function UploadFormContent({ config, models }: UploadFormContentProps) {
               <Alert severity="error">{getErrorMessage(mutation.error)}</Alert>
             )}
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 border-t border-line-soft pt-5">
               <Button type="submit">
-                {mutation.isPending ? "Processing…" : "Coarse-grain structure"}
+                {mutation.isPending ? (
+                  <>
+                    <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+                    Processing…
+                  </>
+                ) : (
+                  <>
+                    Coarse-grain structure
+                    <ArrowRight aria-hidden="true" className="size-4" />
+                  </>
+                )}
               </Button>
               <Button variant="ghost" onClick={handleReset}>
                 Reset
@@ -272,7 +283,7 @@ function UploadFormContent({ config, models }: UploadFormContentProps) {
 
 function FormCard({ children }: { children: ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-md border border-line-soft bg-white">
+    <div className="overflow-hidden rounded-lg border border-line-soft bg-white shadow-sm shadow-ink/5">
       {children}
     </div>
   );
