@@ -21,9 +21,9 @@ def test_custom_model_html_is_shown_as_text(
     expect(page.get_by_text("Custom model loaded")).to_be_visible()
 
     page.get_by_role("button", name="Coarse-grain structure").click()
-    expect(page.get_by_role("region", name="Model report")).to_be_visible()
+    expect(page.get_by_role("region", name="Conversion summary")).to_be_visible()
 
-    page.get_by_text("Model description").click()
+    page.get_by_text("CG model details").click()
     expect(
         page.get_by_role("paragraph").filter(has_text=injected_description)
     ).to_be_visible()
