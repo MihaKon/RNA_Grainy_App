@@ -103,7 +103,6 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
       },
       (error: unknown) => {
         console.error("Could not initialize the structure viewer.", error);
-        // The viewer rejects with an AggregateError when every structure failed to load.
         if (!disposed) {
           setStatus(error instanceof AggregateError ? "unreadable" : "error");
         }
