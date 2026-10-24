@@ -4,13 +4,13 @@ import shutil
 import uuid
 from pathlib import Path
 
-from app.exceptions import FileProcessingError
+from app.exceptions import FileProcessingError, ResultNotFoundError
 from app.settings import (
     MIN_FREE_DISK_SIZE,
     WORKSPACE_STORAGE_DIR,
 )
 
-from .paths import get_workspace_dir, get_workspace_file_path
+from .paths import CONSUMED_MARKER, get_workspace_dir, get_workspace_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +83,26 @@ class WorkspaceManager:
         file_path = get_workspace_file_path(workspace_id, filename)
 
         if not file_path.is_file():
-            raise FileProcessingError("Requested file does not exist.")
+            raise ResultNotFoundError("Requested file does not exist or has expired.")
 
         return file_path
+
+    @classmethod
+    def mark_consumed(cls, workspace_id: str) -> None:
+        """Start the grace period after which the cleaner removes the workspace."""
+        marker = get_workspace_dir(workspace_id) / CONSUMED_MARKER
+
+        try:
+            marker.touch(exist_ok=False)
+        except (FileExistsError, FileNotFoundError):
+            # Already consumed, or the workspace is gone; the grace period stays as is.
+            pass
+        except OSError:
+            logger.warning(
+                "Could not mark workspace %s as consumed.",
+                workspace_id,
+                exc_info=True,
+            )
 
     @classmethod
     def cleanup_workspace(cls, workspace_id: str) -> None:

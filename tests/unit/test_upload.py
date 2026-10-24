@@ -16,7 +16,7 @@ class TestRCSBUpload:
         )
 
         response = client.post(
-            "/upload/rcsb",
+            "/api/coarse-grain/rcsb",
             data={"rcsb_id": "9XYZ", "selected_model": "SimModel"},
         )
 
@@ -41,7 +41,7 @@ class TestRCSBUpload:
         )
 
         response = client.post(
-            "/upload/rcsb",
+            "/api/coarse-grain/rcsb",
             data={"rcsb_id": rcsb_id, "selected_model": "SimModel"},
         )
 
@@ -57,7 +57,7 @@ class TestRCSBUpload:
         )
 
         response = client.post(
-            "/upload/rcsb",
+            "/api/coarse-grain/rcsb",
             data={"rcsb_id": "9XYZ", "selected_model": "SimModel"},
         )
 
@@ -65,7 +65,7 @@ class TestRCSBUpload:
 
     def test_fetch_rcsb_without_id_returns_422(self, client: TestClient) -> None:
         response = client.post(
-            "/upload/rcsb",
+            "/api/coarse-grain/rcsb",
             data={"selected_model": "SimModel"},
         )
 
@@ -73,7 +73,7 @@ class TestRCSBUpload:
 
     def test_fetch_rcsb_without_model_returns_422(self, client: TestClient) -> None:
         response = client.post(
-            "/upload/rcsb",
+            "/api/coarse-grain/rcsb",
             data={"rcsb_id": "4GXY"},
         )
 
@@ -85,7 +85,7 @@ class TestFileUpload:
         self, client: TestClient, empty_file: io.BytesIO
     ) -> None:
         response = client.post(
-            "/upload/file/",
+            "/api/coarse-grain/file",
             files={"file": (empty_file.name, empty_file, "text/plain")},
             data={"selected_model": "SimModel"},
         )
@@ -95,7 +95,7 @@ class TestFileUpload:
         self, client: TestClient
     ) -> None:
         response = client.post(
-            "/upload/file/",
+            "/api/coarse-grain/file",
             data={"selected_model": "SimModel"},
         )
         assert response.status_code == 422
@@ -105,7 +105,7 @@ class TestFileUpload:
         empty_file.name = "empty.txt"
 
         response = client.post(
-            "/upload/file/",
+            "/api/coarse-grain/file",
             files={"file": ("empty.txt", empty_file, "text/plain")},
             data={"selected_model": "SimModel"},
         )
@@ -119,7 +119,7 @@ class TestFileUpload:
         pdb_file: io.BytesIO,
     ) -> None:
         response = client.post(
-            "/upload/file/",
+            "/api/coarse-grain/file",
             files={"file": (pdb_file.name, pdb_file, "text/plain")},
             data={"selected_model": "SimModel"},
         )
@@ -130,7 +130,7 @@ class TestFileUpload:
         self, client: TestClient, cif_file: io.BytesIO
     ) -> None:
         response = client.post(
-            "/upload/file/",
+            "/api/coarse-grain/file",
             files={"file": (cif_file.name, cif_file, "text/plain")},
             data={"selected_model": "SimModel"},
         )
@@ -141,6 +141,7 @@ class TestFileUpload:
         self, client: TestClient, pdb_file: io.BytesIO
     ) -> None:
         response = client.post(
-            "/upload/file/", files={"file": (pdb_file.name, pdb_file, "text/plain")}
+            "/api/coarse-grain/file",
+            files={"file": (pdb_file.name, pdb_file, "text/plain")},
         )
         assert response.status_code == 422

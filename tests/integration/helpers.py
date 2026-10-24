@@ -1,6 +1,3 @@
-import re
-from html import unescape
-
 from gemmi import Structure
 
 # chain_index, residue_seqid, residue_name, atom_name
@@ -8,15 +5,6 @@ AtomKey = tuple[int, str, str, str]
 
 # element_name, x, y, z
 AtomData = tuple[str, float, float, float]
-
-
-def extract_data_attribute(html: str, attribute: str) -> str:
-    match = re.search(rf'{attribute}="([^"]+)"', html)
-
-    if match is None:
-        raise AssertionError(f"Missing HTML attribute: {attribute}")
-
-    return unescape(match.group(1))
 
 
 def get_atoms(

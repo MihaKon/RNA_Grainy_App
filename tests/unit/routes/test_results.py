@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.services.workspaces import WorkspaceManager
+from app.services.workspaces.paths import CONSUMED_MARKER
 
 
 @dataclass(frozen=True)
@@ -170,12 +171,12 @@ def test_get_result_file_fails_when_requested_file_is_missing(
         (f"/api/results/{result_workspace.workspace_id}/{file_type}"),
         params={"file_format": file_format},
     )
-    assert response.status_code == 422
+    assert response.status_code == 404
     assert "does not exist" in response.text
     assert workspace_dir.exists()
 
 
-def test_consumed_removes_workspace(
+def test_consumed_keeps_workspace_for_grace_period(
     client: TestClient,
     result_workspace: ResultWorkspace,
 ) -> None:
@@ -183,7 +184,7 @@ def test_consumed_removes_workspace(
 
     assert response.status_code == 204
     assert len(response.content) == 0
-    assert not result_workspace.directory.exists()
+    assert (result_workspace.directory / CONSUMED_MARKER).is_file()
 
 
 def test_consumed_is_idempotent(
@@ -199,7 +200,18 @@ def test_consumed_is_idempotent(
 
     assert first_response.status_code == 204
     assert second_response.status_code == 204
-    assert not result_workspace.directory.exists()
+    assert (result_workspace.directory / CONSUMED_MARKER).is_file()
+
+
+def test_consumed_succeeds_for_expired_workspace(
+    client: TestClient,
+    isolated_workspace_storage: Path,
+) -> None:
+    workspace_id = WorkspaceManager.create_workspace_id()
+
+    response = client.post(f"/api/results/{workspace_id}/consumed")
+
+    assert response.status_code == 204
 
 
 @pytest.mark.parametrize(
@@ -211,25 +223,40 @@ def test_consumed_is_idempotent(
         ("coarse", "pdb", "coarse.pdb"),
     ],
 )
-def test_consumed_makes_download_unavailable(
+def test_consumed_result_can_be_downloaded_again(
     client: TestClient,
     result_workspace: ResultWorkspace,
     file_type: str,
     file_format: str,
     filename: str,
 ) -> None:
-    first_response = client.post(
+    consumed_response = client.post(
         f"/api/results/{result_workspace.workspace_id}/consumed"
     )
-    assert first_response.status_code == 204
+    assert consumed_response.status_code == 204
 
-    second_response = client.get(
+    response = client.get(
         (f"/api/results/{result_workspace.workspace_id}/{file_type}"),
         params={"file_format": file_format},
     )
 
-    assert second_response.status_code == 422
-    assert not result_workspace.directory.exists()
+    assert response.status_code == 200
+    assert response.content == result_workspace.contents[filename]
+
+
+def test_removed_workspace_returns_not_found(
+    client: TestClient,
+    result_workspace: ResultWorkspace,
+) -> None:
+    WorkspaceManager.cleanup_workspace(result_workspace.workspace_id)
+
+    response = client.get(
+        f"/api/results/{result_workspace.workspace_id}/coarse",
+        params={"file_format": "mmcif"},
+    )
+
+    assert response.status_code == 404
+    assert "has expired" in response.json()["detail"]
 
 
 def test_consumed_fails_when_workspace_id_is_invalid(
