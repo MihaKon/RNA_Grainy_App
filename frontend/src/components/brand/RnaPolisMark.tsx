@@ -15,11 +15,7 @@ export function RnaPolisMark({ colorway = "blue", className }: RnaPolisMarkProps
       alt="RNAPolis"
       width={582}
       height={505}
-      className={cn(
-        "w-auto",
-        colorway === "white" && "brightness-0 invert",
-        className,
-      )}
+      className={cn("w-auto", colorway === "white" && "brightness-0 invert", className)}
     />
   );
 }
