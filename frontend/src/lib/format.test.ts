@@ -28,6 +28,7 @@ describe("format", () => {
     expect(formatBeadCount([2, 3])).toBe("2 or 3");
     expect(formatBeadsPerResidue([1])).toBe("1 bead per residue");
     expect(formatBeadsPerResidue([6, 7])).toBe("6 or 7 beads per residue");
+    expect(formatBeadsPerResidue([1], "nucleotide")).toBe("1 bead per nucleotide");
   });
 
   it("formats fractions as percentages", () => {

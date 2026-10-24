@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -41,17 +41,20 @@ describe("StructureViewer", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
-  it("keeps the coarse-grained structure when the all-atom one cannot be loaded", async () => {
+  it("keeps the CG model when the input structure cannot be loaded", async () => {
     const failedStructures: StructureId[] = ["reference"];
     createMolstarViewer.mockResolvedValue(fakeViewer({ failedStructures }));
     renderViewer();
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "The all-atom structure could not be displayed.",
+      "The input structure could not be displayed.",
     );
-    expect(screen.getByRole("button", { name: "Coarse-grained" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "All-atom" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "By element" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "CG model" })).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Input structure (all-atom)" }),
+    ).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Color by" })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Representation" })).toBeDisabled();
   });
 
   it("switches between the models of a multi-model structure", async () => {
@@ -63,7 +66,8 @@ describe("StructureViewer", () => {
     renderViewer();
 
     const modelSelect = await screen.findByRole("combobox", { name: "Model" });
-    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+    const options = within(modelSelect).getAllByRole("option");
+    expect(options.map((option) => option.textContent)).toEqual([
       "2 (1 of 3)",
       "5 (2 of 3)",
       "7 (3 of 3)",
@@ -79,7 +83,9 @@ describe("StructureViewer", () => {
     createMolstarViewer.mockResolvedValue(fakeViewer());
     renderViewer();
 
-    expect(await screen.findByRole("button", { name: "Cartoon" })).toBeEnabled();
+    expect(
+      await screen.findByRole("combobox", { name: "Representation" }),
+    ).toBeEnabled();
     expect(screen.queryByRole("combobox", { name: "Model" })).not.toBeInTheDocument();
   });
 
@@ -104,14 +110,27 @@ describe("StructureViewer", () => {
     createMolstarViewer.mockResolvedValue(fakeViewer());
     renderViewer();
 
-    expect(await screen.findByRole("button", { name: "Cartoon" })).toBeEnabled();
+    expect(
+      await screen.findByRole("combobox", { name: "Representation" }),
+    ).toBeEnabled();
     expect(
       screen.queryByRole("button", { name: "Water, ions & ligands" }),
     ).not.toBeInTheDocument();
   });
 
-  it("reports that the viewer failed only when no structure can be loaded", async () => {
-    createMolstarViewer.mockRejectedValue(new Error("Unreadable files."));
+  it("reports when neither structure can be displayed", async () => {
+    createMolstarViewer.mockRejectedValue(
+      new AggregateError([], "None of the structures could be loaded."),
+    );
+    renderViewer();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Neither structure could be displayed.",
+    );
+  });
+
+  it("reports when the viewer itself cannot be started", async () => {
+    createMolstarViewer.mockRejectedValue(new Error("WebGL is not available."));
     renderViewer();
 
     expect(await screen.findByRole("alert")).toHaveTextContent(

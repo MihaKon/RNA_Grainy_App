@@ -51,7 +51,7 @@ export function Header() {
             </span>
             {!scrolled && (
               <span className="hidden eyebrow text-[0.5625rem] lg:inline">
-                Coarse-grained RNA structure models
+                A web server for coarse-graining full-atom 3D RNA structures
               </span>
             )}
           </span>

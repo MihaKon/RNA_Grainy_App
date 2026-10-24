@@ -1,4 +1,5 @@
-import "molstar/build/viewer/theme/dark.css";
+import "molstar/build/viewer/molstar.css";
+import "./molstarOverrides.css";
 
 import type { Trajectory } from "molstar/lib/mol-model/structure";
 import { PluginConfig } from "molstar/lib/mol-plugin/config";
@@ -13,7 +14,7 @@ import { Color } from "molstar/lib/mol-util/color";
 
 export type StructureId = "reference" | "coarse";
 export type RepresentationType = "ball-and-stick" | "cartoon" | "backbone";
-export type ColorMode = "uniform" | "element-symbol";
+export type ColorMode = "uniform" | "element-symbol" | "chain-id" | "residue-name";
 
 export interface StructureInput {
   id: StructureId;
@@ -32,7 +33,7 @@ export interface MolstarViewer {
   setVisibility(id: StructureId, visible: boolean): void;
   setNonPolymerVisibility(visible: boolean): void;
   setModel(index: number): Promise<void>;
-  setRepresentation(type: RepresentationType): Promise<void>;
+  setRepresentation(id: StructureId, type: RepresentationType): Promise<void>;
   setColorMode(id: StructureId, colorMode: ColorMode): Promise<void>;
   dispose(): void;
 }
@@ -66,8 +67,6 @@ interface StructureEntry {
   visible: boolean;
 }
 
-export const VIEWER_BACKGROUND = 0x002b45;
-
 const IS_POLYMER = MS.core.rel.eq([MS.ammp("entityType"), "polymer"]);
 const POLYMER_EXPRESSION = MS.struct.generator.atomGroups({
   "entity-test": IS_POLYMER,
@@ -89,7 +88,7 @@ export async function createMolstarViewer(
         initial: { isExpanded: false, showControls: false },
       },
       canvas3d: {
-        renderer: { backgroundColor: Color(VIEWER_BACKGROUND) },
+        renderer: { backgroundColor: Color(0xffffff) },
       },
       config: [
         [PluginConfig.Viewport.ShowExpand, true],
@@ -253,11 +252,10 @@ export async function createMolstarViewer(
       entry.visible = visible;
       applyVisibility(entry);
     },
-    async setRepresentation(type) {
-      for (const [id, entry] of entries) {
-        if (entry.representationType !== type) {
-          await updateRepresentation(id, type, entry.colorMode);
-        }
+    async setRepresentation(id, type) {
+      const entry = getEntry(id);
+      if (entry.representationType !== type) {
+        await updateRepresentation(id, type, entry.colorMode);
       }
     },
     async setColorMode(id, colorMode) {

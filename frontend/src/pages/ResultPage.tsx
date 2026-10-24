@@ -24,7 +24,7 @@ export function ResultPage() {
           structure again.
         </p>
         <Link to="/" className="mt-4 inline-block text-accent hover:text-accent-hover">
-          ← New structure
+          ← Process another structure
         </Link>
       </Hero>
     );

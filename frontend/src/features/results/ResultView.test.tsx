@@ -42,12 +42,28 @@ describe("ResultView", () => {
     vi.useRealTimers();
   });
 
-  it("shows the model report and the loaded structures", async () => {
+  it("shows the conversion summary and the loaded structures", async () => {
     mockResultFiles();
     renderResult();
 
     expect(await screen.findByText("Viewer showing reference")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^1EHZ$/);
+    expect(screen.queryByText(/Job/)).not.toBeInTheDocument();
     const report = screen.getByRole("region", { name: "Conversion summary" });
+    expect(
+      within(report)
+        .getAllByRole("term")
+        .map((term) => term.textContent),
+    ).toEqual([
+      "CG model",
+      "CG resolution",
+      "Input models",
+      "Input chains",
+      "Input atoms",
+      "CG beads",
+      "Atom reduction",
+    ]);
+    expect(within(report).getByText("5 beads per nucleotide")).toBeInTheDocument();
     expect(within(report).getByText("1,821")).toBeInTheDocument();
     expect(within(report).getByText("310")).toBeInTheDocument();
     expect(within(report).getByText("82.98%")).toBeInTheDocument();
@@ -60,7 +76,8 @@ describe("ResultView", () => {
       .spyOn(HTMLAnchorElement.prototype, "click")
       .mockImplementation(() => undefined);
 
-    const downloadButton = screen.getByRole("button", { name: "Download PDB" });
+    const downloads = screen.getByRole("group", { name: "Download CG model" });
+    const downloadButton = within(downloads).getByRole("button", { name: "PDB" });
     expect(downloadButton).toBeDisabled();
     await screen.findByText("Viewer showing reference");
     await user.click(downloadButton);
@@ -82,16 +99,14 @@ describe("ResultView", () => {
       .mockImplementation(() => undefined);
 
     expect(await screen.findByText("Viewer showing reference")).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Download PDB" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "PDB" })).not.toBeInTheDocument();
     expect(
       screen.getByText(
-        "PDB output is unavailable for structures with 100,000 or more atoms.",
+        "PDB output is unavailable for structures with 100,000 or more atoms; use mmCIF instead.",
       ),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Download mmCIF" }));
+    await user.click(screen.getByRole("button", { name: "mmCIF" }));
 
     const anchor = click.mock.contexts[0] as HTMLAnchorElement;
     expect(anchor.download).toBe("1EHZ_SimRNA.cif");
@@ -109,20 +124,20 @@ describe("ResultView", () => {
     renderResult();
 
     expect(await screen.findByText("Viewer showing reference")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Download PDB" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Download mmCIF" })).toBeEnabled();
-    expect(
-      screen.getByText(
-        "The PDB file could not be downloaded. The mmCIF file is still available.",
-      ),
-    ).toBeInTheDocument();
+    const pdbButton = screen.getByRole("button", { name: "PDB" });
+    expect(pdbButton).toBeDisabled();
+    expect(pdbButton).toHaveAccessibleDescription(
+      "The PDB file could not be downloaded; use mmCIF instead.",
+    );
+    expect(screen.getByRole("button", { name: "mmCIF" })).toBeEnabled();
+    expect(screen.queryByText(/Chain names in PDB files/)).not.toBeInTheDocument();
   });
 
-  it("links citation markers in the model description", async () => {
+  it("links citation markers in the CG model details", async () => {
     mockResultFiles();
     const { user } = renderResult();
 
-    await user.click(screen.getByText("Model description"));
+    await user.click(screen.getByText("CG model details"));
 
     expect(screen.getByRole("link", { name: "[1]" })).toHaveAttribute(
       "href",
@@ -142,7 +157,7 @@ describe("ResultView", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("This result has expired.");
     expect(alert).toHaveTextContent("kept for about an hour");
-    expect(screen.getByRole("button", { name: "Download mmCIF" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "mmCIF" })).toBeDisabled();
   });
 
   it("shows the server message when the result files cannot be loaded", async () => {
@@ -165,7 +180,7 @@ describe("ResultView", () => {
     const { router, user } = renderResult();
     await screen.findByText("Viewer showing reference");
 
-    await user.click(screen.getByRole("link", { name: /New structure/ }));
+    await user.click(screen.getByRole("link", { name: /Process another structure/ }));
     await act(() => vi.advanceTimersByTimeAsync(10 * 60 * 1000));
     await act(() => router.navigate(-1));
 

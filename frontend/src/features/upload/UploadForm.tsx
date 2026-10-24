@@ -28,8 +28,8 @@ import {
 
 const SOURCE_TABS: readonly TabItem<SourceKind>[] = [
   { value: "file", label: "Upload file" },
-  { value: "rcsb", label: "PDB ID" },
-  { value: "preset", label: "Example" },
+  { value: "rcsb", label: "Fetch from PDB" },
+  { value: "preset", label: "Use example" },
 ];
 
 const INITIAL_VALUES: UploadFormValues = {
