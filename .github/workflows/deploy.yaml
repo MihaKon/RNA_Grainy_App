@@ -1,11 +1,10 @@
 name: Deploy
 
 on:
-  # Automatic deployment is temporarily disabled.
-  # workflow_run:
-  #   workflows: ["Build and Test"]
-  #   types: [completed]
-  #   branches: [main]
+  workflow_run:
+    workflows: ["Build and Test"]
+    types: [completed]
+    branches: [main]
 
   workflow_dispatch:
 
@@ -18,18 +17,15 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
-    # if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+      || (github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'push'
+      && github.event.workflow_run.head_branch == 'main'
+      && github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: [self-hosted, linux, rnagrainy-prod]
+    environment: production
+    timeout-minutes: 20
     steps:
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-
       - name: Deploy
-        run: |
-          ssh -i ~/.ssh/id_ed25519 \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            'bash /srv/RNA_Grainy_App/deploy.sh'
+        run: sudo --non-interactive --set-home -u deploy /usr/bin/bash /srv/RNA_Grainy_App/deploy.sh
