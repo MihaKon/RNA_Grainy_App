@@ -62,15 +62,13 @@ Detailed descriptions, mapping rules, and references are available in the
 
 ## Public API
 
-RNAgrainy provides a public HTTP API for coarse-graining structures without using
-the web interface. No account or API key is required.
+The public API requires no account or API key.
 
 - **Server:** `https://rnagrainy.cs.put.poznan.pl`
 - **Interactive API documentation:** [Swagger UI](https://rnagrainy.cs.put.poznan.pl/docs)
 
-Conversion requests use `multipart/form-data`. A successful request returns HTTP
-`200` with a JSON result after processing finishes, including a `workspace_id`,
-conversion statistics and paths for downloading the generated files.
+Conversion requests use `multipart/form-data` and return JSON with a
+`workspace_id`, conversion summary and download paths.
 
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
@@ -86,8 +84,7 @@ conversion statistics and paths for downloading the generated files.
 
 ### Find and select a model
 
-The following examples use Bash, `curl` and `jq`. Run them in a directory where you
-want to save the responses and generated structures.
+Examples use Bash, `curl` and `jq`.
 
 ```bash
 BASE="https://rnagrainy.cs.put.poznan.pl"
@@ -96,8 +93,7 @@ curl --fail-with-body -sS "$BASE/api/models" -o models.json
 jq -r '.[] | [.id, .name] | @tsv' models.json
 ```
 
-Use the model's **`id`**, rather than its display name, as `selected_model`.
-For example, the ID for SimRNA is `SimModel`:
+Set `selected_model` to the model's **`id`**, e.g. `SimModel` for SimRNA:
 
 ```bash
 MODEL="SimModel"
@@ -105,14 +101,9 @@ MODEL="SimModel"
 curl --fail-with-body -sS "$BASE/api/config" | jq
 ```
 
-The configuration includes the available `preset_ids` and size limits in bytes.
-
 ### Coarse-grain a structure
 
-Choose one of the following sources. Each example saves the JSON response to a
-separate file.
-
-**Upload a local file.** Replace `structure.pdb` with your PDB, CIF or mmCIF file:
+**Upload a local PDB or mmCIF file:**
 
 ```bash
 curl --fail-with-body -sS "$BASE/api/coarse-grain/file" \
@@ -139,10 +130,8 @@ curl --fail-with-body -sS "$BASE/api/coarse-grain/rcsb" \
   -o result-rcsb.json
 ```
 
-To select specific input chains or structural models, add fields such as
-`-F "chains=A,B"` and `-F "models=1,2"` to any conversion request. Omit these fields
-to include all chains and models. `models` selects model numbers within the input
-structure; `selected_model` selects the coarse-graining scheme.
+Optionally add `-F "chains=A,B"` or `-F "models=1,2"` to select input chains or
+structural model numbers. By default, all chains and models are included.
 
 ### Use a custom model
 
@@ -168,13 +157,12 @@ curl --fail-with-body -sS "$BASE/api/coarse-grain/preset" \
   -o result-custom.json
 ```
 
-The same custom model fields work with `/api/coarse-grain/file` and
-`/api/coarse-grain/rcsb`. In these `curl` commands, `<custom_model.json` sends the
-file's contents as a text form field; `@structure.pdb` uploads a structure file.
+Custom models also work with `/file` and `/rcsb`. The `<custom_model.json`
+syntax sends JSON as a text form field.
 
 ### Download the result
 
-Set `RESULT` to the response file from the request you want to inspect:
+Choose a saved response:
 
 ```bash
 RESULT="result-preset.json"
@@ -184,10 +172,8 @@ CG_URL=$(jq -er '.files.coarse_mmcif_url' "$RESULT")
 curl --fail-with-body -sS "$BASE$CG_URL" -o coarse.mmcif
 ```
 
-The returned paths are relative to the server, so prepend `$BASE`. The `files`
-object also contains `reference_url` for the input structure and `coarse_pdb_url`
-for PDB output. PDB output may be unavailable for structures that exceed the
-format's limits, in which case `coarse_pdb_url` is `null`:
+Prepend `$BASE` to returned paths. `reference_url` points to the input structure;
+`coarse_pdb_url` is `null` when PDB output is unavailable:
 
 ```bash
 PDB_URL=$(jq -r '.files.coarse_pdb_url // empty' "$RESULT")
@@ -198,46 +184,30 @@ fi
 
 ### Open or share a result page
 
-Results created through the API can also be opened in the web viewer. Use the
-returned `workspace_id` to build the link:
+Open the result in the web viewer using its `workspace_id`:
 
 ```bash
 WORKSPACE_ID=$(jq -er '.workspace_id' "$RESULT")
 echo "$BASE/results/$WORKSPACE_ID"
 ```
 
-The link works in a new tab or another browser while the result is still available.
-The page retrieves its conversion summary, model details and file paths from
-`GET /api/results/{workspace_id}`. You can retrieve the same JSON directly:
+The link works in other tabs and browsers while the result is available.
+Retrieve its metadata directly with:
 
 ```bash
 curl --fail-with-body -sS "$BASE/api/results/$WORKSPACE_ID" | jq
 ```
 
-### Limits, errors and result lifetime
+### Limits and availability
 
-- Structure uploads and RCSB downloads are limited to 100 MiB. Custom model JSON
-  is limited to 5,000 characters and 8 KiB of UTF-8 data. Check `/api/config` for
-  the current upload and custom model limits.
-- Invalid input normally returns HTTP `422` with a JSON `detail` message. Missing
-  or expired result files return HTTP `404`. The examples use `--fail-with-body`
-  so `curl` returns a nonzero exit code on HTTP errors while retaining the error
-  response body.
-- Results are temporary. They normally become eligible for cleanup after
-  24 hours. Storage pressure may cause older results to be removed sooner, so
-  download the files you need promptly.
-- After retrieving all needed files, you may optionally POST to the returned
-  `files.consumed_url`. This starts a one-hour cleanup grace period; it does not
-  delete the result immediately. Ordinary GET requests do not mark a result as
-  consumed, and repeated consumed requests do not restart the grace period.
-  The web viewer marks a result as consumed after loading its structure files;
-  retrieving metadata alone does not start the grace period.
-
-```bash
-CONSUMED_URL=$(jq -er '.files.consumed_url' "$RESULT")
-curl --fail-with-body -sS -X POST "$BASE$CONSUMED_URL" \
-  -w '\nHTTP %{http_code}\n'
-```
+- Structure files: up to 100 MiB. Custom JSON: up to 5,000 characters and 8 KiB.
+  Current limits are available at `/api/config`.
+- Invalid input returns HTTP `422` with a JSON `detail` message; unavailable
+  result files return HTTP `404`.
+- Results are normally kept for 24 hours, but may be removed sooner to free storage.
+- After the viewer loads the structures or you POST to `files.consumed_url`,
+  results become eligible for cleanup one hour after the first such call.
+  GET downloads do not start this timer.
 
 ## Local Development
 
