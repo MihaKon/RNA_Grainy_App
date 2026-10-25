@@ -1,7 +1,8 @@
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import type { ResultStructures } from "@/api/results";
 import { Alert } from "@/components/ui/Alert";
+import { SelectField } from "@/components/ui/SelectField";
 import { ToggleButton } from "@/components/ui/ToggleButton";
 
 import {
@@ -57,8 +58,6 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
     useState<RepresentationType>("ball-and-stick");
   const [colorMode, setColorMode] = useState<ColorMode>("uniform");
   const [failedStructures, setFailedStructures] = useState<readonly StructureId[]>([]);
-  const [modelNumbers, setModelNumbers] = useState<readonly number[]>([]);
-  const [modelIndex, setModelIndex] = useState(0);
   const [hasNonPolymer, setHasNonPolymer] = useState(false);
   const [nonPolymerVisible, setNonPolymerVisible] = useState(false);
 
@@ -97,7 +96,6 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
           console.error(`Could not load the ${id} structure into the viewer.`);
         }
         setFailedStructures(viewer.failedStructures);
-        setModelNumbers(viewer.modelNumbers);
         setHasNonPolymer(viewer.hasNonPolymer);
         setStatus("ready");
       },
@@ -147,19 +145,14 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
       setRepresentation(type);
     });
 
-  const changeModel = (index: number) =>
-    runViewerAction(async (viewer) => {
-      await viewer.setModel(index);
-      setModelIndex(index);
-    });
-
   const changeColorMode = (mode: ColorMode) =>
     runViewerAction(async (viewer) => {
       await viewer.setColorMode("reference", mode);
       setColorMode(mode);
     });
 
-  const controlsDisabled = status !== "ready" || busy;
+  const viewerNotReady = status !== "ready";
+  const controlsDisabled = viewerNotReady || busy;
   const referenceControlsDisabled =
     controlsDisabled || failedStructures.includes("reference");
   const failedNames = STRUCTURE_TOGGLES.filter(({ id }) =>
@@ -195,7 +188,7 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
             <ToggleButton
               key={id}
               pressed={visible[id] && !failedStructures.includes(id)}
-              disabled={controlsDisabled || failedStructures.includes(id)}
+              disabled={viewerNotReady || failedStructures.includes(id)}
               onClick={() => {
                 toggleStructure(id);
               }}
@@ -211,23 +204,11 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
           {hasNonPolymer && (
             <ToggleButton
               pressed={nonPolymerVisible}
-              disabled={controlsDisabled}
+              disabled={viewerNotReady}
               onClick={toggleNonPolymer}
             >
               Water, ions &amp; ligands
             </ToggleButton>
-          )}
-          {modelNumbers.length > 1 && (
-            <InlineSelect
-              label="Model"
-              value={String(modelIndex)}
-              disabled={controlsDisabled}
-              onChange={(index) => void changeModel(Number(index))}
-              options={modelNumbers.map((modelNumber, index) => ({
-                value: String(index),
-                label: `${String(modelNumber)} (${String(index + 1)} of ${String(modelNumbers.length)})`,
-              }))}
-            />
           )}
         </ControlGroup>
 
@@ -278,29 +259,24 @@ function InlineSelect<T extends string>({
   options,
   onChange,
 }: InlineSelectProps<T>) {
-  const id = useId();
-
   return (
-    <span className="flex items-center gap-2">
-      <label htmlFor={id} className="text-sm text-ink-2">
-        {label}
-      </label>
-      <select
-        id={id}
-        value={value}
-        disabled={disabled}
-        onChange={(event) => {
-          onChange(event.target.value as T);
-        }}
-        className="cursor-pointer rounded border-[1.5px] border-line-soft bg-surface px-2 py-1 text-sm text-ink transition-colors focus:border-accent focus:outline-none disabled:opacity-60"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </span>
+    <SelectField
+      label={label}
+      value={value}
+      disabled={disabled}
+      inline
+      onChange={(event) => {
+        const option = options.find(({ value }) => value === event.target.value);
+
+        if (option) onChange(option.value);
+      }}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </SelectField>
   );
 }
 

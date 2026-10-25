@@ -6,10 +6,12 @@ import { jsonResponse, mockFetch } from "@/test/fetchMock";
 import { coarseGrainResult } from "@/test/fixtures";
 import { renderApp } from "@/test/renderApp";
 
+import { StructureViewer } from "./viewer/StructureViewer";
+
 vi.mock("./viewer/StructureViewer", () => ({
-  StructureViewer: ({ structures }: { structures: ResultStructures }) => (
+  StructureViewer: vi.fn(({ structures }: { structures: ResultStructures }) => (
     <p>Viewer showing {structures.reference}</p>
-  ),
+  )),
 }));
 
 const { files } = coarseGrainResult;
@@ -34,6 +36,9 @@ const createObjectURL = vi.fn(() => "blob:result");
 
 describe("ResultView", () => {
   beforeEach(() => {
+    vi.mocked(StructureViewer).mockImplementation(({ structures }) => (
+      <p>Viewer showing {structures.reference}</p>
+    ));
     URL.createObjectURL = createObjectURL;
     URL.revokeObjectURL = vi.fn();
   });
@@ -67,6 +72,30 @@ describe("ResultView", () => {
     expect(within(report).getByText("1,821")).toBeInTheDocument();
     expect(within(report).getByText("310")).toBeInTheDocument();
     expect(within(report).getByText("82.98%")).toBeInTheDocument();
+  });
+
+  it("keeps the summary and downloads available when the viewer fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.mocked(StructureViewer).mockImplementation(() => {
+      throw new TypeError("Failed to fetch dynamically imported module");
+    });
+    mockResultFiles();
+    const { user } = renderResult();
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("The structure viewer could not be loaded.");
+    expect(screen.getByRole("region", { name: "Conversion summary" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Reload page" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "PDB" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "mmCIF" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "mmCIF" }));
+    expect(click).toHaveBeenCalledOnce();
+    const anchor = click.mock.contexts[0] as HTMLAnchorElement;
+    expect(anchor.download).toBe("1EHZ_SimRNA.cif");
   });
 
   it("downloads the coarse-grained structure once it is loaded", async () => {

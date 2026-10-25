@@ -15,6 +15,7 @@ import { downloadTextFile } from "@/lib/download";
 
 import { ModelReport } from "./ModelReport";
 import { preloadStructureViewer } from "./viewer/preload";
+import { StructureViewerBoundary } from "./viewer/StructureViewerBoundary";
 
 const StructureViewer = lazy(() =>
   preloadStructureViewer().then((module) => ({ default: module.StructureViewer })),
@@ -37,7 +38,7 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
       </Link>
 
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="font-display text-hero-compact text-ink lg:text-heading">
+        <h1 className="max-w-full min-w-0 font-display text-hero-compact wrap-anywhere text-ink lg:text-heading">
           {result.filename}
         </h1>
         <div
@@ -87,16 +88,18 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
           {structuresQuery.isError ? (
             <ResultLoadError error={structuresQuery.error} />
           ) : (
-            <Suspense fallback={<ViewerPlaceholder />}>
-              {structures ? (
-                <StructureViewer
-                  structures={structures}
-                  referenceFormat={result.reference_format}
-                />
-              ) : (
-                <ViewerPlaceholder />
-              )}
-            </Suspense>
+            <StructureViewerBoundary>
+              <Suspense fallback={<ViewerPlaceholder />}>
+                {structures ? (
+                  <StructureViewer
+                    structures={structures}
+                    referenceFormat={result.reference_format}
+                  />
+                ) : (
+                  <ViewerPlaceholder />
+                )}
+              </Suspense>
+            </StructureViewerBoundary>
           )}
         </div>
 

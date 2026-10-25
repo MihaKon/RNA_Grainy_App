@@ -1,7 +1,8 @@
 import { screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { createDefaultDraft, toDefinition } from "@/features/creator/modelDraft";
+import * as viewerPreload from "@/features/results/viewer/preload";
 import { jsonResponse, mockFetch, requestBody } from "@/test/fetchMock";
 import { appConfig, coarseGrainResult, models } from "@/test/fixtures";
 import { renderApp } from "@/test/renderApp";
@@ -119,6 +120,26 @@ describe("UploadForm", () => {
       expect.stringContaining("/api/coarse-grain"),
       expect.anything(),
     );
+  });
+
+  it("still processes the structure when viewer preloading fails", async () => {
+    const error = new TypeError("Failed to fetch dynamically imported module");
+    vi.spyOn(viewerPreload, "preloadStructureViewer").mockRejectedValueOnce(error);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    mockFetch(coarseGrainRoutes);
+    const { router, user } = await renderForm();
+
+    await fillSource(user, "preset");
+    await user.selectOptions(screen.getByLabelText("Coarse-grained model"), "SimModel");
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(
+      await screen.findByRole("region", { name: "Conversion summary" }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe(
+      `/results/${coarseGrainResult.workspace_id}`,
+    );
+    expect(warn).toHaveBeenCalledWith("Could not preload the structure viewer.", error);
   });
 
   it("processes an example structure and opens the result", async () => {

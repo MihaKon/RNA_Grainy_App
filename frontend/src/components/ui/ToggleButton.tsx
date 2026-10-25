@@ -10,7 +10,7 @@ const STATE_CLASSES = {
 
 function toggleButtonClasses(pressed: boolean): string {
   return cn(
-    "inline-flex items-center gap-1.5 rounded border-[1.5px] px-2.5 py-1 font-mono text-label tracking-[0.12em] uppercase transition-colors disabled:opacity-50",
+    "inline-flex items-center gap-1.5 rounded border-[1.5px] px-2.5 py-1 font-mono text-label tracking-[0.12em] uppercase transition-colors hover:cursor-pointer disabled:opacity-50",
     pressed ? STATE_CLASSES.pressed : STATE_CLASSES.released,
   );
 }
