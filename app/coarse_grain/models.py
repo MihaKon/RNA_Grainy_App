@@ -59,13 +59,6 @@ class CoarseGrainModelRegistry:
 
         return cls._registry[class_name]
 
-    @classmethod
-    def get_dropdown_options(cls) -> list[tuple[str, str]]:
-        return sorted(
-            [(key, model_cls.name_verbose) for key, model_cls in cls._registry.items()],
-            key=lambda x: x[1],
-        )
-
 
 class BaseCoarseGrainModel(ABC):
     name_verbose: str

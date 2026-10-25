@@ -15,8 +15,7 @@ from tests.integration.helpers import AtomKey, get_atoms
 @pytest.mark.parametrize("input_format", ["pdb", "cif"])
 @pytest.mark.parametrize(
     "selected_model",
-    [model_name for model_name, _ in CoarseGrainModelRegistry.get_dropdown_options()]
-    + ["custom"],
+    sorted(CoarseGrainModelRegistry._registry) + ["custom"],
 )
 def test_coarse_pdb_and_cif_exports_are_consistent(
     client: TestClient,
