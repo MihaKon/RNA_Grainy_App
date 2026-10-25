@@ -12,6 +12,8 @@ import { MolScriptBuilder as MS } from "molstar/lib/mol-script/language/builder"
 import type { StateObjectSelector } from "molstar/lib/mol-state";
 import { Color } from "molstar/lib/mol-util/color";
 
+import { MolstarViewportControls } from "./MolstarViewportControls";
+
 export type StructureId = "reference" | "coarse";
 export type RepresentationType = "ball-and-stick" | "cartoon" | "backbone";
 export type ColorMode = "uniform" | "element-symbol" | "chain-id" | "residue-name";
@@ -26,9 +28,7 @@ export interface StructureInput {
 
 export interface MolstarViewer {
   readonly failedStructures: readonly StructureId[];
-  /** Model numbers in file order; switching models uses their index. */
   readonly modelNumbers: readonly number[];
-  /** Whether the input structure has water, ions or ligands; they start hidden. */
   readonly hasNonPolymer: boolean;
   setVisibility(id: StructureId, visible: boolean): void;
   setNonPolymerVisibility(visible: boolean): void;
@@ -55,7 +55,6 @@ type ComponentSelector = Awaited<
 interface StructureEntry {
   model: ModelSelector;
   modelNumbers: readonly number[];
-  /** The polymer part, or the whole structure when nothing is split off. */
   polymer: StructureSelector;
   nonPolymer: ComponentSelector;
   representation: StateObjectSelector | undefined;
@@ -84,6 +83,11 @@ export async function createMolstarViewer(
     render: renderReact18,
     spec: {
       ...DefaultPluginUISpec(),
+      components: {
+        viewport: {
+          controls: MolstarViewportControls,
+        },
+      },
       layout: {
         initial: { isExpanded: false, showControls: false },
       },
@@ -94,7 +98,7 @@ export async function createMolstarViewer(
         [PluginConfig.Viewport.ShowExpand, true],
         [PluginConfig.Viewport.ShowSelectionMode, true],
         [PluginConfig.Viewport.ShowAnimation, false],
-        [PluginConfig.Viewport.ShowTrajectoryControls, false],
+        [PluginConfig.Viewport.ShowTrajectoryControls, true],
         [PluginConfig.Viewport.ShowXR, "never"],
       ],
     },
@@ -123,7 +127,6 @@ export async function createMolstarViewer(
     setHidden(entry.nonPolymerRepresentation, !entry.visible || !nonPolymerVisible);
   };
 
-  // Replaces the structure's representation by reusing its tag, so only one is ever shown.
   const updateRepresentation = async (
     id: StructureId,
     representationType: RepresentationType,
@@ -146,7 +149,6 @@ export async function createMolstarViewer(
         },
         { tag: `rnagrainy-${id}-representation` },
       );
-    // Cartoon and backbone draw nothing for small molecules, so keep them as sticks.
     if (entry.nonPolymer) {
       entry.nonPolymerRepresentation =
         await plugin.builders.structure.representation.addRepresentation(
@@ -173,7 +175,6 @@ export async function createMolstarViewer(
       );
       const model = await plugin.builders.structure.createModel(trajectory);
       const structure = await plugin.builders.structure.createStructure(model);
-      // The CG output holds only nucleotides, so only the input is split.
       const polymer = input.isCoarse
         ? undefined
         : await plugin.builders.structure.tryCreateComponentFromExpression(
@@ -210,7 +211,6 @@ export async function createMolstarViewer(
     }
   };
 
-  // Each structure loads on its own, so one unreadable file still shows the other.
   const failedStructures: StructureId[] = [];
   const errors: unknown[] = [];
   for (const input of structures) {
@@ -227,7 +227,6 @@ export async function createMolstarViewer(
     throw new AggregateError(errors, "None of the structures could be loaded.");
   }
 
-  // Both files hold the same selected models, so either one gives the numbers.
   const modelNumbers = entries.values().next().value?.modelNumbers ?? [1];
 
   return {

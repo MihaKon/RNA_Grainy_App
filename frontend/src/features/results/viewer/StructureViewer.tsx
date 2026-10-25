@@ -58,8 +58,6 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
     useState<RepresentationType>("ball-and-stick");
   const [colorMode, setColorMode] = useState<ColorMode>("uniform");
   const [failedStructures, setFailedStructures] = useState<readonly StructureId[]>([]);
-  const [modelNumbers, setModelNumbers] = useState<readonly number[]>([]);
-  const [modelIndex, setModelIndex] = useState(0);
   const [hasNonPolymer, setHasNonPolymer] = useState(false);
   const [nonPolymerVisible, setNonPolymerVisible] = useState(false);
 
@@ -98,7 +96,6 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
           console.error(`Could not load the ${id} structure into the viewer.`);
         }
         setFailedStructures(viewer.failedStructures);
-        setModelNumbers(viewer.modelNumbers);
         setHasNonPolymer(viewer.hasNonPolymer);
         setStatus("ready");
       },
@@ -146,12 +143,6 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
     runViewerAction(async (viewer) => {
       await viewer.setRepresentation("reference", type);
       setRepresentation(type);
-    });
-
-  const changeModel = (index: number) =>
-    runViewerAction(async (viewer) => {
-      await viewer.setModel(index);
-      setModelIndex(index);
     });
 
   const changeColorMode = (mode: ColorMode) =>
@@ -217,18 +208,6 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
             >
               Water, ions &amp; ligands
             </ToggleButton>
-          )}
-          {modelNumbers.length > 1 && (
-            <InlineSelect
-              label="Model"
-              value={String(modelIndex)}
-              disabled={controlsDisabled}
-              onChange={(index) => void changeModel(Number(index))}
-              options={modelNumbers.map((modelNumber, index) => ({
-                value: String(index),
-                label: `${String(modelNumber)} (${String(index + 1)} of ${String(modelNumbers.length)})`,
-              }))}
-            />
           )}
         </ControlGroup>
 
