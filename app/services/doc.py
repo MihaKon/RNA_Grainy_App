@@ -34,7 +34,7 @@ class DocsContextBuilder:
     def get_all_model_documentation(cls) -> list[ModelDocumentation]:
         models = [
             cls.get_model_documentation(model_name)
-            for model_name in CoarseGrainModelRegistry._registry
+            for model_name in CoarseGrainModelRegistry.registry
         ]
         return sorted(
             models, key=lambda model: (model.beads_per_residue, model.name.lower())

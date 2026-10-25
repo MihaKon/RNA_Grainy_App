@@ -40,24 +40,24 @@ class CoarseGrainModelRegistry:
     Singleton registry to store RNA model classes.
     """
 
-    _registry: dict[str, type[BaseCoarseGrainModel]] = {}
+    registry: dict[str, type[BaseCoarseGrainModel]] = {}
 
     @classmethod
     def register(
         cls, model_cls: type[BaseCoarseGrainModel]
     ) -> type[BaseCoarseGrainModel]:
-        cls._registry[model_cls.__name__] = model_cls
+        cls.registry[model_cls.__name__] = model_cls
         return model_cls
 
     @classmethod
     def get_model(cls, class_name: str) -> type[BaseCoarseGrainModel]:
-        if class_name not in cls._registry:
-            available = list(cls._registry.keys())
+        if class_name not in cls.registry:
+            available = list(cls.registry.keys())
             raise ModelLoadingError(
                 f"Model '{class_name}' not found. Available models: {available}"
             )
 
-        return cls._registry[class_name]
+        return cls.registry[class_name]
 
 
 class BaseCoarseGrainModel(ABC):

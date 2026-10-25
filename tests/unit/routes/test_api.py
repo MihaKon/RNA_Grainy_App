@@ -30,7 +30,7 @@ class TestListModels:
 
         assert response.status_code == 200
         model_ids = {model["id"] for model in response.json()}
-        assert model_ids == set(CoarseGrainModelRegistry._registry)
+        assert model_ids == set(CoarseGrainModelRegistry.registry)
 
     def test_models_are_sorted_by_bead_count(self, client: TestClient) -> None:
         models = client.get("/api/models").json()
