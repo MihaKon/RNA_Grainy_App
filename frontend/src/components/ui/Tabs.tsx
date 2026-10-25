@@ -45,7 +45,7 @@ export function Tabs<T extends string>({
                 onChange(item.value);
               }}
               className={cn(
-                "flex-1 px-3 py-2.5 font-mono text-label tracking-[0.15em] uppercase transition-colors",
+                "flex-1 px-3 py-2.5 font-mono text-label tracking-[0.15em] uppercase transition-colors hover:cursor-pointer",
                 selected
                   ? "bg-accent text-white"
                   : "text-ink-2 hover:bg-accent/5 hover:text-accent",

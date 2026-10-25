@@ -151,7 +151,8 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
       setColorMode(mode);
     });
 
-  const controlsDisabled = status !== "ready" || busy;
+  const viewerNotReady = status !== "ready";
+  const controlsDisabled = viewerNotReady || busy;
   const referenceControlsDisabled =
     controlsDisabled || failedStructures.includes("reference");
   const failedNames = STRUCTURE_TOGGLES.filter(({ id }) =>
@@ -187,7 +188,7 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
             <ToggleButton
               key={id}
               pressed={visible[id] && !failedStructures.includes(id)}
-              disabled={controlsDisabled || failedStructures.includes(id)}
+              disabled={viewerNotReady || failedStructures.includes(id)}
               onClick={() => {
                 toggleStructure(id);
               }}
@@ -203,7 +204,7 @@ export function StructureViewer({ structures, referenceFormat }: StructureViewer
           {hasNonPolymer && (
             <ToggleButton
               pressed={nonPolymerVisible}
-              disabled={controlsDisabled}
+              disabled={viewerNotReady}
               onClick={toggleNonPolymer}
             >
               Water, ions &amp; ligands

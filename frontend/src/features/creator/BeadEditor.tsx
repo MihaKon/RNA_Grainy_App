@@ -28,7 +28,6 @@ const STRATEGY_HINTS: Record<BeadStrategy, string> = {
 };
 
 export function BeadEditor({ bead, issues, dispatch }: BeadEditorProps) {
-  // Imported beads can use atoms the scope does not offer; keep them visible to deselect.
   const scopeAtoms = SCOPES[bead.scope].atoms;
   const atomChoices = [
     ...scopeAtoms,
@@ -49,7 +48,7 @@ export function BeadEditor({ bead, issues, dispatch }: BeadEditorProps) {
         aria-label={`Remove bead ${bead.beadId}`}
         className="absolute top-3 right-3 rounded p-1.5 text-ink-3 transition-colors hover:text-red-deep"
       >
-        <X className="size-4" />
+        <X className="size-4 hover:cursor-pointer" />
       </button>
 
       <div className="grid gap-4 pr-8 lg:grid-cols-3">

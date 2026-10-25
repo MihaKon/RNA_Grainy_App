@@ -13,7 +13,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
 
 function buttonClasses(variant: ButtonVariant): string {
   return cn(
-    "inline-flex items-center justify-center gap-2 rounded border-[1.5px] px-5 py-2 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
+    "inline-flex items-center justify-center gap-2 rounded border-[1.5px] px-5 py-2 text-sm font-medium transition-colors hover:cursor-pointer disabled:pointer-events-none disabled:opacity-50",
     VARIANT_CLASSES[variant],
   );
 }

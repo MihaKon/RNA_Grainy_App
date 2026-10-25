@@ -79,7 +79,7 @@ export function StructureFileInput({
             aria-label={`Remove ${file.name}`}
             className="rounded p-1.5 text-ink-3 transition-colors hover:text-red-deep"
           >
-            <X className="size-4" />
+            <X className="size-4 hover:cursor-pointer" />
           </button>
         </div>
       ) : (

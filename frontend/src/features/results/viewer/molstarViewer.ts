@@ -181,12 +181,14 @@ export async function createMolstarViewer(
             structure,
             POLYMER_EXPRESSION,
             "rnagrainy-polymer",
+            { label: "Polymer " },
           );
       const nonPolymer = polymer
         ? await plugin.builders.structure.tryCreateComponentFromExpression(
             structure,
             NON_POLYMER_EXPRESSION,
             "rnagrainy-non-polymer",
+            { label: "Water, ions & ligands" },
           )
         : undefined;
 

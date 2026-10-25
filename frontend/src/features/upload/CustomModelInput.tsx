@@ -50,7 +50,6 @@ export function CustomModelInput({ config, value, onChange }: CustomModelInputPr
       return;
     }
 
-    // The creator can import a rejected definition, so offer it as the way to fix one.
     try {
       await validateCustomModel(model.json);
     } catch (error) {
@@ -115,7 +114,7 @@ export function CustomModelInput({ config, value, onChange }: CustomModelInputPr
               aria-label="Remove custom model"
               className="rounded p-1.5 text-ink-3 transition-colors hover:text-red-deep"
             >
-              <X className="size-4" />
+              <X className="size-4 hover:cursor-pointer" />
             </button>
           </div>
         </div>
