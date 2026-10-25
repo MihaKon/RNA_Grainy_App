@@ -1,7 +1,8 @@
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import type { ResultStructures } from "@/api/results";
 import { Alert } from "@/components/ui/Alert";
+import { SelectField } from "@/components/ui/SelectField";
 import { ToggleButton } from "@/components/ui/ToggleButton";
 
 import {
@@ -278,29 +279,24 @@ function InlineSelect<T extends string>({
   options,
   onChange,
 }: InlineSelectProps<T>) {
-  const id = useId();
-
   return (
-    <span className="flex items-center gap-2">
-      <label htmlFor={id} className="text-sm text-ink-2">
-        {label}
-      </label>
-      <select
-        id={id}
-        value={value}
-        disabled={disabled}
-        onChange={(event) => {
-          onChange(event.target.value as T);
-        }}
-        className="cursor-pointer rounded border-[1.5px] border-line-soft bg-surface px-2 py-1 text-sm text-ink transition-colors focus:border-accent focus:outline-none disabled:opacity-60"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </span>
+    <SelectField
+      label={label}
+      value={value}
+      disabled={disabled}
+      inline
+      onChange={(event) => {
+        const option = options.find(({ value }) => value === event.target.value);
+
+        if (option) onChange(option.value);
+      }}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </SelectField>
   );
 }
 
