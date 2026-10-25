@@ -15,6 +15,7 @@ import { downloadTextFile } from "@/lib/download";
 
 import { ModelReport } from "./ModelReport";
 import { preloadStructureViewer } from "./viewer/preload";
+import { StructureViewerBoundary } from "./viewer/StructureViewerBoundary";
 
 const StructureViewer = lazy(() =>
   preloadStructureViewer().then((module) => ({ default: module.StructureViewer })),
@@ -87,16 +88,18 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
           {structuresQuery.isError ? (
             <ResultLoadError error={structuresQuery.error} />
           ) : (
-            <Suspense fallback={<ViewerPlaceholder />}>
-              {structures ? (
-                <StructureViewer
-                  structures={structures}
-                  referenceFormat={result.reference_format}
-                />
-              ) : (
-                <ViewerPlaceholder />
-              )}
-            </Suspense>
+            <StructureViewerBoundary>
+              <Suspense fallback={<ViewerPlaceholder />}>
+                {structures ? (
+                  <StructureViewer
+                    structures={structures}
+                    referenceFormat={result.reference_format}
+                  />
+                ) : (
+                  <ViewerPlaceholder />
+                )}
+              </Suspense>
+            </StructureViewerBoundary>
           )}
         </div>
 

@@ -113,7 +113,9 @@ function UploadFormContent({ config, models }: UploadFormContentProps) {
     const source = toStructureSource(values);
     if (!source || hasErrors(validateUploadForm(values, config))) return;
 
-    void preloadStructureViewer();
+    void preloadStructureViewer().catch((error: unknown) => {
+      console.warn("Could not preload the structure viewer.", error);
+    });
 
     mutation.mutate(
       {
