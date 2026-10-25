@@ -353,10 +353,11 @@ pipenv run pytest tests/e2e
 Frontend, in `frontend/`: `npm run lint`, `npm run format:check`, `npm run typecheck`,
 `npm test`.
 
-The pre-commit hooks run the formatters, linters, type checks, and the backend unit and
-integration tests together with the frontend checks. GitHub Actions runs all checks,
-including the E2E tests and a Docker Compose health check, on every pull request and on
-pushes to `main` and `develop`.
+On commit, the hooks run formatting, linting and type checks for the changed parts
+of the project. On push, they run the backend unit and integration tests and, when
+frontend files have changed, the frontend tests. GitHub Actions runs all checks,
+including the E2E tests and a Docker Compose health check, on every pull request and
+on pushes to `main` and `develop`.
 
 ## Authors
 
