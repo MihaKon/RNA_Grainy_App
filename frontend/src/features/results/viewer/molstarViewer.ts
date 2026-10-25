@@ -4,6 +4,7 @@ import "./molstarOverrides.css";
 import type { Trajectory } from "molstar/lib/mol-model/structure";
 import { PluginConfig } from "molstar/lib/mol-plugin/config";
 import type { BuiltInTrajectoryFormat } from "molstar/lib/mol-plugin-state/formats/trajectory";
+import { StructureSelectionQueries as Q } from "molstar/lib/mol-plugin-state/helpers/structure-selection-query";
 import { createPluginUI } from "molstar/lib/mol-plugin-ui";
 import type { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { renderReact18 } from "molstar/lib/mol-plugin-ui/react18";
@@ -46,19 +47,24 @@ type ModelSelector = Awaited<
   ReturnType<PluginUIContext["builders"]["structure"]["createModel"]>
 >;
 
-type ComponentSelector = Awaited<
-  ReturnType<
-    PluginUIContext["builders"]["structure"]["tryCreateComponentFromExpression"]
+type ComponentSelector = NonNullable<
+  Awaited<
+    ReturnType<PluginUIContext["builders"]["structure"]["tryCreateComponentStatic"]>
   >
 >;
+
+interface NonPolymerComponent {
+  type: string;
+  selector: ComponentSelector;
+  representation: StateObjectSelector | undefined;
+}
 
 interface StructureEntry {
   model: ModelSelector;
   modelNumbers: readonly number[];
   polymer: StructureSelector;
-  nonPolymer: ComponentSelector;
+  nonPolymer: NonPolymerComponent[];
   representation: StateObjectSelector | undefined;
-  nonPolymerRepresentation: StateObjectSelector | undefined;
   representationType: RepresentationType;
   colorMode: ColorMode;
   color: number;
@@ -72,6 +78,19 @@ const POLYMER_EXPRESSION = MS.struct.generator.atomGroups({
 });
 const NON_POLYMER_EXPRESSION = MS.struct.generator.atomGroups({
   "entity-test": MS.core.logic.not([IS_POLYMER]),
+});
+
+const NON_POLYMER_TYPES = ["ligand", "branched", "water", "ion", "lipid"] as const;
+
+const UNKNOWN_EXPRESSION = MS.struct.modifier.exceptBy({
+  0: MS.struct.generator.all(),
+  by: MS.struct.combinator.merge([
+    Q.ligandPlusConnected.expression,
+    Q.branchedPlusConnected.expression,
+    Q.water.expression,
+    Q.ion.expression,
+    Q.lipid.expression,
+  ]),
 });
 
 export async function createMolstarViewer(
@@ -124,7 +143,10 @@ export async function createMolstarViewer(
 
   const applyVisibility = (entry: StructureEntry) => {
     setHidden(entry.representation, !entry.visible);
-    setHidden(entry.nonPolymerRepresentation, !entry.visible || !nonPolymerVisible);
+
+    for (const component of entry.nonPolymer) {
+      setHidden(component.representation, !entry.visible || !nonPolymerVisible);
+    }
   };
 
   const updateRepresentation = async (
@@ -149,12 +171,12 @@ export async function createMolstarViewer(
         },
         { tag: `rnagrainy-${id}-representation` },
       );
-    if (entry.nonPolymer) {
-      entry.nonPolymerRepresentation =
+    for (const component of entry.nonPolymer) {
+      component.representation =
         await plugin.builders.structure.representation.addRepresentation(
-          entry.nonPolymer,
+          component.selector,
           { type: "ball-and-stick", ...colorProps },
-          { tag: `rnagrainy-${id}-non-polymer-representation` },
+          { tag: `rnagrainy-${id}-${component.type}-representation` },
         );
     }
 
@@ -181,16 +203,52 @@ export async function createMolstarViewer(
             structure,
             POLYMER_EXPRESSION,
             "rnagrainy-polymer",
-            { label: "Polymer " },
+            { label: "Polymer" },
           );
-      const nonPolymer = polymer
+
+      const nonPolymerSource = polymer
         ? await plugin.builders.structure.tryCreateComponentFromExpression(
             structure,
             NON_POLYMER_EXPRESSION,
             "rnagrainy-non-polymer",
-            { label: "Water, ions & ligands" },
+            { label: "Non-polymer" },
           )
         : undefined;
+
+      const nonPolymer: NonPolymerComponent[] = [];
+
+      if (nonPolymerSource) {
+        for (const type of NON_POLYMER_TYPES) {
+          const selector = await plugin.builders.structure.tryCreateComponentStatic(
+            nonPolymerSource,
+            type,
+          );
+
+          if (selector) {
+            nonPolymer.push({
+              type,
+              selector,
+              representation: undefined,
+            });
+          }
+        }
+
+        const unknown =
+          await plugin.builders.structure.tryCreateComponentFromExpression(
+            nonPolymerSource,
+            UNKNOWN_EXPRESSION,
+            "rnagrainy-unknown",
+            { label: "Unknown" },
+          );
+
+        if (unknown) {
+          nonPolymer.push({
+            type: "unknown",
+            selector: unknown,
+            representation: undefined,
+          });
+        }
+      }
 
       entries.set(input.id, {
         model,
@@ -198,7 +256,6 @@ export async function createMolstarViewer(
         polymer: polymer ?? structure,
         nonPolymer,
         representation: undefined,
-        nonPolymerRepresentation: undefined,
         representationType: "ball-and-stick",
         colorMode: "uniform",
         color: input.color,
@@ -234,7 +291,7 @@ export async function createMolstarViewer(
   return {
     failedStructures,
     modelNumbers,
-    hasNonPolymer: [...entries.values()].some((entry) => entry.nonPolymer),
+    hasNonPolymer: [...entries.values()].some((entry) => entry.nonPolymer.length > 0),
     setNonPolymerVisibility(visible) {
       nonPolymerVisible = visible;
       entries.forEach(applyVisibility);

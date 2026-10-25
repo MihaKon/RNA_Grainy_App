@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -57,26 +57,14 @@ describe("StructureViewer", () => {
     expect(screen.getByRole("combobox", { name: "Representation" })).toBeDisabled();
   });
 
-  it("switches between the models of a multi-model structure", async () => {
-    const setModel = vi.fn(() => Promise.resolve());
-    createMolstarViewer.mockResolvedValue(
-      fakeViewer({ modelNumbers: [2, 5, 7], setModel }),
-    );
-    const user = userEvent.setup();
+  it("leaves multi-model navigation inside Molstar", async () => {
+    createMolstarViewer.mockResolvedValue(fakeViewer({ modelNumbers: [2, 5, 7] }));
     renderViewer();
 
-    const modelSelect = await screen.findByRole("combobox", { name: "Model" });
-    const options = within(modelSelect).getAllByRole("option");
-    expect(options.map((option) => option.textContent)).toEqual([
-      "2 (1 of 3)",
-      "5 (2 of 3)",
-      "7 (3 of 3)",
-    ]);
-
-    await user.selectOptions(modelSelect, "5 (2 of 3)");
-
-    expect(setModel).toHaveBeenCalledWith(1);
-    expect(modelSelect).toHaveValue("1");
+    expect(
+      await screen.findByRole("combobox", { name: "Representation" }),
+    ).toBeEnabled();
+    expect(screen.queryByRole("combobox", { name: "Model" })).not.toBeInTheDocument();
   });
 
   it("hides the model switch for a single-model structure", async () => {
