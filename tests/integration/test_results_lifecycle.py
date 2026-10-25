@@ -24,6 +24,8 @@ def test_results_lifecycle(
     result = upload_response.json()
     workspace_id = result["workspace_id"]
     files = result["files"]
+    metadata_url = f"/api/results/{workspace_id}"
+    assert client.get(metadata_url).json() == result
 
     download_urls = {
         "reference": files["reference_url"],
@@ -50,6 +52,7 @@ def test_results_lifecycle(
         "reference": workspace_dir / "reference.mmcif",
         "coarse_cif": workspace_dir / "coarse.mmcif",
         "coarse_pdb": workspace_dir / "coarse.pdb",
+        "metadata": workspace_dir / "result.json",
     }
 
     for file_path in expected_files.values():
@@ -76,3 +79,4 @@ def test_results_lifecycle(
 
     expired_download_response = client.get(download_urls["reference"])
     assert expired_download_response.status_code == 404
+    assert client.get(metadata_url).status_code == 404

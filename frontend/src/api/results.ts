@@ -1,7 +1,19 @@
 import { queryOptions } from "@tanstack/react-query";
 
-import { apiFetch } from "./client";
+import { apiFetch, apiRequest } from "./client";
 import type { CoarseGrainResult, ResultFiles } from "./types";
+
+export const resultQueryOptions = (workspaceId: string) =>
+  queryOptions({
+    queryKey: ["results", workspaceId, "metadata"],
+    queryFn: ({ signal }) =>
+      apiRequest<CoarseGrainResult>(`/api/results/${encodeURIComponent(workspaceId)}`, {
+        signal,
+      }),
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: false,
+  });
 
 export interface ResultStructures {
   reference: string;

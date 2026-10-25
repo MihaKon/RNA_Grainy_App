@@ -10,6 +10,8 @@ describe("routes", () => {
     mockFetch({
       "GET /api/config": () => jsonResponse(appConfig),
       "GET /api/models": () => jsonResponse(models),
+      "GET /api/results/unknown-workspace": () =>
+        jsonResponse({ detail: "Invalid workspace ID." }, 422),
     });
   });
 
@@ -39,12 +41,12 @@ describe("routes", () => {
     expect(documentationLink).toHaveAttribute("aria-current", "page");
   });
 
-  it("explains that a result is unavailable without its data", () => {
+  it("explains that an invalid result is unavailable", async () => {
     renderApp("/results/unknown-workspace");
 
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Result not available",
-    );
+    expect(
+      await screen.findByRole("heading", { name: "Result not available" }),
+    ).toHaveTextContent("Result not available");
   });
 
   it("renders the not found page for unknown paths", () => {

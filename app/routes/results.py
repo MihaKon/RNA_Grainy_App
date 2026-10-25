@@ -2,12 +2,23 @@ from fastapi import APIRouter, Query, status
 from fastapi.responses import FileResponse, Response
 
 from app.exceptions import InvalidRequestError
+from app.models.api import CoarseGrainResult
 from app.models.form import SupportedFormats
 from app.services.workspaces import WorkspaceManager
 
 FILE_TYPES = ["reference", "coarse"]
 
 router = APIRouter(prefix="/api/results", tags=["results"])
+
+
+@router.get("/{workspace_id}", response_model=CoarseGrainResult)
+async def get_result(workspace_id: str) -> FileResponse:
+    file_path = WorkspaceManager.get_file_path(workspace_id, "result.json")
+    return FileResponse(
+        path=file_path,
+        media_type="application/json",
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @router.get("/{workspace_id}/{file_type}")

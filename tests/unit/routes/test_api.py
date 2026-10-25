@@ -123,6 +123,10 @@ class TestCoarseGrainPreset:
         workspace_id = result["workspace_id"]
 
         assert result["filename"] == "1EHZ"
+        assert (
+            client.get(f"/api/results/{response.json()['workspace_id']}").json()
+            == response.json()
+        )
         assert result["reference_format"] == "mmcif"
         assert result["coarse_format"] == "mmcif"
         assert result["model"]["id"] == "SimModel"
@@ -276,6 +280,10 @@ class TestCoarseGrainPreset:
         assert model["id"] == "custom"
         assert model["description"] == json.loads(custom_model)["description"]
         assert model["image_url"] is None
+        assert (
+            client.get(f"/api/results/{response.json()['workspace_id']}").json()
+            == response.json()
+        )
 
 
 class TestAtomCounts:
@@ -356,6 +364,10 @@ class TestCoarseGrainFile:
 
         assert response.status_code == 200
         assert response.json()["filename"] == "1GCT"
+        assert (
+            client.get(f"/api/results/{response.json()['workspace_id']}").json()
+            == response.json()
+        )
         assert response.json()["reference_format"] == reference_format
 
     @pytest.mark.parametrize(
@@ -422,3 +434,7 @@ class TestCoarseGrainRCSB:
 
         assert response.status_code == 200
         assert response.json()["filename"] == "4GXY"
+        assert (
+            client.get(f"/api/results/{response.json()['workspace_id']}").json()
+            == response.json()
+        )
