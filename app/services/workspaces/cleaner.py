@@ -4,12 +4,10 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from app.services.workspaces.paths import CONSUMED_MARKER, is_valid_uuid
+from app.services.workspaces.paths import is_valid_uuid
 from app.settings import (
-    WORKSPACE_CONSUMED_LIFETIME,
     WORKSPACE_MAX_LIFETIME,
     WORKSPACE_STORAGE_DIR,
-    WORKSPACE_STORAGE_MAX_SIZE,
 )
 
 logger = logging.getLogger(__name__)
@@ -20,15 +18,9 @@ class WorkspaceSnapshot:
     path: Path
     modified_at: float
     size: int
-    consumed_at: float | None = None
 
     def is_expired(self, now: float) -> bool:
-        if now - self.modified_at >= WORKSPACE_MAX_LIFETIME:
-            return True
-        return (
-            self.consumed_at is not None
-            and now - self.consumed_at >= WORKSPACE_CONSUMED_LIFETIME
-        )
+        return now - self.modified_at >= WORKSPACE_MAX_LIFETIME
 
 
 class WorkspaceCleaner:
@@ -42,13 +34,6 @@ class WorkspaceCleaner:
 
         return total_size
 
-    @staticmethod
-    def _get_consumed_time(directory: Path) -> float | None:
-        try:
-            return (directory / CONSUMED_MARKER).stat().st_mtime
-        except FileNotFoundError:
-            return None
-
     @classmethod
     def _scan_workspaces(cls) -> list[WorkspaceSnapshot]:
         workspaces: list[WorkspaceSnapshot] = []
@@ -60,7 +45,9 @@ class WorkspaceCleaner:
                 try:
                     if not workspace_dir.is_dir():
                         continue
-                    workspace_modification_time = workspace_dir.stat().st_mtime
+                    metadata = workspace_dir / "result.json"
+                    timestamp_path = metadata if metadata.is_file() else workspace_dir
+                    workspace_modification_time = timestamp_path.stat().st_mtime
                     workspace_size = cls.get_directory_size(workspace_dir)
 
                     workspaces.append(
@@ -68,7 +55,6 @@ class WorkspaceCleaner:
                             path=workspace_dir,
                             modified_at=workspace_modification_time,
                             size=workspace_size,
-                            consumed_at=cls._get_consumed_time(workspace_dir),
                         )
                     )
                 except FileNotFoundError:
@@ -91,19 +77,15 @@ class WorkspaceCleaner:
         return workspaces
 
     @classmethod
-    def _remove_expired_workspaces(
-        cls, workspaces: list[WorkspaceSnapshot]
-    ) -> tuple[list[WorkspaceSnapshot], int]:
+    def _remove_expired_workspaces(cls, workspaces: list[WorkspaceSnapshot]) -> int:
         now = time.time()
         removed_workspaces_count = 0
-        remaining_workspaces: list[WorkspaceSnapshot] = []
         for workspace in workspaces:
             try:
                 if workspace.is_expired(now):
                     shutil.rmtree(workspace.path)
                     removed_workspaces_count += 1
                     continue
-                remaining_workspaces.append(workspace)
             except FileNotFoundError:
                 continue
             except OSError:
@@ -112,59 +94,18 @@ class WorkspaceCleaner:
                     workspace.path.name,
                     exc_info=True,
                 )
-                remaining_workspaces.append(workspace)
-
-        return remaining_workspaces, removed_workspaces_count
-
-    @classmethod
-    def _remove_workspaces_over_storage_limit(
-        cls, workspaces: list[WorkspaceSnapshot]
-    ) -> int:
-        removed_workspaces_count = 0
-
-        total_size = sum(workspace.size for workspace in workspaces)
-        oldest_workspaces = sorted(
-            workspaces, key=lambda workspace: workspace.modified_at
-        )
-
-        for workspace in oldest_workspaces:
-            if total_size <= WORKSPACE_STORAGE_MAX_SIZE:
-                break
-            try:
-                shutil.rmtree(workspace.path)
-                total_size -= workspace.size
-                removed_workspaces_count += 1
-
-                logger.info(
-                    "Removed workspace %s because storage limit was exceeded.",
-                    workspace.path.name,
-                )
-            except FileNotFoundError:
-                total_size -= workspace.size
-            except OSError:
-                logger.warning(
-                    "Could not remove workspace %s.",
-                    workspace.path.name,
-                    exc_info=True,
-                )
-
-        if total_size > WORKSPACE_STORAGE_MAX_SIZE:
-            logger.warning(
-                "Workspace storage still exceeds the limit: %d bytes used, %d bytes allowed.",
-                total_size,
-                WORKSPACE_STORAGE_MAX_SIZE,
-            )
 
         return removed_workspaces_count
 
     @classmethod
-    def cleanup_workspaces(cls) -> int:
-        """Remove expired workspaces and enforce the storage size limit."""
-        workspaces = cls._scan_workspaces()
-        remaining_workspaces, expired_count = cls._remove_expired_workspaces(workspaces)
-        storage_count = cls._remove_workspaces_over_storage_limit(remaining_workspaces)
+    def get_storage_size(cls) -> int:
+        return sum(workspace.size for workspace in cls._scan_workspaces())
 
-        removed_count = expired_count + storage_count
+    @classmethod
+    def cleanup_workspaces(cls) -> int:
+        """Remove only workspaces whose 24-hour lifetime has elapsed."""
+        workspaces = cls._scan_workspaces()
+        removed_count = cls._remove_expired_workspaces(workspaces)
 
         if removed_count:
             logger.info("Removed %d workspaces.", removed_count)

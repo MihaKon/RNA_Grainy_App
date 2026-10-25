@@ -148,7 +148,7 @@ function ResultLoadError({ error }: { error: Error }) {
       </p>
       <p className="text-ink-2">
         {expired
-          ? "Result files are kept for about an hour after they are first opened. "
+          ? "Result files are kept for 24 hours after processing. "
           : `${getErrorMessage(error)} `}
         Please{" "}
         <Link to="/" className="text-accent hover:text-accent-hover">

@@ -21,7 +21,6 @@ function mockResultFiles() {
     [`GET ${files.reference_url}`]: () => new Response("reference"),
     [`GET ${files.coarse_mmcif_url}`]: () => new Response("coarse mmcif"),
     [`GET ${files.coarse_pdb_url ?? ""}`]: () => new Response("coarse pdb"),
-    [`POST ${files.consumed_url}`]: () => new Response(null, { status: 204 }),
   });
 }
 
@@ -148,7 +147,6 @@ describe("ResultView", () => {
       [`GET ${files.coarse_mmcif_url}`]: () => new Response("coarse mmcif"),
       [`GET ${files.coarse_pdb_url ?? ""}`]: () =>
         jsonResponse({ detail: "Server error." }, 500),
-      [`POST ${files.consumed_url}`]: () => new Response(null, { status: 204 }),
     });
     renderResult();
 
@@ -185,7 +183,7 @@ describe("ResultView", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("This result has expired.");
-    expect(alert).toHaveTextContent("kept for about an hour");
+    expect(alert).toHaveTextContent("kept for 24 hours");
     expect(screen.getByRole("button", { name: "mmCIF" })).toBeDisabled();
   });
 

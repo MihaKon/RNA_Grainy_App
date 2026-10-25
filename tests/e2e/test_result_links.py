@@ -1,7 +1,10 @@
+import os
+import time
+
 import pytest
 from playwright.sync_api import Page, expect
 
-from app.services.workspaces import WorkspaceManager
+from app.services.workspaces import WorkspaceCleaner, WorkspaceManager
 
 
 @pytest.mark.parametrize("preset_id", ["1EHZ", "1MNX"])
@@ -18,6 +21,13 @@ def test_api_result_opens_in_another_tab_and_survives_reload(
     workspace_id = result["workspace_id"]
     link = f"{base_url}/results/{workspace_id}/"
     shared = page.context.new_page()
+    methods: list[str] = []
+    shared.on(
+        "request",
+        lambda request: (
+            methods.append(request.method) if "/api/results/" in request.url else None
+        ),
+    )
 
     try:
         shared.goto(link)
@@ -44,6 +54,29 @@ def test_api_result_opens_in_another_tab_and_survives_reload(
             expect(indicator).to_have_text("Model 1 / 13")
             shared.get_by_role("button", name="Next Model", exact=True).click()
             expect(indicator).to_have_text("Model 2 / 13")
+        assert methods and set(methods) == {"GET"}
+        metadata = WorkspaceManager.get_file_path(workspace_id, "result.json")
+        for age, available in [(2 * 3600, True), (25 * 3600, False)]:
+            timestamp = time.time() - age
+            os.utime(metadata, (timestamp, timestamp))
+            own_workspaces = [
+                w
+                for w in WorkspaceCleaner._scan_workspaces()
+                if w.path.name == workspace_id
+            ]
+            WorkspaceCleaner._remove_expired_workspaces(own_workspaces)
+            shared.reload()
+            if available:
+                expect(
+                    shared.get_by_role("region", name="Conversion summary")
+                ).to_be_visible()
+                expect(
+                    shared.get_by_role("button", name="mmCIF", exact=True)
+                ).to_be_enabled()
+            else:
+                expect(
+                    shared.get_by_role("heading", name="Result not available")
+                ).to_be_visible()
     finally:
         shared.close()
         WorkspaceManager.cleanup_workspace(workspace_id)

@@ -8,9 +8,11 @@ from app.exceptions import FileProcessingError, ResultNotFoundError
 from app.settings import (
     MIN_FREE_DISK_SIZE,
     WORKSPACE_STORAGE_DIR,
+    WORKSPACE_STORAGE_MAX_SIZE,
 )
 
-from .paths import CONSUMED_MARKER, get_workspace_dir, get_workspace_file_path
+from .cleaner import WorkspaceCleaner
+from .paths import get_workspace_dir, get_workspace_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +61,12 @@ class WorkspaceManager:
                 "The server temporarily does not have enough disk space."
             )
 
+        storage_size = await asyncio.to_thread(WorkspaceCleaner.get_storage_size)
+        if storage_size + required_size > WORKSPACE_STORAGE_MAX_SIZE:
+            raise FileProcessingError(
+                "Workspace storage is full. Please try again later."
+            )
+
         file_path = get_workspace_file_path(workspace_id, filename)
         try:
             await asyncio.to_thread(
@@ -86,23 +94,6 @@ class WorkspaceManager:
             raise ResultNotFoundError("Requested file does not exist or has expired.")
 
         return file_path
-
-    @classmethod
-    def mark_consumed(cls, workspace_id: str) -> None:
-        """Start the grace period after which the cleaner removes the workspace."""
-        marker = get_workspace_dir(workspace_id) / CONSUMED_MARKER
-
-        try:
-            marker.touch(exist_ok=False)
-        except (FileExistsError, FileNotFoundError):
-            # Already consumed, or the workspace is gone; the grace period stays as is.
-            pass
-        except OSError:
-            logger.warning(
-                "Could not mark workspace %s as consumed.",
-                workspace_id,
-                exc_info=True,
-            )
 
     @classmethod
     def cleanup_workspace(cls, workspace_id: str) -> None:

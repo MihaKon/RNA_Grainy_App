@@ -51,7 +51,6 @@ class ResultFiles(BaseModel):
     reference_url: str
     coarse_mmcif_url: str
     coarse_pdb_url: str | None
-    consumed_url: str
 
 
 class CoarseGrainResult(BaseModel):

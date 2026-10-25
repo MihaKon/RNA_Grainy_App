@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+import app.services.workspaces.manager as manager_module
 from app.exceptions import FileProcessingError
 from app.services.workspaces import WorkspaceManager
-from app.services.workspaces.paths import CONSUMED_MARKER
 
 pytestmark = pytest.mark.usefixtures("isolated_workspace_storage")
 
@@ -44,7 +44,7 @@ def test_missing_or_invalid_metadata_returns_a_json_error(
     assert response.json()["detail"]
 
 
-def test_metadata_reads_do_not_consume_or_extend_a_result(
+def test_metadata_reads_do_not_extend_a_result(
     client: TestClient,
     isolated_workspace_storage: Path,
 ) -> None:
@@ -69,7 +69,6 @@ def test_metadata_reads_do_not_consume_or_extend_a_result(
         assert response.headers["content-type"] == "application/json"
         assert response.headers["cache-control"] == "no-store"
 
-    assert not (workspace / CONSUMED_MARKER).exists()
     assert workspace.stat().st_mtime_ns == modified_at
 
 
@@ -95,3 +94,30 @@ def test_metadata_write_failure_removes_the_incomplete_workspace(
     assert response.status_code == 422
     assert response.json()["detail"] == "Could not save result metadata."
     assert list(isolated_workspace_storage.iterdir()) == []
+
+
+def test_full_storage_rejects_new_conversion_without_removing_previous_results(
+    client: TestClient,
+    isolated_workspace_storage: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    previous = client.post(
+        "/api/coarse-grain/preset",
+        data={"preset_id": "1EHZ", "selected_model": "SimModel"},
+    )
+    assert previous.status_code == 200
+    result = previous.json()
+    monkeypatch.setattr(manager_module, "WORKSPACE_STORAGE_MAX_SIZE", 0)
+
+    rejected = client.post(
+        "/api/coarse-grain/preset",
+        data={"preset_id": "1EHZ", "selected_model": "SimModel"},
+    )
+
+    assert rejected.status_code == 422
+    assert "storage is full" in rejected.json()["detail"]
+    assert list(isolated_workspace_storage.iterdir()) == [
+        isolated_workspace_storage / result["workspace_id"]
+    ]
+    assert client.get(result["files"]["coarse_mmcif_url"]).status_code == 200
+    assert client.get(f"/api/results/{result['workspace_id']}").json() == result

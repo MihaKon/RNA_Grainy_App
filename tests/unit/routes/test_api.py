@@ -137,7 +137,7 @@ class TestCoarseGrainPreset:
         assert (isolated_workspace_storage / workspace_id).is_dir()
 
         files = result["files"]
-        assert files["consumed_url"] == f"/api/results/{workspace_id}/consumed"
+        assert "consumed_url" not in files
         for url in (
             files["reference_url"],
             files["coarse_mmcif_url"],

@@ -1,15 +1,14 @@
-import os
 from pathlib import Path
 
 import pytest
 
+import app.services.workspaces.manager as manager_module
 from app.exceptions import (
     FileProcessingError,
     InvalidRequestError,
     ResultNotFoundError,
 )
 from app.services.workspaces.manager import WorkspaceManager
-from app.services.workspaces.paths import CONSUMED_MARKER
 from app.settings import MIN_FREE_DISK_SIZE
 
 
@@ -140,39 +139,32 @@ def test_cleanup_workspace_ignores_missing_directory(
     assert not workspace_dir.exists()
 
 
-def test_mark_consumed_keeps_files_and_creates_marker(
+@pytest.mark.anyio
+@pytest.mark.parametrize(("limit", "succeeds"), [(104, False), (105, True)])
+async def test_storage_limit_rejects_new_files_without_removing_existing_results(
     isolated_workspace_storage: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    limit: int,
+    succeeds: bool,
 ) -> None:
+    existing = WorkspaceManager.setup_workspace_dir(
+        WorkspaceManager.create_workspace_id()
+    )
+    existing_file = existing / "coarse.mmcif"
+    existing_file.write_bytes(b"A" * 100)
     workspace_id = WorkspaceManager.create_workspace_id()
-    workspace_dir = WorkspaceManager.setup_workspace_dir(workspace_id)
-    workspace_file = workspace_dir / "coarse.cif"
-    workspace_file.write_text("example content", encoding="utf-8")
+    workspace = WorkspaceManager.setup_workspace_dir(workspace_id)
+    monkeypatch.setattr(manager_module, "WORKSPACE_STORAGE_MAX_SIZE", limit)
+    monkeypatch.setattr(WorkspaceManager, "_get_free_disk_size", lambda: 10**12)
 
-    WorkspaceManager.mark_consumed(workspace_id)
+    if succeeds:
+        result = await WorkspaceManager.create_file(
+            workspace_id, "ąRNA", "coarse.mmcif"
+        )
+        assert result.read_text(encoding="utf-8") == "ąRNA"
+    else:
+        with pytest.raises(FileProcessingError, match="storage is full"):
+            await WorkspaceManager.create_file(workspace_id, "ąRNA", "coarse.mmcif")
+        assert not (workspace / "coarse.mmcif").exists()
 
-    assert workspace_file.is_file()
-    assert (workspace_dir / CONSUMED_MARKER).is_file()
-
-
-def test_mark_consumed_keeps_first_consumed_time(
-    isolated_workspace_storage: Path,
-) -> None:
-    workspace_id = WorkspaceManager.create_workspace_id()
-    workspace_dir = WorkspaceManager.setup_workspace_dir(workspace_id)
-    marker = workspace_dir / CONSUMED_MARKER
-
-    WorkspaceManager.mark_consumed(workspace_id)
-    os.utime(marker, (100.0, 100.0))
-    WorkspaceManager.mark_consumed(workspace_id)
-
-    assert marker.stat().st_mtime == 100.0
-
-
-def test_mark_consumed_ignores_missing_workspace(
-    isolated_workspace_storage: Path,
-) -> None:
-    workspace_id = WorkspaceManager.create_workspace_id()
-
-    WorkspaceManager.mark_consumed(workspace_id)
-
-    assert not (isolated_workspace_storage / workspace_id).exists()
+    assert existing_file.read_bytes() == b"A" * 100

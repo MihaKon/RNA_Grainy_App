@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Query, status
-from fastapi.responses import FileResponse, Response
+from fastapi import APIRouter, Query
+from fastapi.responses import FileResponse
 
 from app.exceptions import InvalidRequestError
 from app.models.api import CoarseGrainResult
@@ -39,12 +39,3 @@ async def get_result_file(
     file_path = WorkspaceManager.get_file_path(workspace_id, filename)
 
     return FileResponse(path=file_path, media_type="application/octet-stream")
-
-
-@router.post(
-    "/{workspace_id}/consumed",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def mark_result_as_consumed(workspace_id: str) -> Response:
-    WorkspaceManager.mark_consumed(workspace_id)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
