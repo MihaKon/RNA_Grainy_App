@@ -37,7 +37,7 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
       </Link>
 
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="font-display text-hero-compact text-ink lg:text-heading">
+        <h1 className="max-w-full min-w-0 font-display text-hero-compact wrap-anywhere text-ink lg:text-heading">
           {result.filename}
         </h1>
         <div
