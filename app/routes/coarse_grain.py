@@ -10,6 +10,7 @@ from app.services.coarse_graining import (
     read_preset_structure,
     read_uploaded_structure,
 )
+from app.services.workspaces import WorkspaceManager
 
 router = APIRouter(
     prefix="/api/coarse-grain",
@@ -32,15 +33,23 @@ async def process_and_build_result(
         chains=chains,
         custom_model_data=custom_model_data,
     )
-    return build_coarse_grain_result(
-        request,
-        source,
-        outcome,
-        upload_request.selected_model,
-        models=models,
-        chains=chains,
-        custom_model_data=custom_model_data,
-    )
+    try:
+        result = build_coarse_grain_result(
+            request,
+            source,
+            outcome,
+            upload_request.selected_model,
+            models=models,
+            chains=chains,
+            custom_model_data=custom_model_data,
+        )
+        await WorkspaceManager.create_file(
+            outcome.workspace_id, result.model_dump_json(), "result.json"
+        )
+    except Exception:
+        WorkspaceManager.cleanup_workspace(outcome.workspace_id)
+        raise
+    return result
 
 
 @router.post("/file")

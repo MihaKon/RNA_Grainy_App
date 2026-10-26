@@ -59,6 +59,153 @@ Detailed descriptions, mapping rules, and references are available in the
 
 ![RNAgrainy model documentation](docs/screenshots/model-documentation.png)
 
+## Public API
+
+The public API requires no account or API key.
+
+- **Server:** `https://rnagrainy.cs.put.poznan.pl`
+- **Interactive API documentation:** [Swagger UI](https://rnagrainy.cs.put.poznan.pl/docs)
+
+Conversion requests use `multipart/form-data` and return JSON with a
+`workspace_id`, conversion summary and download paths.
+
+| Method | Endpoint | Description |
+| ------ | -------- | ----------- |
+| `GET` | `/api/config` | Supported formats, upload limits and preset IDs |
+| `GET` | `/api/models` | Available coarse-grained models and their IDs |
+| `POST` | `/api/coarse-grain/file` | Coarse-grain an uploaded PDB or mmCIF file |
+| `POST` | `/api/coarse-grain/preset` | Coarse-grain a built-in example structure |
+| `POST` | `/api/coarse-grain/rcsb` | Fetch a structure from RCSB PDB and coarse-grain it |
+| `POST` | `/api/models/custom/validate` | Validate a custom model definition |
+| `GET` | `/api/results/{workspace_id}` | Retrieve conversion metadata for an existing result |
+| `GET` | `/api/results/{workspace_id}/{file_type}` | Retrieve a reference or CG file; requires `file_format` |
+
+### Find and select a model
+
+Examples use Bash, `curl` and `jq`.
+
+```bash
+BASE="https://rnagrainy.cs.put.poznan.pl"
+
+curl --fail-with-body -sS "$BASE/api/models" -o models.json
+jq -r '.[] | [.id, .name] | @tsv' models.json
+```
+
+Set `selected_model` to the model's **`id`**, e.g. `SimModel` for SimRNA:
+
+```bash
+MODEL="SimModel"
+
+curl --fail-with-body -sS "$BASE/api/config" | jq
+```
+
+### Coarse-grain a structure
+
+**Upload a local PDB or mmCIF file:**
+
+```bash
+curl --fail-with-body -sS "$BASE/api/coarse-grain/file" \
+  -F "file=@structure.pdb" \
+  -F "selected_model=$MODEL" \
+  -o result-file.json
+```
+
+**Use a built-in preset:**
+
+```bash
+curl --fail-with-body -sS "$BASE/api/coarse-grain/preset" \
+  -F "preset_id=1EHZ" \
+  -F "selected_model=$MODEL" \
+  -o result-preset.json
+```
+
+**Fetch a structure from RCSB PDB:**
+
+```bash
+curl --fail-with-body -sS "$BASE/api/coarse-grain/rcsb" \
+  -F "rcsb_id=2F8S" \
+  -F "selected_model=$MODEL" \
+  -o result-rcsb.json
+```
+
+Optionally add `-F "chains=A,B"` or `-F "models=1,2"` to select input chains or
+structural model numbers. By default, all chains and models are included.
+
+### Use a custom model
+
+Export a model from the Custom Model Creator on the
+[RNAgrainy website](https://rnagrainy.cs.put.poznan.pl/), or save the
+[example definition](tests/data/custom_model.json) as `custom_model.json`.
+
+Validate the definition first. HTTP `204` means that validation succeeded:
+
+```bash
+curl --fail-with-body -sS "$BASE/api/models/custom/validate" \
+  -F "custom_model_data=<custom_model.json" \
+  -w '\nHTTP %{http_code}\n'
+```
+
+Then submit it with `selected_model=custom`:
+
+```bash
+curl --fail-with-body -sS "$BASE/api/coarse-grain/preset" \
+  -F "preset_id=1EHZ" \
+  -F "selected_model=custom" \
+  -F "custom_model_data=<custom_model.json" \
+  -o result-custom.json
+```
+
+Custom models also work with `/file` and `/rcsb`. The `<custom_model.json`
+syntax sends JSON as a text form field.
+
+### Download the result
+
+Choose a saved response:
+
+```bash
+RESULT="result-preset.json"
+jq '{workspace_id, atom_counts, files}' "$RESULT"
+
+CG_URL=$(jq -er '.files.coarse_mmcif_url' "$RESULT")
+curl --fail-with-body -sS "$BASE$CG_URL" -o coarse.mmcif
+```
+
+Prepend `$BASE` to returned paths. `reference_url` points to the input structure;
+`coarse_pdb_url` is `null` when PDB output is unavailable:
+
+```bash
+PDB_URL=$(jq -r '.files.coarse_pdb_url // empty' "$RESULT")
+if [ -n "$PDB_URL" ]; then
+  curl --fail-with-body -sS "$BASE$PDB_URL" -o coarse.pdb
+fi
+```
+
+### Open or share a result page
+
+Open the result in the web viewer using its `workspace_id`:
+
+```bash
+WORKSPACE_ID=$(jq -er '.workspace_id' "$RESULT")
+echo "$BASE/results/$WORKSPACE_ID"
+```
+
+The link works in other tabs and browsers while the result is available.
+Retrieve its metadata directly with:
+
+```bash
+curl --fail-with-body -sS "$BASE/api/results/$WORKSPACE_ID" | jq
+```
+
+### Limits and availability
+
+- Structure files: up to 100 MiB. Custom JSON: up to 5,000 characters and 8 KiB.
+  Current limits are available at `/api/config`.
+- Invalid input returns HTTP `422` with a JSON `detail` message; unavailable
+  result files return HTTP `404`.
+- Results are kept for 24 hours after processing. Opening the viewer or downloading
+  files through the API does not change this period. If storage fills up, the oldest
+  results may be removed sooner.
+
 ## Local Development
 
 ### Tech stack
@@ -72,125 +219,83 @@ Detailed descriptions, mapping rules, and references are available in the
 ### Project structure
 
 ```text
-app/                  FastAPI backend
-  coarse_grain/       coarse-graining algorithm and model definitions
-  routes/             JSON API endpoints and the frontend catch-all route
-  services/           structure loading, coarse-graining, and result workspaces
-  static/             example structures and model images
-frontend/             React + TypeScript frontend (Vite)
-  src/api/            typed API client and TanStack Query hooks
-  src/features/       upload form, model creator, results viewer, model docs
-  src/pages/          routed pages (home, results, documentation, about)
-  src/components/     layout, brand, and shared UI components
-tests/                backend unit, integration, and Playwright E2E tests
-docs/screenshots/     screenshots used in this README
+app/                FastAPI backend and coarse-graining algorithm
+frontend/           React frontend
+tests/              Unit, integration and E2E tests
+docs/screenshots/   Application screenshots
 ```
-
-### API
-
-| Method | Endpoint                                  | Description                                    |
-| ------ | ----------------------------------------- | ---------------------------------------------- |
-| `GET`  | `/api/config`                             | Supported formats, upload limits, example IDs  |
-| `GET`  | `/api/models`                             | Available coarse-grained models                |
-| `POST` | `/api/coarse-grain/file`                  | Coarse-grain an uploaded structure file        |
-| `POST` | `/api/coarse-grain/rcsb`                  | Coarse-grain a structure fetched by PDB ID     |
-| `POST` | `/api/coarse-grain/preset`                | Coarse-grain one of the example structures     |
-| `GET`  | `/api/results/{workspace_id}/{file_type}` | Download the reference or coarse-grained file  |
-| `POST` | `/api/results/{workspace_id}/consumed`    | Remove a result workspace after it was loaded  |
-
-The interactive API documentation is available at `/docs` when the backend is running.
 
 ### Requirements
 
-Install the following tools:
-
-- Python 3.12
-- Pipenv
+- Python 3.12 and Pipenv
 - Node.js 24 with npm
-- Docker with Docker Compose
+- Docker with Docker Compose (optional)
 
 ### Install dependencies
 
-Install Pipenv:
+Run from the repository root:
 
 ```bash
 python -m pip install pipenv==2026.6.2
-```
-
-Install Python dependencies, including development tools:
-
-```bash
 pipenv sync --dev
-```
-
-Install frontend dependencies:
-
-```bash
-cd frontend
-npm ci
-```
-
-Install the Git hooks configured by the project:
-
-```bash
+npm --prefix frontend ci
 pipenv run pre-commit install
 ```
 
-### Start the development environment
+### Development
 
-Start the backend in the first terminal:
+Backend:
 
 ```bash
 pipenv run uvicorn app.main:app --port 5050 --reload
 ```
 
-Start the frontend dev server in a second terminal:
+Frontend, in a separate terminal:
 
 ```bash
-cd frontend
-npm run dev
+npm --prefix frontend run dev
 ```
 
-The application is available at `http://127.0.0.1:5173`. The Vite dev server proxies
-the API to `http://127.0.0.1:5050`; override it with the `BACKEND_URL` environment
-variable.
+Open `http://localhost:5173`. The frontend proxies API requests to
+`http://127.0.0.1:5050`; override this with `BACKEND_URL`.
 
-### Run the production build
-
-Build the frontend and let FastAPI serve it:
+### Production build
 
 ```bash
-cd frontend && npm run build && cd ..
+npm --prefix frontend run build
 pipenv run uvicorn app.main:app --port 5050
 ```
 
-Or build and run the Docker image, which builds the frontend itself:
+Or use Docker:
 
 ```bash
-docker compose -f compose.yaml -f compose.dev.yaml up --build app
+docker compose up --build
 ```
 
-Either way, the application is available at `http://127.0.0.1:5050`.
+Open `http://127.0.0.1:5050`.
 
 ### Checks
 
-Backend: `pipenv run ruff check .`, `pipenv run mypy`, and the test suites, run
-separately as in CI (Playwright's event loop clashes with the async unit tests when they
-share a session; the E2E tests also need a frontend build):
+Backend (build the frontend before running E2E tests):
 
 ```bash
+pipenv run ruff check .
+pipenv run mypy
 pipenv run pytest tests/unit
 pipenv run pytest tests/integration
 pipenv run pytest tests/e2e
 ```
 
-Frontend, in `frontend/`: `npm run lint`, `npm run format:check`, `npm run typecheck`,
-`npm test`.
+Frontend:
 
-The pre-commit hooks run the formatters, linters, type checks, and the backend unit and
-integration tests together with the frontend checks. GitHub Actions runs all checks,
-including the E2E tests and a Docker Compose health check, on every pull request and on
-pushes to `main` and `develop`.
+```bash
+npm --prefix frontend run lint
+npm --prefix frontend run format:check
+npm --prefix frontend run typecheck
+npm --prefix frontend test
+```
+
+Git hooks and CI automate the project checks.
 
 ## Authors
 

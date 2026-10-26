@@ -51,7 +51,6 @@ export const coarseGrainResult: CoarseGrainResult = {
       "/api/results/4f1c2a9e-0000-4000-8000-000000000000/coarse?file_format=mmcif",
     coarse_pdb_url:
       "/api/results/4f1c2a9e-0000-4000-8000-000000000000/coarse?file_format=pdb",
-    consumed_url: "/api/results/4f1c2a9e-0000-4000-8000-000000000000/consumed",
   },
   atom_counts: { original: 1821, coarse: 310, reduction: 0.8298 },
   selected_models: [],

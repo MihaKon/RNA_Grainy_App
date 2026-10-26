@@ -10,7 +10,7 @@ from app.settings import (
     WORKSPACE_STORAGE_DIR,
 )
 
-from .paths import CONSUMED_MARKER, get_workspace_dir, get_workspace_file_path
+from .paths import get_workspace_dir, get_workspace_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -86,23 +86,6 @@ class WorkspaceManager:
             raise ResultNotFoundError("Requested file does not exist or has expired.")
 
         return file_path
-
-    @classmethod
-    def mark_consumed(cls, workspace_id: str) -> None:
-        """Start the grace period after which the cleaner removes the workspace."""
-        marker = get_workspace_dir(workspace_id) / CONSUMED_MARKER
-
-        try:
-            marker.touch(exist_ok=False)
-        except (FileExistsError, FileNotFoundError):
-            # Already consumed, or the workspace is gone; the grace period stays as is.
-            pass
-        except OSError:
-            logger.warning(
-                "Could not mark workspace %s as consumed.",
-                workspace_id,
-                exc_info=True,
-            )
 
     @classmethod
     def cleanup_workspace(cls, workspace_id: str) -> None:

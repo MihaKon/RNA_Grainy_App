@@ -21,7 +21,6 @@ function mockResultFiles() {
     [`GET ${files.reference_url}`]: () => new Response("reference"),
     [`GET ${files.coarse_mmcif_url}`]: () => new Response("coarse mmcif"),
     [`GET ${files.coarse_pdb_url ?? ""}`]: () => new Response("coarse pdb"),
-    [`POST ${files.consumed_url}`]: () => new Response(null, { status: 204 }),
   });
 }
 
@@ -72,6 +71,77 @@ describe("ResultView", () => {
     expect(within(report).getByText("1,821")).toBeInTheDocument();
     expect(within(report).getByText("310")).toBeInTheDocument();
     expect(within(report).getByText("82.98%")).toBeInTheDocument();
+  });
+
+  it("shares the current result from the results page", async () => {
+    mockResultFiles();
+    const { user } = renderResult();
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockResolvedValue(undefined);
+
+    await user.click(await screen.findByRole("button", { name: "Share results" }));
+
+    expect(writeText).toHaveBeenCalledExactlyOnceWith(
+      `${window.location.origin}/results/${coarseGrainResult.workspace_id}/`,
+    );
+    expect(await screen.findByRole("button", { name: "Link copied" })).toBeEnabled();
+    expect(screen.getByRole("group", { name: "Download CG model" })).toBeVisible();
+    expect(screen.getByText("Result link copied to clipboard.")).toHaveAttribute(
+      "role",
+      "status",
+    );
+  });
+
+  it("provides a selectable result link when clipboard access is denied", async () => {
+    mockResultFiles();
+    const { user } = renderResult();
+    vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(
+      new DOMException("Clipboard denied", "NotAllowedError"),
+    );
+
+    await user.click(await screen.findByRole("button", { name: "Share results" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not copy automatically",
+    );
+    const input = screen.getByRole<HTMLInputElement>("textbox", {
+      name: "Result link",
+    });
+    const url = `${window.location.origin}/results/${coarseGrainResult.workspace_id}/`;
+    expect(input).toHaveValue(url);
+    expect(input).toHaveAttribute("readonly");
+
+    await user.tab();
+
+    expect(input).toHaveFocus();
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe(url.length);
+    expect(
+      screen.queryByRole("button", { name: "Link copied" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("provides the result link when the Clipboard API is unavailable", async () => {
+    mockResultFiles();
+    const { user } = renderResult();
+    const descriptor = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+    Reflect.deleteProperty(navigator, "clipboard");
+
+    try {
+      await user.click(await screen.findByRole("button", { name: "Share results" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Could not copy automatically",
+      );
+      expect(screen.getByRole("textbox", { name: "Result link" })).toHaveValue(
+        `${window.location.origin}/results/${coarseGrainResult.workspace_id}/`,
+      );
+    } finally {
+      if (descriptor) {
+        Object.defineProperty(navigator, "clipboard", descriptor);
+      }
+    }
   });
 
   it("keeps the summary and downloads available when the viewer fails", async () => {
@@ -148,7 +218,6 @@ describe("ResultView", () => {
       [`GET ${files.coarse_mmcif_url}`]: () => new Response("coarse mmcif"),
       [`GET ${files.coarse_pdb_url ?? ""}`]: () =>
         jsonResponse({ detail: "Server error." }, 500),
-      [`POST ${files.consumed_url}`]: () => new Response(null, { status: 204 }),
     });
     renderResult();
 
@@ -185,7 +254,7 @@ describe("ResultView", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("This result has expired.");
-    expect(alert).toHaveTextContent("kept for about an hour");
+    expect(alert).toHaveTextContent("kept for 24 hours");
     expect(screen.getByRole("button", { name: "mmCIF" })).toBeDisabled();
   });
 

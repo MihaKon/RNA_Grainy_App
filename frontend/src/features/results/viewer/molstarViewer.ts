@@ -1,7 +1,6 @@
 import "molstar/build/viewer/molstar.css";
 import "./molstarOverrides.css";
 
-import type { Trajectory } from "molstar/lib/mol-model/structure";
 import { PluginConfig } from "molstar/lib/mol-plugin/config";
 import type { BuiltInTrajectoryFormat } from "molstar/lib/mol-plugin-state/formats/trajectory";
 import { StructureSelectionQueries as Q } from "molstar/lib/mol-plugin-state/helpers/structure-selection-query";
@@ -29,11 +28,9 @@ export interface StructureInput {
 
 export interface MolstarViewer {
   readonly failedStructures: readonly StructureId[];
-  readonly modelNumbers: readonly number[];
   readonly hasNonPolymer: boolean;
   setVisibility(id: StructureId, visible: boolean): void;
   setNonPolymerVisibility(visible: boolean): void;
-  setModel(index: number): Promise<void>;
   setRepresentation(id: StructureId, type: RepresentationType): Promise<void>;
   setColorMode(id: StructureId, colorMode: ColorMode): Promise<void>;
   dispose(): void;
@@ -41,10 +38,6 @@ export interface MolstarViewer {
 
 type StructureSelector = Awaited<
   ReturnType<PluginUIContext["builders"]["structure"]["createStructure"]>
->;
-
-type ModelSelector = Awaited<
-  ReturnType<PluginUIContext["builders"]["structure"]["createModel"]>
 >;
 
 type ComponentSelector = NonNullable<
@@ -60,8 +53,6 @@ interface NonPolymerComponent {
 }
 
 interface StructureEntry {
-  model: ModelSelector;
-  modelNumbers: readonly number[];
   polymer: StructureSelector;
   nonPolymer: NonPolymerComponent[];
   representation: StateObjectSelector | undefined;
@@ -251,8 +242,6 @@ export async function createMolstarViewer(
       }
 
       entries.set(input.id, {
-        model,
-        modelNumbers: readModelNumbers(trajectory.data),
         polymer: polymer ?? structure,
         nonPolymer,
         representation: undefined,
@@ -286,24 +275,12 @@ export async function createMolstarViewer(
     throw new AggregateError(errors, "None of the structures could be loaded.");
   }
 
-  const modelNumbers = entries.values().next().value?.modelNumbers ?? [1];
-
   return {
     failedStructures,
-    modelNumbers,
     hasNonPolymer: [...entries.values()].some((entry) => entry.nonPolymer.length > 0),
     setNonPolymerVisibility(visible) {
       nonPolymerVisible = visible;
       entries.forEach(applyVisibility);
-    },
-    async setModel(index) {
-      const update = plugin.build();
-      for (const entry of entries.values()) {
-        if (index < entry.modelNumbers.length) {
-          update.to(entry.model).update({ modelIndex: index });
-        }
-      }
-      await update.commit();
     },
     setVisibility(id, visible) {
       const entry = getEntry(id);
@@ -327,12 +304,4 @@ export async function createMolstarViewer(
       plugin.dispose();
     },
   };
-}
-
-function readModelNumbers(trajectory: Trajectory | undefined): number[] {
-  if (!trajectory) return [1];
-  return Array.from({ length: trajectory.frameCount }, (_, index) => {
-    const frame = trajectory.getFrameAtIndex(index);
-    return "modelNum" in frame ? frame.modelNum : index + 1;
-  });
 }

@@ -4,9 +4,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from app.services.workspaces.paths import CONSUMED_MARKER, is_valid_uuid
+from app.services.workspaces.paths import is_valid_uuid
 from app.settings import (
-    WORKSPACE_CONSUMED_LIFETIME,
     WORKSPACE_MAX_LIFETIME,
     WORKSPACE_STORAGE_DIR,
     WORKSPACE_STORAGE_MAX_SIZE,
@@ -20,15 +19,9 @@ class WorkspaceSnapshot:
     path: Path
     modified_at: float
     size: int
-    consumed_at: float | None = None
 
     def is_expired(self, now: float) -> bool:
-        if now - self.modified_at >= WORKSPACE_MAX_LIFETIME:
-            return True
-        return (
-            self.consumed_at is not None
-            and now - self.consumed_at >= WORKSPACE_CONSUMED_LIFETIME
-        )
+        return now - self.modified_at >= WORKSPACE_MAX_LIFETIME
 
 
 class WorkspaceCleaner:
@@ -42,13 +35,6 @@ class WorkspaceCleaner:
 
         return total_size
 
-    @staticmethod
-    def _get_consumed_time(directory: Path) -> float | None:
-        try:
-            return (directory / CONSUMED_MARKER).stat().st_mtime
-        except FileNotFoundError:
-            return None
-
     @classmethod
     def _scan_workspaces(cls) -> list[WorkspaceSnapshot]:
         workspaces: list[WorkspaceSnapshot] = []
@@ -60,7 +46,9 @@ class WorkspaceCleaner:
                 try:
                     if not workspace_dir.is_dir():
                         continue
-                    workspace_modification_time = workspace_dir.stat().st_mtime
+                    metadata = workspace_dir / "result.json"
+                    timestamp_path = metadata if metadata.is_file() else workspace_dir
+                    workspace_modification_time = timestamp_path.stat().st_mtime
                     workspace_size = cls.get_directory_size(workspace_dir)
 
                     workspaces.append(
@@ -68,7 +56,6 @@ class WorkspaceCleaner:
                             path=workspace_dir,
                             modified_at=workspace_modification_time,
                             size=workspace_size,
-                            consumed_at=cls._get_consumed_time(workspace_dir),
                         )
                     )
                 except FileNotFoundError:

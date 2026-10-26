@@ -1,7 +1,19 @@
 import { queryOptions } from "@tanstack/react-query";
 
-import { apiFetch } from "./client";
+import { apiFetch, apiRequest } from "./client";
 import type { CoarseGrainResult, ResultFiles } from "./types";
+
+export const resultQueryOptions = (workspaceId: string) =>
+  queryOptions({
+    queryKey: ["results", workspaceId, "metadata"],
+    queryFn: ({ signal }) =>
+      apiRequest<CoarseGrainResult>(`/api/results/${encodeURIComponent(workspaceId)}`, {
+        signal,
+      }),
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: false,
+  });
 
 export interface ResultStructures {
   reference: string;
@@ -36,12 +48,6 @@ export async function fetchResultStructures(
     fetchOptionalText(files.coarse_pdb_url),
   ]);
 
-  try {
-    await apiFetch(files.consumed_url, { method: "POST" });
-  } catch (error) {
-    console.warn("Could not mark the result as consumed.", error);
-  }
-
   return {
     reference,
     coarseMmcif,
@@ -50,8 +56,7 @@ export async function fetchResultStructures(
   };
 }
 
-// The server removes a consumed workspace after a grace period (about an hour), so
-// keep the files for the whole session instead of fetching them again.
+// Reuse the downloaded structure text for display controls and file downloads.
 export const resultStructuresQueryOptions = (result: CoarseGrainResult) =>
   queryOptions({
     queryKey: ["results", result.workspace_id, "structures"],

@@ -20,11 +20,9 @@ const structures: ResultStructures = {
 function fakeViewer(overrides: Partial<MolstarViewer> = {}): MolstarViewer {
   return {
     failedStructures: [],
-    modelNumbers: [1],
     hasNonPolymer: false,
     setVisibility: vi.fn(),
     setNonPolymerVisibility: vi.fn(),
-    setModel: vi.fn(() => Promise.resolve()),
     setRepresentation: vi.fn(() => Promise.resolve()),
     setColorMode: vi.fn(() => Promise.resolve()),
     dispose: vi.fn(),
@@ -58,16 +56,6 @@ describe("StructureViewer", () => {
   });
 
   it("leaves multi-model navigation inside Molstar", async () => {
-    createMolstarViewer.mockResolvedValue(fakeViewer({ modelNumbers: [2, 5, 7] }));
-    renderViewer();
-
-    expect(
-      await screen.findByRole("combobox", { name: "Representation" }),
-    ).toBeEnabled();
-    expect(screen.queryByRole("combobox", { name: "Model" })).not.toBeInTheDocument();
-  });
-
-  it("hides the model switch for a single-model structure", async () => {
     createMolstarViewer.mockResolvedValue(fakeViewer());
     renderViewer();
 
