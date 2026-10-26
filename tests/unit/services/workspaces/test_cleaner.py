@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -64,9 +65,12 @@ def test_remove_expired_workspaces_removes_expired_workspace(
         size=0,
     )
 
-    removed_count = WorkspaceCleaner._remove_expired_workspaces([workspace])
+    remaining_workspaces, removed_count = WorkspaceCleaner._remove_expired_workspaces(
+        [workspace]
+    )
 
     assert not workspace_dir.exists()
+    assert remaining_workspaces == []
     assert removed_count == 1
 
 
@@ -89,9 +93,12 @@ def test_remove_expired_workspaces_keeps_fresh_workspace(
         size=0,
     )
 
-    removed_count = WorkspaceCleaner._remove_expired_workspaces([workspace])
+    remaining_workspaces, removed_count = WorkspaceCleaner._remove_expired_workspaces(
+        [workspace]
+    )
 
     assert workspace_dir.exists()
+    assert remaining_workspaces == [workspace]
     assert removed_count == 0
 
 
@@ -112,9 +119,12 @@ def test_remove_expired_workspaces_removes_workspace_at_lifetime_limit(
         path=workspace_dir, modified_at=current_time - workspace_lifetime, size=0
     )
 
-    removed_count = WorkspaceCleaner._remove_expired_workspaces([workspace])
+    remaining_workspaces, removed_count = WorkspaceCleaner._remove_expired_workspaces(
+        [workspace]
+    )
 
     assert not workspace_dir.exists()
+    assert remaining_workspaces == []
     assert removed_count == 1
 
 
@@ -166,14 +176,169 @@ def test_old_activity_markers_do_not_shorten_or_extend_retention(
     assert not workspace.exists()
 
 
-def test_storage_size_counts_existing_files_without_evicting_fresh_results(
-    isolated_workspace_storage: Path,
+def test_remove_workspaces_over_storage_limit_keeps_workspace_at_limit(
+    isolated_workspace_storage: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    workspace = WorkspaceManager.setup_workspace_dir(
+    storage_limit = 100
+
+    monkeypatch.setattr(cleaner_module, "WORKSPACE_STORAGE_MAX_SIZE", storage_limit)
+
+    workspace_id = WorkspaceManager.create_workspace_id()
+    workspace_dir = WorkspaceManager.setup_workspace_dir(workspace_id)
+
+    workspace = cleaner_module.WorkspaceSnapshot(
+        path=workspace_dir, modified_at=0, size=100
+    )
+
+    removed_workspaces_count = WorkspaceCleaner._remove_workspaces_over_storage_limit(
+        [workspace]
+    )
+
+    assert removed_workspaces_count == 0
+    assert workspace_dir.exists()
+
+
+def test_remove_workspaces_over_storage_limit_removes_workspace_above_limit(
+    isolated_workspace_storage: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    storage_limit = 100
+
+    monkeypatch.setattr(cleaner_module, "WORKSPACE_STORAGE_MAX_SIZE", storage_limit)
+
+    workspace_id = WorkspaceManager.create_workspace_id()
+    workspace_dir = WorkspaceManager.setup_workspace_dir(workspace_id)
+
+    workspace = cleaner_module.WorkspaceSnapshot(
+        path=workspace_dir, modified_at=0, size=101
+    )
+
+    removed_workspaces_count = WorkspaceCleaner._remove_workspaces_over_storage_limit(
+        [workspace]
+    )
+
+    assert removed_workspaces_count == 1
+    assert not workspace_dir.exists()
+
+
+def test_remove_workspaces_over_storage_limit_removes_oldest_workspace_first(
+    isolated_workspace_storage: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    storage_limit = 100
+    workspace_size = 50
+
+    monkeypatch.setattr(cleaner_module, "WORKSPACE_STORAGE_MAX_SIZE", storage_limit)
+
+    oldest_workspace_dir = WorkspaceManager.setup_workspace_dir(
         WorkspaceManager.create_workspace_id()
     )
-    (workspace / "coarse.mmcif").write_bytes(b"A" * 100)
 
-    assert WorkspaceCleaner.get_storage_size() == 100
-    assert WorkspaceCleaner.cleanup_workspaces() == 0
-    assert workspace.exists()
+    middle_workspace_dir = WorkspaceManager.setup_workspace_dir(
+        WorkspaceManager.create_workspace_id()
+    )
+
+    newest_workspace_dir = WorkspaceManager.setup_workspace_dir(
+        WorkspaceManager.create_workspace_id()
+    )
+
+    workspaces = [
+        cleaner_module.WorkspaceSnapshot(
+            path=oldest_workspace_dir, modified_at=10.0, size=workspace_size
+        ),
+        cleaner_module.WorkspaceSnapshot(
+            path=middle_workspace_dir, modified_at=20.0, size=workspace_size
+        ),
+        cleaner_module.WorkspaceSnapshot(
+            path=newest_workspace_dir, modified_at=30.0, size=workspace_size
+        ),
+    ]
+    removed_count = WorkspaceCleaner._remove_workspaces_over_storage_limit(workspaces)
+
+    assert removed_count == 1
+    assert not oldest_workspace_dir.exists()
+    assert middle_workspace_dir.exists()
+    assert newest_workspace_dir.exists()
+
+
+def test_remove_workspaces_over_storage_limit_handles_concurrently_removed_workspace(
+    isolated_workspace_storage: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        cleaner_module,
+        "WORKSPACE_STORAGE_MAX_SIZE",
+        0,
+    )
+
+    workspace_id = WorkspaceManager.create_workspace_id()
+    workspace_dir = WorkspaceManager.setup_workspace_dir(workspace_id)
+
+    workspace = cleaner_module.WorkspaceSnapshot(
+        path=workspace_dir,
+        modified_at=0,
+        size=1,
+    )
+
+    WorkspaceManager.cleanup_workspace(workspace_id)  # race condition
+
+    removed_count = WorkspaceCleaner._remove_workspaces_over_storage_limit([workspace])
+
+    assert not workspace_dir.exists()
+    assert removed_count == 0
+
+
+def test_remove_workspaces_over_storage_limit_logs_oserror_and_continues(
+    isolated_workspace_storage: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    monkeypatch.setattr(
+        cleaner_module,
+        "WORKSPACE_STORAGE_MAX_SIZE",
+        1,
+    )
+
+    failing_workspace_dir = WorkspaceManager.setup_workspace_dir(
+        WorkspaceManager.create_workspace_id()
+    )
+    removable_workspace_dir = WorkspaceManager.setup_workspace_dir(
+        WorkspaceManager.create_workspace_id()
+    )
+
+    workspaces = [
+        cleaner_module.WorkspaceSnapshot(
+            path=failing_workspace_dir,
+            modified_at=10.0,
+            size=1,
+        ),
+        cleaner_module.WorkspaceSnapshot(
+            path=removable_workspace_dir,
+            modified_at=20.0,
+            size=1,
+        ),
+    ]
+
+    original_rmtree = cleaner_module.shutil.rmtree
+
+    def mocked_rmtree(path: Path) -> None:
+        if path == failing_workspace_dir:
+            raise OSError("permission denied")
+
+        original_rmtree(path)
+
+    monkeypatch.setattr(
+        cleaner_module.shutil,
+        "rmtree",
+        mocked_rmtree,
+    )
+
+    caplog.set_level(
+        logging.WARNING,
+        logger=cleaner_module.__name__,
+    )
+
+    removed_count = WorkspaceCleaner._remove_workspaces_over_storage_limit(workspaces)
+
+    assert failing_workspace_dir.exists()
+    assert not removable_workspace_dir.exists()
+    assert removed_count == 1
+    assert "Could not remove workspace" in caplog.text
+    assert "permission denied" in caplog.text

@@ -3,37 +3,43 @@
 > A universal platform for generating, visualizing, and comparing coarse-grained RNA structure models.
 
 [**Open RNAgrainy**](https://rnagrainy.cs.put.poznan.pl/) ·
-[**Documentation**](https://rnagrainy.cs.put.poznan.pl/documentation/) ·
-[**API**](#public-api)
+[**Documentation**](https://rnagrainy.cs.put.poznan.pl/documentation/)
 
 ![Stack](https://img.shields.io/badge/Stack-FastAPI%20%7C%20React%20%7C%20TypeScript%20%7C%20Tailwind%20%7C%20Mol*%20%7C%20Gemmi-blue)
 
 ## About
 
-RNAgrainy converts full-atom RNA structures into published or custom coarse-grained
-models and compares them in an interactive Mol* viewer.
+RNAgrainy is a web-based bioinformatics platform for generating, visualizing, and comparing coarse-grained representations of RNA structures.
+
+The application enables the transformation of all-atom RNA structures into simplified coarse-grained representations using multiple models described in the scientific literature. It also provides tools for defining custom coarse-grained representations.
 
 ## Scientific Background
 
-Coarse-grained RNA models represent groups of atoms as pseudoatoms to reduce
-computational cost. Models differ in resolution and atom mapping rules.
+RNA molecules play essential roles in many biological processes, and understanding their structure and dynamics is important for studying their function.
+
+All-atom molecular representations provide detailed structural information but may become computationally expensive when used in simulations of large RNA molecules or over long timescales. Coarse-grained models reduce the number of interaction sites by representing groups of atoms as simplified particles or pseudoatoms.
+
+Different coarse-grained RNA models use different mapping strategies, resolutions, and representations. RNAgrainy provides a unified environment for generating and comparing these representations from the same input RNA structure.
 
 ## Key Features
 
-- **Input:** PDB/mmCIF uploads, RCSB PDB retrieval and built-in examples.
-- **Model selection:** Published models with optional chain and structural model selection.
-- **Visualization:** Interactive comparison of input and CG structures in Mol*.
-- **Custom models:** Edit beads, atom mappings and connectivity; import/export JSON.
-- **Export:** Download CG structures in PDB or mmCIF format.
-- **Documentation:** Model descriptions, atom mappings and references.
+* **Structure import:** Support for PDB and PDBx/mmCIF files, as well as direct retrieval of structures from the RCSB PDB database using a PDB ID. Predefined example structures can also be selected.
+* **Coarse-grained model selection:** Selection of predefined RNA coarse-grained models described in the scientific literature.
+* **Chain and structure model selection:** Users can select specific chains and structural models from the input structure.
+* **Interactive visualization:** Comparison of the original all-atom structure and the generated coarse-grained representation using the Mol* molecular visualization library.
+* **Custom model creator:** Define custom coarse-grained representations, pseudoatom mappings, and connectivity rules through an interactive editor, or load an existing model configuration from JSON.
+* **Structure export:** Generated coarse-grained structures can be exported in standard PDB and PDBx/mmCIF formats.
+* **Model documentation:** The application provides descriptions of supported coarse-grained models, atom mapping rules, and references to the original scientific literature.
 
 ## Supported Models
+
+RNAgrainy currently supports the following predefined coarse-grained RNA models:
 
 `NAST` · `YUP` · `Nares-2P` · `VFold` · `FebRNA` · `iFoldRNA` ·
 `TopRNA` · `isRNA1` · `isRNA2` · `RNA-JP` · `SimRNA` · `HiRE-RNA`
 
-See the [model documentation](https://rnagrainy.cs.put.poznan.pl/documentation/)
-for details.
+Detailed descriptions, mapping rules, and references are available in the
+[model documentation](https://rnagrainy.cs.put.poznan.pl/documentation/).
 
 ## Application Preview
 
@@ -197,7 +203,8 @@ curl --fail-with-body -sS "$BASE/api/results/$WORKSPACE_ID" | jq
 - Invalid input returns HTTP `422` with a JSON `detail` message; unavailable
   result files return HTTP `404`.
 - Results are kept for 24 hours after processing. Opening the viewer or downloading
-  files through the API does not change this period.
+  files through the API does not change this period. If storage fills up, the oldest
+  results may be removed sooner.
 
 ## Local Development
 

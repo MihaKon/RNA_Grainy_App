@@ -8,10 +8,8 @@ from app.exceptions import FileProcessingError, ResultNotFoundError
 from app.settings import (
     MIN_FREE_DISK_SIZE,
     WORKSPACE_STORAGE_DIR,
-    WORKSPACE_STORAGE_MAX_SIZE,
 )
 
-from .cleaner import WorkspaceCleaner
 from .paths import get_workspace_dir, get_workspace_file_path
 
 logger = logging.getLogger(__name__)
@@ -59,12 +57,6 @@ class WorkspaceManager:
         if free_disk_size < MIN_FREE_DISK_SIZE + required_size:
             raise FileProcessingError(
                 "The server temporarily does not have enough disk space."
-            )
-
-        storage_size = await asyncio.to_thread(WorkspaceCleaner.get_storage_size)
-        if storage_size + required_size > WORKSPACE_STORAGE_MAX_SIZE:
-            raise FileProcessingError(
-                "Workspace storage is full. Please try again later."
             )
 
         file_path = get_workspace_file_path(workspace_id, filename)

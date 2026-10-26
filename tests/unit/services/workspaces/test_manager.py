@@ -2,7 +2,6 @@ from pathlib import Path
 
 import pytest
 
-import app.services.workspaces.manager as manager_module
 from app.exceptions import (
     FileProcessingError,
     InvalidRequestError,
@@ -137,34 +136,3 @@ def test_cleanup_workspace_ignores_missing_directory(
     WorkspaceManager.cleanup_workspace(workspace_id)
 
     assert not workspace_dir.exists()
-
-
-@pytest.mark.anyio
-@pytest.mark.parametrize(("limit", "succeeds"), [(104, False), (105, True)])
-async def test_storage_limit_rejects_new_files_without_removing_existing_results(
-    isolated_workspace_storage: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    limit: int,
-    succeeds: bool,
-) -> None:
-    existing = WorkspaceManager.setup_workspace_dir(
-        WorkspaceManager.create_workspace_id()
-    )
-    existing_file = existing / "coarse.mmcif"
-    existing_file.write_bytes(b"A" * 100)
-    workspace_id = WorkspaceManager.create_workspace_id()
-    workspace = WorkspaceManager.setup_workspace_dir(workspace_id)
-    monkeypatch.setattr(manager_module, "WORKSPACE_STORAGE_MAX_SIZE", limit)
-    monkeypatch.setattr(WorkspaceManager, "_get_free_disk_size", lambda: 10**12)
-
-    if succeeds:
-        result = await WorkspaceManager.create_file(
-            workspace_id, "ąRNA", "coarse.mmcif"
-        )
-        assert result.read_text(encoding="utf-8") == "ąRNA"
-    else:
-        with pytest.raises(FileProcessingError, match="storage is full"):
-            await WorkspaceManager.create_file(workspace_id, "ąRNA", "coarse.mmcif")
-        assert not (workspace / "coarse.mmcif").exists()
-
-    assert existing_file.read_bytes() == b"A" * 100

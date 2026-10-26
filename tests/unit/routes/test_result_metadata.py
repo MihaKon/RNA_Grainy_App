@@ -1,11 +1,12 @@
+import os
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-import app.services.workspaces.manager as manager_module
+import app.services.workspaces.cleaner as cleaner_module
 from app.exceptions import FileProcessingError
-from app.services.workspaces import WorkspaceManager
+from app.services.workspaces import WorkspaceCleaner, WorkspaceManager
 
 pytestmark = pytest.mark.usefixtures("isolated_workspace_storage")
 
@@ -96,28 +97,35 @@ def test_metadata_write_failure_removes_the_incomplete_workspace(
     assert list(isolated_workspace_storage.iterdir()) == []
 
 
-def test_full_storage_rejects_new_conversion_without_removing_previous_results(
+def test_storage_pressure_removes_oldest_result_without_blocking_conversions(
     client: TestClient,
     isolated_workspace_storage: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    previous = client.post(
-        "/api/coarse-grain/preset",
-        data={"preset_id": "1EHZ", "selected_model": "SimModel"},
-    )
-    assert previous.status_code == 200
-    result = previous.json()
-    monkeypatch.setattr(manager_module, "WORKSPACE_STORAGE_MAX_SIZE", 0)
+    results = []
+    for _ in range(2):
+        response = client.post(
+            "/api/coarse-grain/preset",
+            data={"preset_id": "1EHZ", "selected_model": "SimModel"},
+        )
+        assert response.status_code == 200
+        results.append(response.json())
 
-    rejected = client.post(
-        "/api/coarse-grain/preset",
-        data={"preset_id": "1EHZ", "selected_model": "SimModel"},
+    previous, newest = results
+    previous_metadata = (
+        isolated_workspace_storage / previous["workspace_id"] / "result.json"
+    )
+    newest_workspace = isolated_workspace_storage / newest["workspace_id"]
+    timestamp = (newest_workspace / "result.json").stat().st_mtime
+    os.utime(previous_metadata, (timestamp - 60, timestamp - 60))
+    monkeypatch.setattr(
+        cleaner_module,
+        "WORKSPACE_STORAGE_MAX_SIZE",
+        WorkspaceCleaner.get_directory_size(newest_workspace),
     )
 
-    assert rejected.status_code == 422
-    assert "storage is full" in rejected.json()["detail"]
-    assert list(isolated_workspace_storage.iterdir()) == [
-        isolated_workspace_storage / result["workspace_id"]
-    ]
-    assert client.get(result["files"]["coarse_mmcif_url"]).status_code == 200
-    assert client.get(f"/api/results/{result['workspace_id']}").json() == result
+    assert WorkspaceCleaner.cleanup_workspaces() == 1
+    assert client.get(f"/api/results/{previous['workspace_id']}").status_code == 404
+    assert client.get(previous["files"]["coarse_mmcif_url"]).status_code == 404
+    assert client.get(f"/api/results/{newest['workspace_id']}").json() == newest
+    assert client.get(newest["files"]["coarse_mmcif_url"]).status_code == 200

@@ -557,8 +557,6 @@ class Nares2PModel(GeometricCenterModel):
     name_verbose: str = "Nares-2P"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nares.json"
 
-    INTER_P_BEAD_NAME = "PP"
-
     def _calculate_inter_p_bead_position(
         self, curr_res: Residue, prev_res: Residue
     ) -> None:
