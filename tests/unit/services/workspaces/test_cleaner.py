@@ -6,7 +6,6 @@ import pytest
 
 import app.services.workspaces.cleaner as cleaner_module
 from app.services.workspaces import WorkspaceCleaner, WorkspaceManager
-from app.services.workspaces.paths import CONSUMED_MARKER
 
 
 def test_get_directory_size_returns_total_file_size(
@@ -129,54 +128,52 @@ def test_remove_expired_workspaces_removes_workspace_at_lifetime_limit(
     assert removed_count == 1
 
 
-def test_scan_workspaces_reads_consumed_time(
-    isolated_workspace_storage: Path,
+def test_cleanup_workspaces_returns_removed_workspace_count(
+    isolated_workspace_storage: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    workspace_id = WorkspaceManager.create_workspace_id()
-    workspace_dir = WorkspaceManager.setup_workspace_dir(workspace_id)
-    marker = workspace_dir / CONSUMED_MARKER
-    marker.touch()
-    os.utime(marker, (50.0, 50.0))
+    workspace_lifetime = 60
 
-    result = WorkspaceCleaner._scan_workspaces()
+    first_workspace_dir = WorkspaceManager.setup_workspace_dir(
+        WorkspaceManager.create_workspace_id()
+    )
 
-    assert len(result) == 1
-    assert result[0].consumed_at == 50.0
+    second_workspace_dir = WorkspaceManager.setup_workspace_dir(
+        WorkspaceManager.create_workspace_id()
+    )
+
+    current_time = cleaner_module.time.time()
+    monkeypatch.setattr(cleaner_module, "WORKSPACE_MAX_LIFETIME", workspace_lifetime)
+    monkeypatch.setattr(
+        cleaner_module.time, "time", lambda: current_time + workspace_lifetime + 1
+    )
+
+    removed_count = WorkspaceCleaner.cleanup_workspaces()
+
+    assert removed_count == 2
+    assert not first_workspace_dir.exists()
+    assert not second_workspace_dir.exists()
 
 
-@pytest.mark.parametrize(
-    ("consumed_age", "expected_removed"),
-    [(59, False), (60, True)],
-)
-def test_remove_expired_workspaces_removes_consumed_workspace_after_grace_period(
+def test_old_activity_markers_do_not_shorten_or_extend_retention(
     isolated_workspace_storage: Path,
     monkeypatch: pytest.MonkeyPatch,
-    consumed_age: int,
-    expected_removed: bool,
 ) -> None:
-    current_time = 1000.0
-
-    monkeypatch.setattr(cleaner_module, "WORKSPACE_MAX_LIFETIME", 600)
-    monkeypatch.setattr(cleaner_module, "WORKSPACE_CONSUMED_LIFETIME", 60)
-    monkeypatch.setattr(cleaner_module.time, "time", lambda: current_time)
-
-    workspace_id = WorkspaceManager.create_workspace_id()
-    workspace_dir = WorkspaceManager.setup_workspace_dir(workspace_id)
-
-    workspace = cleaner_module.WorkspaceSnapshot(
-        path=workspace_dir,
-        modified_at=current_time - consumed_age,
-        size=0,
-        consumed_at=current_time - consumed_age,
+    workspace = WorkspaceManager.setup_workspace_dir(
+        WorkspaceManager.create_workspace_id()
     )
+    metadata = workspace / "result.json"
+    metadata.write_text("{}")
+    os.utime(metadata, (100.0, 100.0))
+    (workspace / ".consumed").touch()
+    monkeypatch.setattr(cleaner_module.time, "time", lambda: 100.0 + 2 * 3600)
 
-    remaining_workspaces, removed_count = WorkspaceCleaner._remove_expired_workspaces(
-        [workspace]
-    )
+    assert WorkspaceCleaner.cleanup_workspaces() == 0
+    assert workspace.exists()
+    assert WorkspaceCleaner._scan_workspaces()[0].modified_at == 100.0
 
-    assert workspace_dir.exists() is not expected_removed
-    assert removed_count == int(expected_removed)
-    assert remaining_workspaces == ([] if expected_removed else [workspace])
+    monkeypatch.setattr(cleaner_module.time, "time", lambda: 100.0 + 24 * 3600)
+    assert WorkspaceCleaner.cleanup_workspaces() == 1
+    assert not workspace.exists()
 
 
 def test_remove_workspaces_over_storage_limit_keeps_workspace_at_limit(
@@ -286,32 +283,6 @@ def test_remove_workspaces_over_storage_limit_handles_concurrently_removed_works
 
     assert not workspace_dir.exists()
     assert removed_count == 0
-
-
-def test_cleanup_workspaces_returns_removed_workspace_count(
-    isolated_workspace_storage: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    workspace_lifetime = 60
-
-    first_workspace_dir = WorkspaceManager.setup_workspace_dir(
-        WorkspaceManager.create_workspace_id()
-    )
-
-    second_workspace_dir = WorkspaceManager.setup_workspace_dir(
-        WorkspaceManager.create_workspace_id()
-    )
-
-    current_time = cleaner_module.time.time()
-    monkeypatch.setattr(cleaner_module, "WORKSPACE_MAX_LIFETIME", workspace_lifetime)
-    monkeypatch.setattr(
-        cleaner_module.time, "time", lambda: current_time + workspace_lifetime + 1
-    )
-
-    removed_count = WorkspaceCleaner.cleanup_workspaces()
-
-    assert removed_count == 2
-    assert not first_workspace_dir.exists()
-    assert not second_workspace_dir.exists()
 
 
 def test_remove_workspaces_over_storage_limit_logs_oserror_and_continues(

@@ -4,8 +4,6 @@ from pathlib import Path
 from app.exceptions import InvalidRequestError
 from app.settings import WORKSPACE_STORAGE_DIR
 
-CONSUMED_MARKER = ".consumed"
-
 
 def is_valid_uuid(workspace_id: str) -> bool:
     try:

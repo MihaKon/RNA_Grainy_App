@@ -44,7 +44,6 @@ export interface ResultFiles {
   reference_url: string;
   coarse_mmcif_url: string;
   coarse_pdb_url: string | null;
-  consumed_url: string;
 }
 
 export interface CoarseGrainResult {

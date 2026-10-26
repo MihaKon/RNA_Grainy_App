@@ -40,31 +40,24 @@ class CoarseGrainModelRegistry:
     Singleton registry to store RNA model classes.
     """
 
-    _registry: dict[str, type[BaseCoarseGrainModel]] = {}
+    registry: dict[str, type[BaseCoarseGrainModel]] = {}
 
     @classmethod
     def register(
         cls, model_cls: type[BaseCoarseGrainModel]
     ) -> type[BaseCoarseGrainModel]:
-        cls._registry[model_cls.__name__] = model_cls
+        cls.registry[model_cls.__name__] = model_cls
         return model_cls
 
     @classmethod
     def get_model(cls, class_name: str) -> type[BaseCoarseGrainModel]:
-        if class_name not in cls._registry:
-            available = list(cls._registry.keys())
+        if class_name not in cls.registry:
+            available = list(cls.registry.keys())
             raise ModelLoadingError(
                 f"Model '{class_name}' not found. Available models: {available}"
             )
 
-        return cls._registry[class_name]
-
-    @classmethod
-    def get_dropdown_options(cls) -> list[tuple[str, str]]:
-        return sorted(
-            [(key, model_cls.name_verbose) for key, model_cls in cls._registry.items()],
-            key=lambda x: x[1],
-        )
+        return cls.registry[class_name]
 
 
 class BaseCoarseGrainModel(ABC):
@@ -563,8 +556,6 @@ class VFoldModel(BaseCoarseGrainModel):
 class Nares2PModel(GeometricCenterModel):
     name_verbose: str = "Nares-2P"
     JSON_model_file: pathlib.Path = COARSE_GRAIN_MODELS_DIR / "nares.json"
-
-    INTER_P_BEAD_NAME = "PP"
 
     def _calculate_inter_p_bead_position(
         self, curr_res: Residue, prev_res: Residue

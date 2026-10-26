@@ -219,11 +219,6 @@ def build_coarse_grain_result(
                 if outcome.is_pdb_available
                 else None
             ),
-            consumed_url=str(
-                request.app.url_path_for(
-                    "mark_result_as_consumed", workspace_id=outcome.workspace_id
-                )
-            ),
         ),
         atom_counts=AtomCounts(
             original=outcome.original_atom_count,

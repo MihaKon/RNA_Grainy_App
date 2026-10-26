@@ -48,23 +48,35 @@ export function ModelDescription({ model }: { model: ModelDocumentation }) {
 
 function CitationText({ text, url }: { text: string; url: string }) {
   const match = DOI_SUFFIX.exec(text);
-  const link = (label: string) => (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="break-all text-accent hover:text-accent-hover"
-    >
-      {label}
-    </a>
-  );
+  const reference = match?.[1];
+  const doi = match?.[2];
 
-  const [, reference, doi] = match ?? [];
-  if (reference === undefined || doi === undefined) return <span>{link(text)}</span>;
+  if (reference === undefined || doi === undefined) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="min-w-0 wrap-anywhere text-accent hover:text-accent-hover"
+      >
+        {text}
+      </a>
+    );
+  }
 
   return (
-    <span>
-      {reference} {link(`doi:${doi}`)}
+    <span className="min-w-0">
+      {reference}{" "}
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={`doi:${doi}`}
+        aria-label={`Open publication, DOI: ${doi}`}
+        className="inline-flex items-center gap-1 rounded border border-line-soft px-1.5 py-0.5 font-mono whitespace-nowrap text-accent transition-colors hover:border-accent hover:bg-surface"
+      >
+        DOI <span aria-hidden="true">↗</span>
+      </a>
     </span>
   );
 }

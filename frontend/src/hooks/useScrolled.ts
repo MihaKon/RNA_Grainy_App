@@ -1,16 +1,24 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 
-function subscribe(onChange: () => void): () => void {
-  window.addEventListener("scroll", onChange, { passive: true });
-  return () => {
-    window.removeEventListener("scroll", onChange);
-  };
-}
+export function useScrolled(collapseAt = 64, expandAt = 16): boolean {
+  const [scrolled, setScrolled] = useState(false);
 
-export function useScrolled(threshold: number): boolean {
-  return useSyncExternalStore(
-    subscribe,
-    () => window.scrollY > threshold,
-    () => false,
-  );
+  useEffect(() => {
+    const update = () => {
+      const scrollY = window.scrollY;
+
+      setScrolled((wasScrolled) =>
+        wasScrolled ? scrollY > expandAt : scrollY > collapseAt,
+      );
+    };
+
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", update);
+    };
+  }, [collapseAt, expandAt]);
+
+  return scrolled;
 }

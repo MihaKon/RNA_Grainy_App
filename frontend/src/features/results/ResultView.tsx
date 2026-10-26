@@ -14,7 +14,9 @@ import { ModelDescription } from "@/features/models/ModelDescription";
 import { downloadTextFile } from "@/lib/download";
 
 import { ModelReport } from "./ModelReport";
+import { ShareResultsButton } from "./ShareResultsButton";
 import { preloadStructureViewer } from "./viewer/preload";
+import { StructureViewerBoundary } from "./viewer/StructureViewerBoundary";
 
 const StructureViewer = lazy(() =>
   preloadStructureViewer().then((module) => ({ default: module.StructureViewer })),
@@ -37,48 +39,55 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
       </Link>
 
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="font-display text-hero-compact text-ink lg:text-heading">
+        <h1 className="max-w-full min-w-0 font-display text-hero-compact wrap-anywhere text-ink lg:text-heading">
           {result.filename}
         </h1>
-        <div
-          role="group"
-          aria-labelledby="download-cg-model"
-          className="flex flex-wrap items-center gap-3"
-        >
-          <span id="download-cg-model" className="eyebrow">
-            Download CG model
-          </span>
-          <Button
-            variant={pdbAvailable ? "ghost" : "primary"}
-            disabled={!structures}
-            onClick={() => {
-              if (structures) {
-                downloadTextFile(structures.coarseMmcif, `${downloadName}.cif`);
-              }
-            }}
+        <div className="flex w-full min-w-0 flex-col items-start gap-3 lg:w-auto lg:items-end">
+          <ShareResultsButton
+            key={result.workspace_id}
+            workspaceId={result.workspace_id}
+          />
+
+          <div
+            role="group"
+            aria-labelledby="download-cg-model"
+            className="flex flex-wrap items-center gap-3"
           >
-            mmCIF
-          </Button>
-          {pdbAvailable && (
+            <span id="download-cg-model" className="eyebrow">
+              Download CG model
+            </span>
             <Button
-              disabled={!structures?.coarsePdb}
-              aria-describedby={
-                structures?.coarsePdbFailed ? "pdb-download-failed" : undefined
-              }
+              variant={pdbAvailable ? "ghost" : "primary"}
+              disabled={!structures}
               onClick={() => {
-                if (structures?.coarsePdb) {
-                  downloadTextFile(structures.coarsePdb, `${downloadName}.pdb`);
+                if (structures) {
+                  downloadTextFile(structures.coarseMmcif, `${downloadName}.cif`);
                 }
               }}
             >
-              PDB
+              mmCIF
             </Button>
-          )}
-          {structures?.coarsePdbFailed && (
-            <span id="pdb-download-failed" className="text-sm text-ink-2">
-              The PDB file could not be downloaded; use mmCIF instead.
-            </span>
-          )}
+            {pdbAvailable && (
+              <Button
+                disabled={!structures?.coarsePdb}
+                aria-describedby={
+                  structures?.coarsePdbFailed ? "pdb-download-failed" : undefined
+                }
+                onClick={() => {
+                  if (structures?.coarsePdb) {
+                    downloadTextFile(structures.coarsePdb, `${downloadName}.pdb`);
+                  }
+                }}
+              >
+                PDB
+              </Button>
+            )}
+            {structures?.coarsePdbFailed && (
+              <span id="pdb-download-failed" className="text-sm text-ink-2">
+                The PDB file could not be downloaded; use mmCIF instead.
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -87,16 +96,18 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
           {structuresQuery.isError ? (
             <ResultLoadError error={structuresQuery.error} />
           ) : (
-            <Suspense fallback={<ViewerPlaceholder />}>
-              {structures ? (
-                <StructureViewer
-                  structures={structures}
-                  referenceFormat={result.reference_format}
-                />
-              ) : (
-                <ViewerPlaceholder />
-              )}
-            </Suspense>
+            <StructureViewerBoundary>
+              <Suspense fallback={<ViewerPlaceholder />}>
+                {structures ? (
+                  <StructureViewer
+                    structures={structures}
+                    referenceFormat={result.reference_format}
+                  />
+                ) : (
+                  <ViewerPlaceholder />
+                )}
+              </Suspense>
+            </StructureViewerBoundary>
           )}
         </div>
 
@@ -145,7 +156,7 @@ function ResultLoadError({ error }: { error: Error }) {
       </p>
       <p className="text-ink-2">
         {expired
-          ? "Result files are kept for about an hour after they are first opened. "
+          ? "Result files are kept for 24 hours after processing. "
           : `${getErrorMessage(error)} `}
         Please{" "}
         <Link to="/" className="text-accent hover:text-accent-hover">

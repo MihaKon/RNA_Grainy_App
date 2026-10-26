@@ -8,7 +8,8 @@ import { useScrolled } from "@/hooks/useScrolled";
 import { cn } from "@/lib/cn";
 import { GITHUB_REPOSITORY_URL, RNAPOLIS_URL } from "@/lib/links";
 
-const SCROLL_SHRINK_THRESHOLD = 40;
+const SCROLL_SHRINK_THRESHOLD = 64;
+const EXPAND_AT_THRESHOLD = 16;
 
 const NAV_ITEMS = [
   { to: "/", label: "New model", end: true },
@@ -17,7 +18,7 @@ const NAV_ITEMS = [
 ] as const;
 
 export function Header() {
-  const scrolled = useScrolled(SCROLL_SHRINK_THRESHOLD);
+  const scrolled = useScrolled(SCROLL_SHRINK_THRESHOLD, EXPAND_AT_THRESHOLD);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const closeMenu = () => {

@@ -81,7 +81,7 @@ class UploadBase(BaseModel):
     @field_validator("selected_model")
     @classmethod
     def validate_selected_model(cls, v: str) -> str:
-        if v != CUSTOM_MODEL_ID and v not in CoarseGrainModelRegistry._registry:
+        if v != CUSTOM_MODEL_ID and v not in CoarseGrainModelRegistry.registry:
             raise ValueError(f"Unknown coarse-grained model: {v}.")
         return v
 

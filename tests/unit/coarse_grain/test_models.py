@@ -4,10 +4,9 @@ from app.coarse_grain.models import CoarseGrainModelRegistry
 
 
 def test_coarse_grain_models_from_registry_execution(structure) -> None:  # type: ignore
-    models = CoarseGrainModelRegistry.get_dropdown_options()
     failed_models = []
 
-    for model_name, _ in models:
+    for model_name in sorted(CoarseGrainModelRegistry.registry):
         try:
             cls = CoarseGrainModelRegistry.get_model(model_name)
             model_instance = cls()
