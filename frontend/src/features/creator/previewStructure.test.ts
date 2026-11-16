@@ -7,7 +7,7 @@ import { StructConn } from "molstar/lib/mol-model-formats/structure/property/bon
 import { describe, expect, it } from "vitest";
 
 import { createDefaultDraft, type ModelDraft } from "./modelDraft";
-import { atomicMass, nucleotideDiagram } from "./nucleotideDiagram";
+import { atomicMass } from "./nucleotideDiagram";
 import {
   buildPreview,
   type PreviewResidue,
@@ -135,18 +135,5 @@ describe("creator preview structures", () => {
         ?.getField("label_atom_id")
         ?.str(0),
     ).toBe(`C' "center"`);
-  });
-
-  it("draws every selectable atom and only bonds atoms present in that nucleotide", () => {
-    for (const base of ["A", "G", "C", "U"] as const) {
-      const diagram = nucleotideDiagram(base);
-      diagram.bonds.forEach(([a, b]) => {
-        expect(diagram.atoms[a]).toBeDefined();
-        expect(diagram.atoms[b]).toBeDefined();
-      });
-      expect(Object.keys(diagram.atoms)).toHaveLength(
-        base === "A" ? 22 : base === "G" ? 23 : 20,
-      );
-    }
   });
 });

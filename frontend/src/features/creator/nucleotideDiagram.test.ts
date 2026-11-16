@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_RESIDUES, residuesForScope } from "./atoms";
+import { ALL_RESIDUES, residuesForScope, SCOPES } from "./atoms";
 import { createDefaultDraft } from "./modelDraft";
 import { beadLabels, nucleotideDiagram } from "./nucleotideDiagram";
 
@@ -9,7 +9,15 @@ describe("bead label placement", () => {
     "keeps labels clear of atoms and other labels in %s",
     (base) => {
       const draft = createDefaultDraft();
-      const { atoms } = nucleotideDiagram(base);
+      const { atoms, bonds } = nucleotideDiagram(base);
+      const scope = (
+        { A: "adenine", G: "guanine", C: "cytosine", U: "uracil" } as const
+      )[base];
+      expect(Object.keys(atoms).sort()).toEqual([...SCOPES[scope].atoms].sort());
+      for (const [a, b] of bonds) {
+        expect(atoms[a]).toBeDefined();
+        expect(atoms[b]).toBeDefined();
+      }
       const template = draft.beads[0];
       if (!template) throw new Error("Missing bead fixture");
       const layouts = [
@@ -25,7 +33,6 @@ describe("bead label placement", () => {
       ];
       for (const beads of layouts) {
         const labels = beadLabels(beads, atoms);
-        expect(beadLabels(beads, atoms)).toEqual(labels);
         labels.forEach(({ label: [x, y] }, index) => {
           expect(x).toBeGreaterThanOrEqual(8);
           expect(x + 36).toBeLessThanOrEqual(382);

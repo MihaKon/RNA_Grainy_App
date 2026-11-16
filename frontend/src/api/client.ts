@@ -36,18 +36,14 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
 }
 
 async function readErrorDetail(response: Response): Promise<string> {
-  try {
-    const body: unknown = await response.json();
-    if (
-      typeof body === "object" &&
-      body !== null &&
-      "detail" in body &&
-      typeof body.detail === "string"
-    ) {
-      return body.detail;
-    }
-  } catch {
-    // Non-JSON error bodies (e.g. proxy errors) fall through to the generic messages.
+  const body: unknown = await response.json().catch(() => null);
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "detail" in body &&
+    typeof body.detail === "string"
+  ) {
+    return body.detail;
   }
   return SERVER_UNAVAILABLE_STATUSES.has(response.status)
     ? SERVER_UNAVAILABLE_MESSAGE

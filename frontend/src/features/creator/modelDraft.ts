@@ -70,7 +70,13 @@ export type DraftAction =
       patch: Partial<Pick<BeadDraft, "name" | "description">>;
     }
   | { type: "renameBead"; key: string; beadId: string }
-  | { type: "setBeadScope"; key: string; scope: BeadScope; keepAtoms?: boolean }
+  | {
+      type: "setBeadScope";
+      key: string;
+      scope: BeadScope;
+      keepAtoms?: boolean;
+      atom?: string;
+    }
   | { type: "setBeadStrategy"; key: string; strategy: BeadStrategy }
   | { type: "toggleAtom"; key: string; atom: string }
   | { type: "toggleIntraConnection"; first: string; second: string }
@@ -218,13 +224,16 @@ export function draftReducer(draft: ModelDraft, action: DraftAction): ModelDraft
     }
 
     case "setBeadScope":
-      return updateBead(draft, action.key, (bead) => ({
-        ...bead,
-        scope: action.scope,
-        atoms: action.keepAtoms
-          ? bead.atoms.filter((atom) => SCOPES[action.scope].atoms.includes(atom))
-          : [],
-      }));
+      return updateBead(draft, action.key, (bead) => {
+        const scoped = {
+          ...bead,
+          scope: action.scope,
+          atoms: action.keepAtoms
+            ? bead.atoms.filter((atom) => SCOPES[action.scope].atoms.includes(atom))
+            : [],
+        };
+        return action.atom === undefined ? scoped : atomSelection(scoped, action.atom);
+      });
 
     case "setBeadStrategy":
       return updateBead(draft, action.key, (bead) => ({

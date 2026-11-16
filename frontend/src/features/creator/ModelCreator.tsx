@@ -478,8 +478,8 @@ export function ModelCreator({
                   key: active.key,
                   scope,
                   keepAtoms: true,
+                  atom,
                 });
-                dispatch({ type: "toggleAtom", key: active.key, atom });
               }
             }}
             onConnect={(first, second) => {

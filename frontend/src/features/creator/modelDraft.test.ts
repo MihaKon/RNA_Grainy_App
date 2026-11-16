@@ -19,6 +19,44 @@ function requiredBead(draft: ModelDraft, index: number) {
 }
 
 describe("exclusive bead positions", () => {
+  it("changes scope and selects an atom without rejecting a valid final center", () => {
+    const bead = {
+      ...requiredBead(createDefaultDraft(), 0),
+      scope: "purine" as const,
+      strategy: "geometric_center" as const,
+      atoms: ["O4'", "N9"],
+    };
+    const occupied = {
+      ...bead,
+      key: "occupied",
+      beadId: "B2",
+      name: "B2",
+      scope: "nucleotide" as const,
+      strategy: "direct" as const,
+      atoms: ["O4'"],
+    };
+    const draft = { ...createDefaultDraft(), beads: [bead, occupied] };
+    const changed = draftReducer(draft, {
+      type: "setBeadScope",
+      key: bead.key,
+      scope: "pyrimidine",
+      keepAtoms: true,
+      atom: "N1",
+    });
+    expect(changed.beads[0]).toMatchObject({
+      scope: "pyrimidine",
+      atoms: ["O4'", "N1"],
+    });
+    expect(positionConflict(changed, requiredBead(changed, 0))).toBeUndefined();
+    expect(
+      draftReducer(draft, {
+        type: "setBeadScope",
+        key: bead.key,
+        scope: "pyrimidine",
+        atom: "O4'",
+      }),
+    ).toBe(draft);
+  });
   it.each(["direct", "geometric_center", "center_of_mass"] as const)(
     "rejects an occupied atom with %s mapping",
     (strategy) => {

@@ -63,6 +63,7 @@ describe("ModelCreator", () => {
       if (!panel) throw new Error("Missing dropdown panel");
       fireEvent.pointerDown(panel);
       fireEvent.focusOut(control, { relatedTarget: dialog });
+      fireEvent.focusIn(dialog);
       expect(dropdown).toHaveAttribute("open");
       fireEvent.pointerUp(panel);
       fireEvent.click(panel);
@@ -70,6 +71,7 @@ describe("ModelCreator", () => {
       fireEvent.pointerDown(panel, { pointerType: "touch" });
       fireEvent.pointerUp(panel, { pointerType: "touch" });
       fireEvent.focusOut(control, { relatedTarget: dialog });
+      fireEvent.focusIn(dialog);
       expect(dropdown).toHaveAttribute("open");
       fireEvent.click(panel);
       expect(dropdown).toHaveAttribute("open");
@@ -87,16 +89,15 @@ describe("ModelCreator", () => {
         expect(within(panel).getByLabelText("Model name")).toHaveFocus();
         expect(dropdown).toHaveAttribute("open");
       }
-      fireEvent.focusOut(control, { relatedTarget: control });
-      expect(dropdown).toHaveAttribute("open");
-      const windowBlur = new FocusEvent("focusout", { bubbles: true });
-      Object.defineProperty(windowBlur, "relatedTarget", { value: window });
-      fireEvent(control, windowBlur);
+      const lastButton = within(panel).getAllByRole("button").at(-1);
+      if (!lastButton) throw new Error("Missing dropdown action");
+      lastButton.focus();
+      await user.tab();
+      expect(dropdown).not.toHaveAttribute("open");
+      await user.click(control);
+      fireEvent.blur(window);
       expect(dropdown).not.toHaveAttribute("open");
       expect(dialog).toBeInTheDocument();
-      await user.click(control);
-      fireEvent.focusOut(control, { relatedTarget: null });
-      expect(dropdown).not.toHaveAttribute("open");
       await user.click(control);
       await user.click(within(dialog).getByRole("button", { name: "Map atoms" }));
       expect(dropdown).not.toHaveAttribute("open");

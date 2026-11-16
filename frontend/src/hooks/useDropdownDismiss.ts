@@ -11,8 +11,6 @@ export function useDropdownDismiss(
     if (!container) return;
     const document = container.ownerDocument;
     let pointerInside = false;
-    const contains = (target: EventTarget | null) =>
-      target instanceof Node && container.contains(target);
     const handlePointerDown = (event: PointerEvent) => {
       pointerInside = event.composedPath().includes(container);
       if (!pointerInside) dismiss();
@@ -20,11 +18,8 @@ export function useDropdownDismiss(
     const resetPointer = () => {
       pointerInside = false;
     };
-    const handleBlur = (event: FocusEvent) => {
-      if (!pointerInside && !contains(event.relatedTarget)) dismiss();
-    };
     const handleFocus = (event: FocusEvent) => {
-      if (!pointerInside && !contains(event.target)) dismiss();
+      if (!pointerInside && !event.composedPath().includes(container)) dismiss();
     };
     const handleWindowBlur = () => {
       pointerInside = false;
@@ -36,7 +31,6 @@ export function useDropdownDismiss(
     document.addEventListener("keydown", resetPointer, true);
     document.addEventListener("pointercancel", resetPointer, true);
     document.addEventListener("focusin", handleFocus);
-    container.addEventListener("focusout", handleBlur);
     document.defaultView?.addEventListener("blur", handleWindowBlur);
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown, true);
@@ -44,7 +38,6 @@ export function useDropdownDismiss(
       document.removeEventListener("keydown", resetPointer, true);
       document.removeEventListener("pointercancel", resetPointer, true);
       document.removeEventListener("focusin", handleFocus);
-      container.removeEventListener("focusout", handleBlur);
       document.defaultView?.removeEventListener("blur", handleWindowBlur);
     };
   }, [ref]);

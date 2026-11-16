@@ -122,7 +122,6 @@ export function buildPreview(
       const selected = bead.atoms.flatMap((name) =>
         residue.atoms.filter((atom) => atom.name === name),
       );
-      if (selected.length === 0) continue;
       const first = selected[0];
       if (!first) continue;
       if (bead.strategy === "direct" && first.name !== bead.atoms[0]) continue;

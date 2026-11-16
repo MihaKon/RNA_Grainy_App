@@ -15,7 +15,6 @@ export function DocumentationPage() {
   const { hash } = useLocation();
   const models = modelsQuery.data;
 
-  // The sections render after the models load, so the browser cannot scroll to the hash itself.
   useEffect(() => {
     if (models && hash) {
       document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView();
