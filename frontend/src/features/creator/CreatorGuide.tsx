@@ -59,10 +59,10 @@ export function CreatorGuide() {
         </p>
         <p>
           Choose <Term>Connect beads → Inter-residue</Term>, then click the source bead
-          for residue i and the target bead for residue i+1. The connection appears
-          below the diagrams. You can connect the same bead ID to itself across
-          residues. Only one inter-residue connection is supported; drawing another
-          replaces it.
+          for residue i and the target bead for residue i+1. The connection appears in
+          the toolbar above the diagrams. You can connect the same bead ID to itself
+          across residues. Only one inter-residue connection is supported; drawing
+          another replaces it.
         </p>
         <p>
           For example, SimRNA links <Code>A2</Code> in residue i to <Code>A1</Code> in

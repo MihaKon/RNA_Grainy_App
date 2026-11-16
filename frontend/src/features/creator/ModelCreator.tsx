@@ -154,7 +154,7 @@ export function ModelCreator({
       ref={editorRef}
       tabIndex={-1}
       aria-labelledby="bead-settings-heading"
-      className="absolute top-full right-0 z-40 mt-2 flex max-h-[min(70dvh,620px)] w-[360px] max-w-[calc(100vw-3.5rem)] flex-col overflow-hidden rounded-md border border-line-soft bg-white shadow-xl transition-[transform,opacity] duration-150 outline-none motion-reduce:transition-none starting:-translate-y-2 starting:opacity-0"
+      className="fixed inset-x-4 top-24 z-40 mt-2 flex max-h-[calc(100dvh-7rem)] flex-col overflow-hidden rounded-md border border-line-soft bg-white shadow-xl transition-[transform,opacity] duration-150 outline-none motion-reduce:transition-none min-[640px]:absolute min-[640px]:inset-x-auto min-[640px]:top-full min-[640px]:right-0 min-[640px]:max-h-[min(70dvh,620px)] min-[640px]:w-[360px] starting:-translate-y-2 starting:opacity-0"
     >
       <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
         <h3 id="bead-settings-heading" className="eyebrow">

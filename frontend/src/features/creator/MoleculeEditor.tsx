@@ -48,7 +48,7 @@ interface Props {
 
 const NAMES = { A: "Adenine", G: "Guanine", C: "Cytosine", U: "Uracil" };
 const NOTICE_CLASSES =
-  "absolute bottom-3 left-1/2 z-20 w-fit max-w-[min(24rem,calc(100%_-_1.5rem))] -translate-x-1/2 rounded border border-red bg-white px-2.5 py-2 text-xs shadow-lg";
+  "flex w-full max-w-3xl flex-wrap items-center justify-between gap-2 rounded border border-red bg-white px-2.5 py-2 text-xs";
 export function MoleculeEditor({
   draft,
   active,
@@ -331,6 +331,39 @@ export function MoleculeEditor({
           </SelectField>
         )}
         <div
+          className="flex max-w-full min-w-0 flex-wrap items-center gap-2 border-l border-line-soft pl-2"
+          aria-label="Inter-residue connection diagram"
+        >
+          <div className="max-w-24 text-[10px] leading-tight text-ink-3">
+            <p className="font-medium text-ink">Inter-residue connection</p>
+          </div>
+          {draft.interResidue.source && draft.interResidue.target ? (
+            <div className="flex items-center gap-2 font-mono text-xs">
+              <span className="rounded border border-accent/30 bg-accent/5 px-2 py-1 text-accent">
+                {draft.interResidue.source} <small>i</small>
+              </span>
+              <span className="text-accent">⇢</span>
+              <span className="rounded border border-accent/30 bg-accent/5 px-2 py-1 text-accent">
+                {draft.interResidue.target} <small>i+1</small>
+              </span>
+              <button
+                type="button"
+                aria-label="Remove 2D inter-residue connection"
+                className="cursor-pointer px-1 text-ink-3 hover:text-red-deep"
+                onClick={onClearInter}
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <span className="text-[10px] text-ink-3">
+              {tool === "inter"
+                ? "Choose beads on the diagrams"
+                : "Choose the Inter-residue tool"}
+            </span>
+          )}
+        </div>
+        <div
           ref={addingRef}
           className="relative ml-auto"
           onKeyDown={(event) => {
@@ -378,21 +411,11 @@ export function MoleculeEditor({
           )}
         </div>
       </div>
-      {connectionStart && (
-        <div role="status" className={NOTICE_CLASSES}>
-          <p>{instruction}</p>
-          <Button
-            variant="ghost"
-            className="mt-2"
-            onClick={() => {
-              setConnectionStart(null);
-            }}
-          >
-            Dismiss
-          </Button>
-        </div>
-      )}
-      <div className="grid min-h-0 flex-1 grid-cols-1 min-[640px]:grid-cols-2 lg:grid-rows-2">
+      <div
+        role="group"
+        aria-label="Nucleotide diagrams"
+        className="grid min-h-0 flex-1 grid-cols-1 min-[640px]:grid-cols-2 lg:grid-rows-[repeat(2,minmax(13rem,1fr))] lg:overflow-y-auto"
+      >
         {ALL_RESIDUES.map((residue) => {
           const { atoms, bonds } = nucleotideDiagram(residue);
           const applicable = draft.beads.filter((bead) =>
@@ -682,80 +705,71 @@ export function MoleculeEditor({
         })}
       </div>
       <div
-        className="flex h-14 shrink-0 items-center justify-between gap-2 border-t border-line-soft bg-surface/60 px-3"
-        aria-label="Inter-residue connection diagram"
+        role="region"
+        aria-label="Editor messages"
+        className="flex h-32 shrink-0 items-center justify-center border-t border-line-soft px-3 py-2 min-[640px]:h-20"
       >
-        <div className="min-w-0 text-[10px] text-ink-3">
-          <p className="font-medium text-ink">Inter-residue connection</p>
-          <p>Residue i → residue i+1</p>
-        </div>
-        {draft.interResidue.source && draft.interResidue.target ? (
-          <div className="flex items-center gap-2 font-mono text-xs">
-            <span className="rounded border border-accent/30 bg-accent/5 px-2 py-1 text-accent">
-              {draft.interResidue.source} <small>i</small>
-            </span>
-            <span className="text-accent">⇢</span>
-            <span className="rounded border border-accent/30 bg-accent/5 px-2 py-1 text-accent">
-              {draft.interResidue.target} <small>i+1</small>
-            </span>
-            <button
-              type="button"
-              aria-label="Remove 2D inter-residue connection"
-              className="cursor-pointer px-1 text-ink-3 hover:text-red-deep"
-              onClick={onClearInter}
-            >
-              ×
-            </button>
-          </div>
-        ) : (
-          <span className="text-[10px] text-ink-3">
-            {tool === "inter"
-              ? "Choose beads on the diagrams"
-              : "Choose the Inter-residue tool"}
-          </span>
-        )}
-      </div>
-      {!connectMode && conflictHint && conflictHint.key === active?.key && (
-        <div role="alert" className={NOTICE_CLASSES}>
-          <p>{conflictHint.message} Move that bead or change Scope.</p>
-          <Button
-            variant="ghost"
-            className="mt-2"
-            onClick={() => {
-              setConflictHint(null);
-            }}
-          >
-            Dismiss
-          </Button>
-        </div>
-      )}
-      {scopeHint && scopeHint.key === active?.key && !conflictHint && (
-        <div role="alert" className={NOTICE_CLASSES}>
-          <p>
-            {scopeHint.atom} needs a different mapping scope. Change Scope and keep
-            compatible selected atoms.
-          </p>
-          <div className="mt-2 flex gap-2">
+        {connectionStart && (
+          <div role="status" className={NOTICE_CLASSES}>
+            <p className="min-w-0 flex-1 basis-48">{instruction}</p>
             <Button
-              variant="ghost"
+              variant="text"
+              className="min-h-8 shrink-0"
               onClick={() => {
-                onScopeAtom(scopeHint.scope, scopeHint.atom);
-                setScopeHint(null);
-              }}
-            >
-              Use {SCOPES[scopeHint.scope].label} and select {scopeHint.atom}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setScopeHint(null);
+                setConnectionStart(null);
               }}
             >
               Dismiss
             </Button>
           </div>
-        </div>
-      )}
+        )}
+        {!connectMode && conflictHint && conflictHint.key === active?.key && (
+          <div role="alert" className={NOTICE_CLASSES}>
+            <p className="min-w-0 flex-1 basis-48">
+              {conflictHint.message} Move that bead or change Scope.
+            </p>
+            <Button
+              variant="text"
+              className="min-h-8 shrink-0"
+              onClick={() => {
+                setConflictHint(null);
+              }}
+            >
+              Dismiss
+            </Button>
+          </div>
+        )}
+        {scopeHint && scopeHint.key === active?.key && !conflictHint && (
+          <div role="alert" className={NOTICE_CLASSES}>
+            <p className="min-w-0 flex-1 basis-48">
+              {scopeHint.atom} needs a different mapping scope. Change Scope and keep
+              compatible selected atoms.
+            </p>
+            <div className="flex max-w-full flex-wrap items-center gap-3">
+              <Button
+                variant="text"
+                className="min-h-8"
+                aria-label={`Use ${SCOPES[scopeHint.scope].label} and select ${scopeHint.atom}`}
+                onClick={() => {
+                  onScopeAtom(scopeHint.scope, scopeHint.atom);
+                  setScopeHint(null);
+                }}
+              >
+                Use {SCOPES[scopeHint.scope].label}
+              </Button>
+              <Button
+                variant="text"
+                className="min-h-8"
+                onClick={() => {
+                  setScopeHint(null);
+                }}
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </section>
   );
 }
