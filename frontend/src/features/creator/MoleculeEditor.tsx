@@ -414,7 +414,7 @@ export function MoleculeEditor({
       <div
         role="group"
         aria-label="Nucleotide diagrams"
-        className="grid min-h-0 flex-1 grid-cols-1 min-[640px]:grid-cols-2 lg:grid-rows-[repeat(2,minmax(13rem,1fr))] lg:overflow-y-auto"
+        className="grid min-h-0 flex-1 grid-cols-1 min-[640px]:grid-cols-2 lg:grid-rows-[repeat(2,minmax(14rem,1fr))] lg:overflow-y-auto"
       >
         {ALL_RESIDUES.map((residue) => {
           const { atoms, bonds } = nucleotideDiagram(residue);
@@ -431,7 +431,7 @@ export function MoleculeEditor({
           return (
             <div
               key={residue}
-              className={`relative flex min-h-0 min-w-0 flex-col border-b border-line-soft/70 p-2 odd:min-[640px]:border-r ${editable ? "bg-white" : "bg-surface/70"}`}
+              className={`relative flex min-h-0 min-w-0 flex-col border-b border-line-soft/70 p-1 odd:min-[640px]:border-r ${editable ? "bg-white" : "bg-surface/70"}`}
               data-editable={!!editable}
             >
               <div className="flex items-center justify-between gap-2">
@@ -451,7 +451,7 @@ export function MoleculeEditor({
               <svg
                 viewBox="0 24 390 248"
                 aria-label={`${NAMES[residue]} atom diagram`}
-                className={`h-44 min-h-0 w-full lg:h-full lg:flex-1 ${editable ? "" : "opacity-45"}`}
+                className={`h-52 min-h-0 w-full lg:h-full lg:flex-1 ${editable ? "" : "opacity-45"}`}
               >
                 <defs>
                   {markers.map(({ bead }) => (
@@ -707,7 +707,7 @@ export function MoleculeEditor({
       <div
         role="region"
         aria-label="Editor messages"
-        className="flex h-32 shrink-0 items-center justify-center border-t border-line-soft px-3 py-2 min-[640px]:h-20"
+        className="flex h-32 shrink-0 items-center justify-center border-t border-line-soft px-3 py-2 min-[640px]:h-16"
       >
         {connectionStart && (
           <div role="status" className={NOTICE_CLASSES}>

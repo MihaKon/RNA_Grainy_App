@@ -452,7 +452,7 @@ export function ModelCreator({
           </div>
         </div>
       </header>
-      <div className="mx-auto grid max-w-[1800px] gap-3 px-4 py-3 [--creator-height:calc(100dvh-92px)] lg:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1800px] gap-3 px-4 py-3 [--creator-height:calc(100dvh-80px)] lg:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)]">
         <div className="min-w-0 lg:h-[var(--creator-height)] lg:min-h-[480px]">
           <MoleculeEditor
             draft={draft}
