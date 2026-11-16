@@ -190,7 +190,9 @@ export async function createMolstarViewer(
         input.format,
       );
       const model = await plugin.builders.structure.createModel(trajectory);
-      const structure = await plugin.builders.structure.createStructure(model);
+      const rootStructure = await plugin.builders.structure.createStructure(model);
+      const structure =
+        await plugin.builders.structure.insertStructureProperties(rootStructure);
       const polymer = input.isCoarse
         ? undefined
         : await plugin.builders.structure.tryCreateComponentFromExpression(
