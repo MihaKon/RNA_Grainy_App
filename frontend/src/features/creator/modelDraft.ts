@@ -86,7 +86,7 @@ export type DraftAction =
 
 let beadKeyCounter = 0;
 
-function createBead(bead: Omit<BeadDraft, "key">): BeadDraft {
+export function createBead(bead: Omit<BeadDraft, "key">): BeadDraft {
   beadKeyCounter += 1;
   return { key: `bead-${beadKeyCounter.toString()}`, ...bead };
 }
@@ -651,7 +651,7 @@ function scopeForResidues(
   );
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
@@ -672,7 +672,7 @@ function isStrategy(value: unknown): value is BeadStrategy {
   return BEAD_STRATEGIES.some((strategy) => strategy === value);
 }
 
-function isStringPair(value: unknown): value is [string, string] {
+export function isStringPair(value: unknown): value is [string, string] {
   return (
     Array.isArray(value) &&
     value.length === 2 &&

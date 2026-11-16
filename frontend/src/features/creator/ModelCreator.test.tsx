@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { jsonResponse, mockFetch, requestBody } from "@/test/fetchMock";
@@ -51,6 +51,84 @@ async function openBeadSettings(
 }
 
 describe("ModelCreator", () => {
+  it("restores unfinished edits after Escape and remounting the page", async () => {
+    const { user, dialog } = await openCreator();
+    await openModelDetails(user, dialog);
+    const name = within(dialog).getByLabelText("Model name");
+    fireEvent.change(name, { target: { value: "Saved draft" } });
+    await user.click(within(dialog).getByRole("button", { name: "Done" }));
+    await user.click(within(dialog).getByRole("button", { name: "Add bead" }));
+    await user.click(within(dialog).getByRole("menuitem", { name: "Center of mass" }));
+    await user.click(
+      within(within(dialog).getByRole("article", { name: "Bead A8" })).getByRole(
+        "button",
+        { name: "A" },
+      ),
+    );
+    await user.keyboard("{Escape}");
+    expect(dialog).toBeInTheDocument();
+    fireEvent(dialog, new Event("cancel", { cancelable: true }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Open creator" }));
+    expect(screen.getByLabelText("Model name")).toHaveValue("Saved draft");
+    cleanup();
+    const restored = await openCreator();
+    expect(within(restored.dialog).getByLabelText("Model name")).toHaveValue(
+      "Saved draft",
+    );
+    await restored.user.click(within(restored.dialog).getByLabelText("Select bead"));
+    await restored.user.click(
+      within(restored.dialog).getByRole("menuitemradio", { name: /A8/ }),
+    );
+    await openBeadSettings(restored.user, restored.dialog);
+    const bead = within(restored.dialog).getByRole("article", { name: "Bead A8" });
+    expect(within(bead).getByLabelText("Strategy")).toHaveValue("center_of_mass");
+    expect(within(bead).getByRole("button", { name: "A" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(within(bead).getByText("Select at least one atom.")).toBeInTheDocument();
+    await restored.user.click(
+      within(restored.dialog).getByRole("button", { name: "Close bead settings" }),
+    );
+    await restored.user.click(
+      within(restored.dialog).getByRole("button", { name: "Add bead" }),
+    );
+    await restored.user.click(
+      within(restored.dialog).getByRole("menuitem", { name: "Direct mapping" }),
+    );
+    expect(
+      within(restored.dialog).getByRole("article", { name: "Bead A9" }),
+    ).toBeInTheDocument();
+  }, 10000);
+
+  it.each(["{", '{"source":null,"draft":{"beads":[]}}'])(
+    "ignores an unreadable stored draft: %s",
+    async (stored) => {
+      localStorage.setItem("rnagrainy.creator-draft.v1", stored);
+      const { dialog } = await openCreator();
+      expect(within(dialog).getByLabelText("Model name")).toHaveValue("Custom Model");
+      expect(within(dialog).getByRole("button", { name: "Use model" })).toBeEnabled();
+    },
+  );
+
+  it("retains edits on Escape when browser storage is unavailable", async () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new DOMException("Storage blocked", "SecurityError");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("Storage blocked", "SecurityError");
+    });
+    const { user, dialog } = await openCreator();
+    await openModelDetails(user, dialog);
+    await user.type(within(dialog).getByLabelText("Description"), " Unsaved work");
+    await user.click(within(dialog).getByRole("button", { name: "Done" }));
+    fireEvent(dialog, new Event("cancel", { cancelable: true }));
+    await user.click(screen.getByRole("button", { name: "Open creator" }));
+    expect(screen.getByLabelText("Description")).toHaveValue(
+      "Custom Model based on SimRNA. Unsaved work",
+    );
+  });
   it.each(["Model details", "Model actions menu"])(
     "handles focus changes safely in %s",
     async (label) => {

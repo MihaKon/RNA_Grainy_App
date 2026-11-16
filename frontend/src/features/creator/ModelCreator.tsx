@@ -1,10 +1,10 @@
 import { ChevronDown, CircleAlert, CircleCheck } from "lucide-react";
 import {
   type ChangeEvent,
+  type Dispatch,
   lazy,
   Suspense,
   useEffect,
-  useReducer,
   useRef,
   useState,
 } from "react";
@@ -28,6 +28,7 @@ import { CreatorGuide } from "./CreatorGuide";
 import {
   createDefaultDraft,
   createEmptyDraft,
+  type DraftAction,
   draftReducer,
   fromDefinition,
   type ModelDraft,
@@ -43,7 +44,8 @@ export const CREATOR_ORIGIN = "Model creator";
 interface ModelCreatorProps {
   titleId: string;
   config: AppConfig;
-  initialDraft: ModelDraft;
+  draft: ModelDraft;
+  dispatch: Dispatch<DraftAction>;
   onApply: (model: LoadedCustomModel) => void;
   onCancel: () => void;
 }
@@ -60,11 +62,11 @@ function restoreEditorFocus(target: HTMLElement | null, panel: HTMLElement | nul
 export function ModelCreator({
   titleId,
   config,
-  initialDraft,
+  draft,
+  dispatch,
   onApply,
   onCancel,
 }: ModelCreatorProps) {
-  const [draft, dispatch] = useReducer(draftReducer, initialDraft);
   const [previewTab, setPreviewTab] = useState<"live" | "json">("live");
   const [importError, setImportError] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);

@@ -1,16 +1,27 @@
 import { FileJson, PencilRuler, X } from "lucide-react";
-import { type ChangeEvent, useId, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  useEffect,
+  useId,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 
 import { getErrorMessage } from "@/api/client";
 import { validateCustomModel } from "@/api/coarseGrain";
 import type { AppConfig } from "@/api/types";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
+import {
+  readCreatorDraft,
+  writeCreatorDraft,
+} from "@/features/creator/creatorDraftStorage";
 import { ModelCreator } from "@/features/creator/ModelCreator";
 import {
   createDefaultDraft,
+  draftReducer,
   fromDefinition,
-  type ModelDraft,
 } from "@/features/creator/modelDraft";
 
 import {
@@ -30,7 +41,17 @@ export function CustomModelInput({ config, value, onChange }: CustomModelInputPr
   const inputRef = useRef<HTMLInputElement>(null);
   const [readError, setReadError] = useState<string | null>(null);
   const [rejectedModel, setRejectedModel] = useState<LoadedCustomModel | null>(null);
-  const [creatorDraft, setCreatorDraft] = useState<ModelDraft | null>(null);
+  const [initialCreator] = useState(
+    () => readCreatorDraft() ?? { source: null, draft: createDefaultDraft() },
+  );
+  const [creatorDraft, dispatch] = useReducer(draftReducer, initialCreator.draft);
+  const [creatorSource, setCreatorSource] = useState(initialCreator.source);
+  const [creatorOpen, setCreatorOpen] = useState(false);
+  const openingDraft = useRef(creatorDraft);
+
+  useEffect(() => {
+    writeCreatorDraft({ source: creatorSource, draft: creatorDraft });
+  }, [creatorDraft, creatorSource]);
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -63,14 +84,15 @@ export function CustomModelInput({ config, value, onChange }: CustomModelInputPr
   };
 
   const openCreator = (model: LoadedCustomModel | null) => {
-    if (!model) {
-      setCreatorDraft(createDefaultDraft());
-      return;
-    }
     try {
-      setCreatorDraft(
-        fromDefinition(JSON.parse(model.json) as Record<string, unknown>),
-      );
+      const next =
+        !model || model.json === creatorSource
+          ? creatorDraft
+          : fromDefinition(JSON.parse(model.json) as Record<string, unknown>);
+      openingDraft.current = next;
+      dispatch({ type: "replace", draft: next });
+      if (model) setCreatorSource(model.json);
+      setCreatorOpen(true);
     } catch (error) {
       if (!(error instanceof CustomModelFileError)) throw error;
       setRejectedModel(null);
@@ -166,25 +188,28 @@ export function CustomModelInput({ config, value, onChange }: CustomModelInputPr
       )}
 
       <Drawer
-        open={creatorDraft !== null}
+        open={creatorOpen}
         labelledBy={creatorTitleId}
         onClose={() => {
-          setCreatorDraft(null);
+          setCreatorOpen(false);
         }}
       >
-        {creatorDraft && (
+        {creatorOpen && (
           <ModelCreator
             titleId={creatorTitleId}
             config={config}
-            initialDraft={creatorDraft}
+            draft={creatorDraft}
+            dispatch={dispatch}
             onApply={(model) => {
               onChange(model);
+              setCreatorSource(model.json);
               setReadError(null);
               setRejectedModel(null);
-              setCreatorDraft(null);
+              setCreatorOpen(false);
             }}
             onCancel={() => {
-              setCreatorDraft(null);
+              dispatch({ type: "replace", draft: openingDraft.current });
+              setCreatorOpen(false);
             }}
           />
         )}

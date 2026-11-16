@@ -95,6 +95,11 @@ export function CreatorGuide() {
           file. Start a new model with <Term>Start from scratch</Term> or{" "}
           <Term>Load SimRNA template</Term>.
         </p>
+        <p>
+          Edits are saved in this browser, including unfinished beads. Escape keeps your
+          draft when closing the creator, and it is restored after a page reload.
+          <Term> Cancel</Term> restores the draft from before you opened the creator.
+        </p>
       </GuideSection>
     </div>
   );
