@@ -67,9 +67,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("example")));
   viewer = fakeViewer();
   createViewer.mockReset().mockResolvedValue(viewer);
-  readStructure
-    .mockReset()
-    .mockResolvedValue({ residues: example, originalAtomCount: 6 });
+  readStructure.mockReset().mockResolvedValue({ residues: example });
 });
 
 describe("CreatorPreview", () => {

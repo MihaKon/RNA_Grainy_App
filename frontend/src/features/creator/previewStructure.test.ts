@@ -55,6 +55,65 @@ function draft(strategy: "direct" | "geometric_center" | "center_of_mass"): Mode
 }
 
 describe("creator preview structures", () => {
+  it("counts only residues that produce beads in the selected preview", () => {
+    const residue = source[0];
+    if (!residue) throw new Error("Missing fixture");
+    const model = draft("direct");
+    model.beads = model.beads.map((bead) => ({ ...bead, scope: "adenine" }));
+    const residues: PreviewResidue[] = [
+      residue,
+      {
+        ...residue,
+        sequence: 2,
+        atoms: residue.atoms.filter((atom) => atom.name !== "P"),
+      },
+      { ...residue, base: "C", sequence: 3 },
+    ];
+    expect(buildPreview(model, residues, "all").atomCounts).toEqual({
+      original: 3,
+      coarse: 1,
+      reduction: 1 - 1 / 3,
+    });
+    expect(buildPreview(model, residues, "C").atomCounts).toEqual({
+      original: 0,
+      coarse: 0,
+      reduction: 0,
+    });
+  });
+
+  it("counts accepted alternate conformations from the first model only", async () => {
+    const parsed = await readPreviewSource(`data_alternates
+loop_
+_entity.id
+_entity.type
+1 polymer
+loop_
+_atom_site.label_entity_id
+_atom_site.label_asym_id
+_atom_site.label_seq_id
+_atom_site.label_comp_id
+_atom_site.label_alt_id
+_atom_site.label_atom_id
+_atom_site.type_symbol
+_atom_site.Cartn_x
+_atom_site.Cartn_y
+_atom_site.Cartn_z
+_atom_site.pdbx_PDB_model_num
+1 A 1 A . P P 0 0 0 1
+1 A 1 A A OP1 O 1 0 0 1
+1 A 1 A ? OP2 O 0 1 0 1
+1 A 1 A B OP1 O 2 0 0 1
+1 A 1 A C OP2 O 0 2 0 1
+1 A 2 A B P P 3 0 0 1
+1 A 1 A . P P 4 0 0 2
+`);
+    expect(parsed.residues).toHaveLength(1);
+    expect(parsed.residues[0]?.inputAtomCount).toBe(3);
+    expect(
+      buildPreview(draft("direct"), parsed.residues, "all").atomCounts.original,
+    ).toBe(3);
+  });
+
   it("calculates all mapping strategies using experimental coordinates", async () => {
     for (const strategy of ["direct", "geometric_center", "center_of_mass"] as const) {
       const preview = buildPreview(draft(strategy), source, "all");
@@ -79,14 +138,9 @@ describe("creator preview structures", () => {
       );
       const source = await readPreviewSource(text);
       const residues = source.residues;
-      const preview = buildPreview(
-        createDefaultDraft(),
-        residues,
-        "all",
-        source.originalAtomCount,
-      );
+      const preview = buildPreview(createDefaultDraft(), residues, "all");
       const expected = (
-        { "1EHZ": [1652, 380], "1MNX": [1364, 209], "2F8S": [6794, 220] } as Record<
+        { "1EHZ": [1652, 380], "1MNX": [1364, 209], "2F8S": [930, 220] } as Record<
           string,
           number[]
         >
@@ -94,7 +148,7 @@ describe("creator preview structures", () => {
       expect(preview.atomCounts.original).toBe(expected?.[0]);
       expect(preview.atomCounts.coarse).toBe(expected?.[1]);
       expect(preview.atomCounts.reduction).toBeCloseTo(
-        1 - preview.count / source.originalAtomCount,
+        1 - preview.count / preview.atomCounts.original,
       );
       expect(preview.count).toBe(residues.length * 5 - (id === "1MNX" ? 1 : 0));
       const block = await parse(preview.coarse);

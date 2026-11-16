@@ -77,8 +77,9 @@ export function CreatorGuide() {
           all-atom layers independently. Edits preserve the camera; changing the example
           or residue selection reframes the view. Missing atoms are skipped, as in
           conversion. Modified nucleotides use their recorded parent base. Water,
-          ligands and proteins are omitted from the 3D preview. Input atom counts follow
-          Results and include all first-model polymer atoms.
+          ligands and proteins are omitted from the 3D preview. Input atom counts
+          include only RNA residues represented by at least one bead, using the same
+          alternate conformations as the mapping.
         </p>
       </GuideSection>
 
