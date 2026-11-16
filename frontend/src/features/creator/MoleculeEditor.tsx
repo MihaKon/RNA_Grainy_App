@@ -4,6 +4,7 @@ import { type ReactNode, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { SelectField } from "@/components/ui/SelectField";
 import { ToggleButton } from "@/components/ui/ToggleButton";
+import { useDropdownDismiss } from "@/hooks/useDropdownDismiss";
 
 import {
   ALL_RESIDUES,
@@ -67,6 +68,13 @@ export function MoleculeEditor({
   const [tool, setTool] = useState<"atoms" | "intra" | "inter">("atoms");
   const [connectionType, setConnectionType] = useState<"intra" | "inter">("intra");
   const [adding, setAdding] = useState(false);
+  const addingRef = useRef<HTMLDivElement>(null);
+  useDropdownDismiss(selectorRef, () => {
+    selectorRef.current?.removeAttribute("open");
+  });
+  useDropdownDismiss(addingRef, () => {
+    setAdding(false);
+  });
   const [conflictHint, setConflictHint] = useState<{
     key: string;
     message: string;
@@ -142,13 +150,6 @@ export function MoleculeEditor({
           <details
             ref={selectorRef}
             className="relative"
-            onBlur={(event) => {
-              if (
-                !(event.relatedTarget instanceof Node) ||
-                !event.currentTarget.contains(event.relatedTarget)
-              )
-                selectorRef.current?.removeAttribute("open");
-            }}
             onKeyDown={(event) => {
               if (event.key === "Escape") {
                 event.preventDefault();
@@ -330,14 +331,8 @@ export function MoleculeEditor({
           </SelectField>
         )}
         <div
+          ref={addingRef}
           className="relative ml-auto"
-          onBlur={(event) => {
-            if (
-              !(event.relatedTarget instanceof Node) ||
-              !event.currentTarget.contains(event.relatedTarget)
-            )
-              setAdding(false);
-          }}
           onKeyDown={(event) => {
             if (event.key === "Escape" && adding) {
               event.preventDefault();

@@ -19,6 +19,7 @@ import {
   type LoadedCustomModel,
   readCustomModelFile,
 } from "@/features/upload/customModel";
+import { useDropdownDismiss } from "@/hooks/useDropdownDismiss";
 import { cn } from "@/lib/cn";
 import { downloadTextFile } from "@/lib/download";
 
@@ -72,6 +73,15 @@ export function ModelCreator({
   const modelMenuRef = useRef<HTMLDetailsElement>(null);
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const guideRef = useRef<HTMLDetailsElement>(null);
+  useDropdownDismiss(detailsRef, () => {
+    detailsRef.current?.removeAttribute("open");
+  });
+  useDropdownDismiss(modelMenuRef, () => {
+    modelMenuRef.current?.removeAttribute("open");
+  });
+  useDropdownDismiss(guideRef, () => {
+    guideRef.current?.removeAttribute("open");
+  });
   const editorRef = useRef<HTMLElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const active = draft.beads.find((bead) => bead.key === selectedKey) ?? draft.beads[0];
@@ -186,13 +196,6 @@ export function ModelCreator({
             <details
               ref={detailsRef}
               className="group/model-details relative"
-              onBlur={(event) => {
-                if (
-                  !(event.relatedTarget instanceof Node) ||
-                  !event.currentTarget.contains(event.relatedTarget)
-                )
-                  detailsRef.current?.removeAttribute("open");
-              }}
               onKeyDown={(event) => {
                 if (event.key === "Escape") {
                   event.preventDefault();
@@ -252,13 +255,6 @@ export function ModelCreator({
             <details
               ref={modelMenuRef}
               className="relative"
-              onBlur={(event) => {
-                if (
-                  !(event.relatedTarget instanceof Node) ||
-                  !event.currentTarget.contains(event.relatedTarget)
-                )
-                  modelMenuRef.current?.removeAttribute("open");
-              }}
               onKeyDown={(event) => {
                 if (event.key === "Escape") {
                   event.preventDefault();

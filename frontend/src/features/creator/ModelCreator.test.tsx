@@ -59,6 +59,34 @@ describe("ModelCreator", () => {
       const dropdown = control.closest("details");
       await user.click(control);
       expect(dropdown).toHaveAttribute("open");
+      const panel = dropdown?.querySelector("div");
+      if (!panel) throw new Error("Missing dropdown panel");
+      fireEvent.pointerDown(panel);
+      fireEvent.focusOut(control, { relatedTarget: dialog });
+      expect(dropdown).toHaveAttribute("open");
+      fireEvent.pointerUp(panel);
+      fireEvent.click(panel);
+      expect(dropdown).toHaveAttribute("open");
+      fireEvent.pointerDown(panel, { pointerType: "touch" });
+      fireEvent.pointerUp(panel, { pointerType: "touch" });
+      fireEvent.focusOut(control, { relatedTarget: dialog });
+      expect(dropdown).toHaveAttribute("open");
+      fireEvent.click(panel);
+      expect(dropdown).toHaveAttribute("open");
+      fireEvent.focusIn(dialog);
+      expect(dropdown).not.toHaveAttribute("open");
+      await user.click(control);
+      await user.click(
+        within(panel).getByText(
+          label === "Model details" ? "Model details" : "Model ready",
+        ),
+      );
+      expect(dropdown).toHaveAttribute("open");
+      if (label === "Model details") {
+        await user.click(within(panel).getByText("Model name", { selector: "label" }));
+        expect(within(panel).getByLabelText("Model name")).toHaveFocus();
+        expect(dropdown).toHaveAttribute("open");
+      }
       fireEvent.focusOut(control, { relatedTarget: control });
       expect(dropdown).toHaveAttribute("open");
       const windowBlur = new FocusEvent("focusout", { bubbles: true });
