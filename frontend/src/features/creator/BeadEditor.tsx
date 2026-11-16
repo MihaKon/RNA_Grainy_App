@@ -1,6 +1,7 @@
-import { X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import type { Dispatch } from "react";
 
+import { Button } from "@/components/ui/Button";
 import { SelectField } from "@/components/ui/SelectField";
 import { TextField } from "@/components/ui/TextField";
 import { ToggleButton } from "@/components/ui/ToggleButton";
@@ -13,9 +14,16 @@ import {
   STRATEGY_LABELS,
 } from "./atoms";
 import { ChipGroup } from "./ChipGroup";
-import type { BeadDraft, DraftAction } from "./modelDraft";
+import {
+  atomSelection,
+  type BeadDraft,
+  type DraftAction,
+  type ModelDraft,
+  positionConflict,
+} from "./modelDraft";
 
 interface BeadEditorProps {
+  draft: ModelDraft;
   bead: BeadDraft;
   issues: readonly string[] | undefined;
   dispatch: Dispatch<DraftAction>;
@@ -27,7 +35,7 @@ const STRATEGY_HINTS: Record<BeadStrategy, string> = {
   geometric_center: "The bead is placed at the geometric center of the selected atoms.",
 };
 
-export function BeadEditor({ bead, issues, dispatch }: BeadEditorProps) {
+export function BeadEditor({ draft, bead, issues, dispatch }: BeadEditorProps) {
   const scopeAtoms = SCOPES[bead.scope].atoms;
   const atomChoices = [
     ...scopeAtoms,
@@ -38,23 +46,13 @@ export function BeadEditor({ bead, issues, dispatch }: BeadEditorProps) {
   return (
     <article
       aria-label={`Bead ${bead.beadId || "without ID"}`}
-      className="relative flex flex-col gap-5 rounded-md border border-line-soft bg-white p-5"
+      className="relative flex flex-col gap-3 bg-white"
     >
-      <button
-        type="button"
-        onClick={() => {
-          dispatch({ type: "removeBead", key });
-        }}
-        aria-label={`Remove bead ${bead.beadId}`}
-        className="absolute top-3 right-3 rounded p-1.5 text-ink-3 transition-colors hover:text-red-deep"
-      >
-        <X className="size-4 hover:cursor-pointer" />
-      </button>
-
-      <div className="grid gap-4 pr-8 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2 [&>div:last-child]:col-span-2">
         <TextField
           label="Bead ID"
           value={bead.beadId}
+          maxLength={5}
           autoComplete="off"
           spellCheck={false}
           onChange={(event) => {
@@ -64,6 +62,7 @@ export function BeadEditor({ bead, issues, dispatch }: BeadEditorProps) {
         <TextField
           label="Bead name"
           value={bead.name}
+          maxLength={5}
           autoComplete="off"
           spellCheck={false}
           onChange={(event) => {
@@ -81,7 +80,17 @@ export function BeadEditor({ bead, issues, dispatch }: BeadEditorProps) {
           }}
         >
           {BEAD_STRATEGIES.map((strategy) => (
-            <option key={strategy} value={strategy}>
+            <option
+              key={strategy}
+              value={strategy}
+              disabled={
+                !!positionConflict(draft, {
+                  ...bead,
+                  strategy,
+                  atoms: strategy === "direct" ? bead.atoms.slice(0, 1) : bead.atoms,
+                })
+              }
+            >
               {STRATEGY_LABELS[strategy]}
             </option>
           ))}
@@ -89,7 +98,7 @@ export function BeadEditor({ bead, issues, dispatch }: BeadEditorProps) {
       </div>
 
       <TextField
-        label="Description"
+        label="Bead description"
         value={bead.description}
         placeholder="e.g. Phosphate P atom"
         onChange={(event) => {
@@ -100,8 +109,7 @@ export function BeadEditor({ bead, issues, dispatch }: BeadEditorProps) {
           });
         }}
       />
-
-      <ChipGroup legend="Applies to">
+      <ChipGroup legend="Scope">
         {BEAD_SCOPES.map((scope) => (
           <ToggleButton
             key={scope}
@@ -116,18 +124,28 @@ export function BeadEditor({ bead, issues, dispatch }: BeadEditorProps) {
       </ChipGroup>
 
       <ChipGroup legend="Atoms" hint={STRATEGY_HINTS[bead.strategy]}>
-        {atomChoices.map((atom) => (
-          <ToggleButton
-            key={atom}
-            pressed={bead.atoms.includes(atom)}
-            className="normal-case"
-            onClick={() => {
-              dispatch({ type: "toggleAtom", key, atom });
-            }}
-          >
-            {atom}
-          </ToggleButton>
-        ))}
+        {atomChoices.map((atom) => {
+          const conflict = positionConflict(draft, atomSelection(bead, atom));
+          return (
+            <ToggleButton
+              key={atom}
+              pressed={bead.atoms.includes(atom)}
+              disabled={!!conflict}
+              title={conflict}
+              className="normal-case"
+              onClick={() => {
+                dispatch({ type: "toggleAtom", key, atom });
+              }}
+            >
+              {atom}
+            </ToggleButton>
+          );
+        })}
+        {bead.atoms.length === 0 && (
+          <p className="text-xs text-ink-3">
+            Select atoms in the diagrams or this list.
+          </p>
+        )}
       </ChipGroup>
 
       {issues && (
@@ -137,6 +155,15 @@ export function BeadEditor({ bead, issues, dispatch }: BeadEditorProps) {
           ))}
         </ul>
       )}
+      <Button
+        variant="danger"
+        aria-label={`Remove bead ${bead.beadId}`}
+        onClick={() => {
+          dispatch({ type: "removeBead", key });
+        }}
+      >
+        <Trash2 aria-hidden="true" className="size-4" /> Remove bead
+      </Button>
     </article>
   );
 }

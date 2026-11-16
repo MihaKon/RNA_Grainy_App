@@ -6,10 +6,103 @@ import {
   draftReducer,
   fromDefinition,
   type ModelDraft,
+  positionConflict,
   resolveBeads,
   toDefinition,
   validateDraft,
 } from "./modelDraft";
+
+function requiredBead(draft: ModelDraft, index: number) {
+  const bead = draft.beads.at(index);
+  if (!bead) throw new Error("Missing test bead");
+  return bead;
+}
+
+describe("exclusive bead positions", () => {
+  it.each(["direct", "geometric_center", "center_of_mass"] as const)(
+    "rejects an occupied atom with %s mapping",
+    (strategy) => {
+      const draft = draftReducer(createDefaultDraft(), { type: "addBead", strategy });
+      const bead = requiredBead(draft, -1);
+      expect(
+        draftReducer(draft, { type: "toggleAtom", key: bead.key, atom: "P" }),
+      ).toBe(draft);
+      const free = draftReducer(draft, {
+        type: "toggleAtom",
+        key: bead.key,
+        atom: "OP1",
+      });
+      expect(free.beads.at(-1)?.atoms).toEqual(["OP1"]);
+    },
+  );
+
+  it("validates duplicate centers regardless of atom order", () => {
+    const first = {
+      ...requiredBead(createDefaultDraft(), 0),
+      strategy: "geometric_center" as const,
+      atoms: ["OP1", "OP2"],
+    };
+    const second = {
+      ...first,
+      key: "second",
+      beadId: "B2",
+      name: "B2",
+      atoms: ["OP2", "OP1"],
+    };
+    const draft = { ...createDefaultDraft(), beads: [first, second] };
+    expect(positionConflict(draft, second)).toContain("A1");
+    expect(validateDraft(draft).beads[second.key]).toContain(
+      "Position already occupied by bead A1 in A.",
+    );
+    const edited = draftReducer(draft, {
+      type: "updateBead",
+      key: second.key,
+      patch: { description: "Imported center" },
+    });
+    expect(edited.beads.find((bead) => bead.key === second.key)?.description).toBe(
+      "Imported center",
+    );
+    expect(validateDraft(edited).beads[second.key]).toBeDefined();
+  });
+
+  it("allows equal positions on disjoint bases and rejects expanding into an occupied base", () => {
+    const first = {
+      ...requiredBead(createDefaultDraft(), 0),
+      scope: "adenine" as const,
+    };
+    const second = {
+      ...first,
+      key: "second",
+      beadId: "B2",
+      name: "B2",
+      scope: "guanine" as const,
+    };
+    const draft = { ...createDefaultDraft(), beads: [first, second] };
+    expect(positionConflict(draft, second)).toBeUndefined();
+    expect(
+      draftReducer(draft, {
+        type: "setBeadScope",
+        key: second.key,
+        scope: "purine",
+        keepAtoms: true,
+      }),
+    ).toBe(draft);
+  });
+
+  it("allows reusing a position after removing its bead", () => {
+    const draft = draftReducer(createDefaultDraft(), { type: "addBead" });
+    const bead = requiredBead(draft, -1);
+    const removed = draftReducer(draft, {
+      type: "removeBead",
+      key: requiredBead(draft, 0).key,
+    });
+    expect(
+      draftReducer(removed, { type: "toggleAtom", key: bead.key, atom: "P" }).beads.at(
+        -1,
+      )?.atoms,
+    ).toEqual(["P"]);
+  });
+});
 
 const withoutKeys = (draft: ModelDraft) => ({
   ...draft,

@@ -2,6 +2,21 @@ export const ALL_RESIDUES = ["A", "G", "C", "U"] as const;
 
 export type Residue = (typeof ALL_RESIDUES)[number];
 
+const BACKBONE_ATOMS = [
+  "P",
+  "OP1",
+  "OP2",
+  "C1'",
+  "C2'",
+  "C3'",
+  "C4'",
+  "C5'",
+  "O2'",
+  "O3'",
+  "O4'",
+  "O5'",
+];
+
 const BASE_ATOMS: Record<Residue, readonly string[]> = {
   A: ["N1", "C2", "N3", "C4", "C5", "C6", "N6", "N7", "C8", "N9"],
   G: ["N1", "C2", "N2", "N3", "C4", "C5", "C6", "O6", "N7", "C8", "N9"],
@@ -11,19 +26,17 @@ const BASE_ATOMS: Record<Residue, readonly string[]> = {
 
 interface ScopeDefinition {
   label: string;
-  // Scopes without residues apply to every residue through the default mapping.
   residues?: readonly Residue[];
   atoms: readonly string[];
 }
 
-// A bead must find its atoms in every residue it applies to.
 function sharedAtoms(residues: readonly Residue[]): string[] {
   const [first = [], ...rest] = residues.map((residue) => BASE_ATOMS[residue]);
   return first.filter((atom) => rest.every((atoms) => atoms.includes(atom)));
 }
 
 function baseScope(label: string, residues: readonly Residue[]): ScopeDefinition {
-  return { label, residues, atoms: sharedAtoms(residues) };
+  return { label, residues, atoms: [...BACKBONE_ATOMS, ...sharedAtoms(residues)] };
 }
 
 const SCOPE_DEFINITIONS = {
@@ -39,6 +52,10 @@ const SCOPE_DEFINITIONS = {
   cytosine: baseScope("C", ["C"]),
   guanine: baseScope("G", ["G"]),
   uracil: baseScope("U", ["U"]),
+  nucleotide: {
+    label: "Whole nucleotide",
+    atoms: [...BACKBONE_ATOMS, ...sharedAtoms(ALL_RESIDUES)],
+  },
 } satisfies Record<string, ScopeDefinition>;
 
 export type BeadScope = keyof typeof SCOPE_DEFINITIONS;
@@ -63,7 +80,6 @@ export function residuesForScope(scope: BeadScope): readonly Residue[] {
 
 const BASE_ATOM_NAMES = new Set(Object.values(BASE_ATOMS).flat());
 
-// Only base atoms differ between residues; backbone and other atom names are not checked.
 export function residuesWithoutAtom(
   atom: string,
   residues: readonly Residue[],
