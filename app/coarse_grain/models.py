@@ -21,6 +21,7 @@ from gemmi import (
     Structure,
 )
 
+from app.coarse_grain.fixer import check_residue_completeness, get_required_atoms
 from app.coarse_grain.geometry import (
     calculate_center_of_mass,
     calculate_geometric_center,
@@ -163,6 +164,14 @@ class BaseCoarseGrainModel(ABC):
     def _filter_atoms(self, structure: Structure) -> None:
         for model in structure:
             for chain in model:
+                first_residue_id = next(
+                    (
+                        i
+                        for i, residue in enumerate(chain)
+                        if self._should_keep_residue(residue)
+                    ),
+                    None,
+                )
                 for res_id in range(len(chain) - 1, -1, -1):
                     res = chain[res_id]
 
@@ -171,6 +180,17 @@ class BaseCoarseGrainModel(ABC):
                         continue
 
                     self._filter_alternate_conformations(res)
+
+                    required_atoms = set(
+                        self.nucleotides_config[res.name]["allowed_atoms"]
+                    )
+
+                    check_residue_completeness(
+                        res,
+                        required_atoms,
+                        is_first_residue=res_id == first_residue_id,
+                    )
+
                     self._filter_residue_atoms(
                         res, self.nucleotides_config[res.name]["allowed_atoms"]
                     )
@@ -393,6 +413,15 @@ class CalculateBeadModel(BaseCoarseGrainModel):
     def _filter_atoms(self, structure: Structure) -> None:
         for model in structure:
             for chain in model:
+                first_residue_id = next(
+                    (
+                        i
+                        for i, residue in enumerate(chain)
+                        if self._should_keep_residue(residue)
+                    ),
+                    None,
+                )
+
                 for res_id in range(len(chain) - 1, -1, -1):
                     res = chain[res_id]
 
@@ -401,6 +430,18 @@ class CalculateBeadModel(BaseCoarseGrainModel):
                         continue
 
                     self._filter_alternate_conformations(res)
+
+                    required_atoms = get_required_atoms(
+                        res.name,
+                        self.nucleotides_config[res.name]["atom_centers"].values(),
+                    )
+
+                    check_residue_completeness(
+                        res,
+                        required_atoms,
+                        is_first_residue=res_id == first_residue_id,
+                    )
+
                     self._get_residue_with_beads(res)
 
         structure.remove_empty_chains()
