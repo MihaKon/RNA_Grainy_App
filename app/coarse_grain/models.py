@@ -42,6 +42,7 @@ logger = logging.getLogger(__name__)
 ModifiedResidueKey = tuple[str, str, str]  # chain, seqid, residue name
 EMPTY_ALTLOC = "\x00"
 PRIMARY_ATOM_ALTLOC = "A"
+MAX_INTER_RESIDUE_DISTANCE = 8.0
 
 
 class CoarseGrainModelRegistry:
@@ -321,7 +322,11 @@ class BaseCoarseGrainModel(ABC):
         tail_atom = next((a for a in prev_res if a.name == tail_atom_name), None)
         head_atom = next((a for a in curr_res if a.name == head_atom_name), None)
 
-        if tail_atom and head_atom:
+        if (
+            tail_atom is not None
+            and head_atom is not None
+            and tail_atom.pos.dist(head_atom.pos) <= MAX_INTER_RESIDUE_DISTANCE
+        ):
             conn = self._create_connection(
                 prev_res, tail_atom, curr_res, head_atom, chain_name
             )
@@ -696,7 +701,11 @@ class Nares2PModel(GeometricCenterModel):
         tail_atom = next((a for a in prev_res if a.name == tail_atom_name), None)
         head_atom = next((a for a in curr_res if a.name == head_atom_name), None)
 
-        if tail_atom and head_atom:
+        if (
+            tail_atom is not None
+            and head_atom is not None
+            and tail_atom.pos.dist(head_atom.pos) <= MAX_INTER_RESIDUE_DISTANCE
+        ):
             structure.add_conect(tail_atom.serial, head_atom.serial, order=1)
             conn = self._create_connection(
                 prev_res, tail_atom, curr_res, head_atom, chain_name
