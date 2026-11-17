@@ -16,6 +16,8 @@ BACKBONE_ATOMS = {
     "O5'",
 }
 
+SUGAR_RING_ATOMS = {"C1'", "C2'", "C3'", "C4'", "O4'"}
+
 BASE_ATOMS = {
     "A": {"N1", "C2", "N3", "C4", "C5", "C6", "N6", "N7", "C8", "N9"},
     "C": {"N1", "C2", "O2", "N3", "C4", "N4", "C5", "C6"},

@@ -6,7 +6,12 @@ from math import isfinite
 
 from gemmi import Atom, Element, Position, Residue, SupResult, cif, superpose_positions
 
-from app.coarse_grain.residues import get_atoms, normalize_atom_name
+from app.coarse_grain.residues import (
+    BASE_ATOMS,
+    SUGAR_RING_ATOMS,
+    get_atoms,
+    normalize_atom_name,
+)
 from app.settings import RESIDUE_TEMPLATES_DIR
 
 
@@ -103,6 +108,36 @@ def _has_noncollinear_points(
     return False
 
 
+def check_reconstruction_support(
+    residue: Residue,
+    missing_atoms: set[str],
+) -> str | None:
+    present = {normalize_atom_name(atom.name): atom for atom in residue}
+
+    fragments = (
+        ("base", BASE_ATOMS[residue.name]),
+        ("sugar ring", SUGAR_RING_ATOMS),
+    )
+
+    for fragment_name, fragment_atoms in fragments:
+        if not missing_atoms & fragment_atoms:
+            continue
+
+        positions = [
+            present[name].pos
+            for name in sorted(fragment_atoms & present.keys())
+            if _finite_position(present[name].pos)
+        ]
+
+        if len(positions) < 3 or not _has_noncollinear_points(positions):
+            return (
+                f"Insufficient reference atoms in the {fragment_name}: "
+                "at least three noncollinear atoms are required."
+            )
+
+    return None
+
+
 def fit_template(
     residue: Residue,
     template: Mapping[str, Atom],
@@ -151,6 +186,14 @@ def estimate_missing_atom_positions(
 
     if not missing:
         return EstimationResult({}, {})
+
+    reason = check_reconstruction_support(residue, missing)
+
+    if reason is not None:
+        return EstimationResult(
+            positions={},
+            failures={name: reason for name in sorted(missing)},
+        )
 
     present = _atoms_by_name(residue)
 
