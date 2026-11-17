@@ -21,10 +21,18 @@ from gemmi import (
     Structure,
 )
 
-from app.coarse_grain.fixer import check_residue_completeness, get_required_atoms
 from app.coarse_grain.geometry import (
     calculate_center_of_mass,
     calculate_geometric_center,
+)
+from app.coarse_grain.residue_fixer import (
+    add_estimated_atoms,
+    estimate_missing_atom_positions,
+    load_template,
+)
+from app.coarse_grain.residues import (
+    check_residue_completeness,
+    get_required_atoms,
 )
 from app.exceptions import InvalidModelParametersError, ModelLoadingError
 from app.settings import COARSE_GRAIN_MODELS_DIR
@@ -185,14 +193,17 @@ class BaseCoarseGrainModel(ABC):
                         self.nucleotides_config[res.name]["allowed_atoms"]
                     )
 
-                    check_residue_completeness(
+                    if not self._reconstruct_missing_atoms(
                         res,
                         required_atoms,
                         is_first_residue=res_id == first_residue_id,
-                    )
+                    ):
+                        del chain[res_id]
+                        continue
 
                     self._filter_residue_atoms(
-                        res, self.nucleotides_config[res.name]["allowed_atoms"]
+                        res,
+                        self.nucleotides_config[res.name]["allowed_atoms"],
                     )
 
         structure.remove_empty_chains()
@@ -402,6 +413,44 @@ class BaseCoarseGrainModel(ABC):
                         residue.name = parent_name
                         residue.het_flag = "A"
 
+    def _reconstruct_missing_atoms(
+        self,
+        res: Residue,
+        required_atoms: set[str],
+        is_first_residue: bool,
+    ) -> bool:
+        missing_atoms = check_residue_completeness(
+            res,
+            required_atoms,
+            is_first_residue=is_first_residue,
+        )
+
+        if not missing_atoms:
+            return True
+
+        template = load_template(res.name)
+
+        estimation = estimate_missing_atom_positions(
+            res,
+            missing_atoms,
+            template,
+        )
+
+        if estimation.failures:
+            logger.warning(
+                "Skipping residue %s: %s",
+                res.seqid,
+                estimation.failures,
+            )
+            return False
+
+        add_estimated_atoms(
+            res,
+            template,
+            estimation.positions,
+        )
+        return True
+
 
 class CalculateBeadModel(BaseCoarseGrainModel):
     @property
@@ -430,17 +479,18 @@ class CalculateBeadModel(BaseCoarseGrainModel):
                         continue
 
                     self._filter_alternate_conformations(res)
-
                     required_atoms = get_required_atoms(
                         res.name,
                         self.nucleotides_config[res.name]["atom_centers"].values(),
                     )
 
-                    check_residue_completeness(
+                    if not self._reconstruct_missing_atoms(
                         res,
                         required_atoms,
                         is_first_residue=res_id == first_residue_id,
-                    )
+                    ):
+                        del chain[res_id]
+                        continue
 
                     self._get_residue_with_beads(res)
 

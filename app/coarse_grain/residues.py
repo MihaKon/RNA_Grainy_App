@@ -33,7 +33,7 @@ def normalize_atom_name(atom_name: str) -> str:
     return ATOM_NAME_ALIASES.get(atom_name, atom_name)
 
 
-def get_canonical_atoms(residue_name: str) -> set[str]:
+def get_atoms(residue_name: str) -> set[str]:
     return BACKBONE_ATOMS | PHOSPHATE_ATOMS | BASE_ATOMS[residue_name]
 
 
@@ -41,7 +41,7 @@ def get_required_atoms(residue_name: str, atom_groups: Iterable[list[str]]) -> s
     configured_atoms = {
         normalize_atom_name(atom_name) for atoms in atom_groups for atom_name in atoms
     }
-    return configured_atoms & get_canonical_atoms(residue_name)
+    return configured_atoms & get_atoms(residue_name)
 
 
 def check_residue_completeness(

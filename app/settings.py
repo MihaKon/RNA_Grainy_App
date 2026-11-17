@@ -18,6 +18,7 @@ SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 
 COARSE_GRAIN_MODELS_DIR = BASE_DIR / "coarse_grain" / "models"
+RESIDUE_TEMPLATES_DIR = BASE_DIR / "coarse_grain" / "templates"
 CITATIONS_DIR = BASE_DIR / "coarse_grain" / "metadata" / "citations.json"
 
 STATIC_DIR = BASE_DIR / "static"
