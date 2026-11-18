@@ -60,17 +60,6 @@ Detailed descriptions, mapping rules, and references are available in the
 
 ![RNAgrainy model documentation](docs/screenshots/model-documentation.png)
 
-### Structure processing
-
-![RNAgrainy structure processing documentation](docs/screenshots/structure-processing.png)
-
-### Custom model download
-
-![Download the custom model definition from the results page](docs/screenshots/custom-model-download.png)
-
-### Conversion report
-
-![Conversion report with estimated atoms and a skipped nucleotide](docs/screenshots/conversion-report.png)
 
 ## Public API
 
