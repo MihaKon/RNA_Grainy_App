@@ -7,6 +7,7 @@ from gemmi import (
 
 from app.coarse_grain.models import EMPTY_ALTLOC, PRIMARY_ATOM_ALTLOC
 from app.coarse_grain.parser import process_structure_with_coarse_grain_model
+from app.coarse_grain.report import ConversionReportCollector
 from app.exceptions import AppException
 from app.models.form import SupportedFormats
 
@@ -97,8 +98,11 @@ class StructureProcessor:
 
     @staticmethod
     def apply_coarse_graining(
-        structure: Structure, model: str, custom_model_data: dict | None = None
+        structure: Structure,
+        model: str,
+        custom_model_data: dict | None = None,
+        report: ConversionReportCollector | None = None,
     ) -> Structure:
         return process_structure_with_coarse_grain_model(
-            structure, model, custom_model_data
+            structure, model, custom_model_data, report
         )

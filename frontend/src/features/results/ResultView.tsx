@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { Link } from "react-router";
 
@@ -13,6 +13,7 @@ import { AtomMappingTable } from "@/features/models/AtomMappingTable";
 import { ModelDescription } from "@/features/models/ModelDescription";
 import { downloadTextFile } from "@/lib/download";
 
+import { ConversionLog } from "./ConversionLog";
 import { ModelReport } from "./ModelReport";
 import { ShareResultsButton } from "./ShareResultsButton";
 import { preloadStructureViewer } from "./viewer/preload";
@@ -43,10 +44,26 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
           {result.filename}
         </h1>
         <div className="flex w-full min-w-0 flex-col items-start gap-3 lg:w-auto lg:items-end">
-          <ShareResultsButton
-            key={result.workspace_id}
-            workspaceId={result.workspace_id}
-          />
+          <div className="flex max-w-full flex-wrap items-start gap-x-4 gap-y-2 lg:justify-end">
+            <ShareResultsButton
+              key={result.workspace_id}
+              workspaceId={result.workspace_id}
+            />
+            {result.custom_model && (
+              <Button
+                variant="text"
+                onClick={() => {
+                  downloadTextFile(
+                    JSON.stringify(result.custom_model, null, 2),
+                    `${model.name}.json`,
+                  );
+                }}
+              >
+                <Download aria-hidden="true" className="size-3" />
+                Download custom model (JSON)
+              </Button>
+            )}
+          </div>
 
           <div
             role="group"
@@ -109,6 +126,11 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
               </Suspense>
             </StructureViewerBoundary>
           )}
+          <ConversionLog
+            key={result.workspace_id}
+            report={result.report}
+            filename={result.filename}
+          />
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">
@@ -135,9 +157,8 @@ export function ResultView({ result }: { result: CoarseGrainResult }) {
                 </li>
               )}
               <li>
-                Some beads may be skipped for incomplete residues or residues with
-                incorrect atoms, because the atoms they are built from are missing or
-                wrong.
+                Missing required atoms may be estimated for CG conversion. See the
+                conversion report for repairs and skipped nucleotides or connections.
               </li>
             </ul>
           </Alert>

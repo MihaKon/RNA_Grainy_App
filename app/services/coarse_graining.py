@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 from fastapi import Request, UploadFile
 from gemmi import Structure
 
+from app.coarse_grain.report import ConversionReport, ConversionReportCollector
 from app.exceptions import FileProcessingError
 from app.models.api import AtomCounts, CoarseGrainResult, ResultFiles
 from app.models.form import COARSE_FILE_FORMAT, SupportedFormats
@@ -37,6 +38,7 @@ class CoarseGrainingOutcome:
     workspace_id: str
     original_atom_count: int
     coarse_atom_count: int
+    report: ConversionReport | None = None
 
     @property
     def is_pdb_available(self) -> bool:
@@ -114,8 +116,9 @@ async def coarse_grain_structure(
     original_structure = StructureProcessor.parse_structure(
         source.content, source.file_format, models=models, chains=chains
     )
+    report = ConversionReportCollector(original_structure)
     coarse_structure = StructureProcessor.apply_coarse_graining(
-        original_structure, selected_model, custom_model_data
+        original_structure, selected_model, custom_model_data, report
     )
     if StructureProcessor.get_coarse_structure_atom_count(coarse_structure) == 0:
         raise FileProcessingError(
@@ -132,6 +135,7 @@ async def coarse_grain_structure(
         coarse_atom_count=StructureProcessor.get_coarse_structure_atom_count(
             coarse_structure
         ),
+        report=report.report,
     )
     model, _ = DocsContextBuilder.load_model_config(selected_model, custom_model_data)
     await _save_structures(
@@ -232,4 +236,6 @@ def build_coarse_grain_result(
         model=DocsContextBuilder.get_model_documentation(
             selected_model, custom_model_data
         ),
+        report=outcome.report,
+        custom_model=custom_model_data if selected_model == "custom" else None,
     )
