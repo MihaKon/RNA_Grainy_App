@@ -37,6 +37,7 @@ interface Props {
   onSelect: (key: string) => void;
   onRemove: (key: string) => void;
   onEdit: () => void;
+  onCloseSettings: () => void;
   beadSettings?: ReactNode;
   onAtom: (atom: string) => void;
   onConnect: (first: string, second: string) => void;
@@ -55,6 +56,7 @@ export function MoleculeEditor({
   onSelect,
   onRemove,
   onEdit,
+  onCloseSettings,
   beadSettings,
   onAtom,
   onConnect,
@@ -65,6 +67,8 @@ export function MoleculeEditor({
 }: Props) {
   const id = useId();
   const selectorRef = useRef<HTMLDetailsElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
+  useDropdownDismiss(settingsRef, onCloseSettings);
   const [tool, setTool] = useState<"atoms" | "intra" | "inter">("atoms");
   const [connectionType, setConnectionType] = useState<"intra" | "inter">("intra");
   const [adding, setAdding] = useState(false);
@@ -145,13 +149,12 @@ export function MoleculeEditor({
       className="relative flex h-full min-h-0 flex-col rounded-md border border-line-soft bg-white"
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-2">
-        <h3 className="eyebrow">2D model editor</h3>
-        <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <details
             ref={selectorRef}
             className="relative"
             onKeyDown={(event) => {
-              if (event.key === "Escape") {
+              if (event.key === "Escape" && event.currentTarget.open) {
                 event.preventDefault();
                 event.stopPropagation();
                 selectorRef.current?.removeAttribute("open");
@@ -270,9 +273,14 @@ export function MoleculeEditor({
           <span className="sr-only" role="status" aria-label="Active bead summary">
             {active ? `${active.beadId} · ${active.name}` : "No bead selected"}
           </span>
-          <div className="relative">
-            <ToggleButton
-              pressed={!!beadSettings}
+          <div
+            ref={settingsRef}
+            className="group/settings relative"
+            data-open={!!beadSettings}
+          >
+            <Button
+              variant="ghost"
+              className="border px-3 py-2 font-normal"
               onClick={onEdit}
               disabled={!active}
               aria-label="Bead settings"
@@ -280,7 +288,11 @@ export function MoleculeEditor({
               aria-controls={`${id}-bead-settings`}
             >
               Bead settings
-            </ToggleButton>
+              <ChevronDown
+                aria-hidden="true"
+                className="size-3.5 shrink-0 text-ink-3 transition-transform group-data-[open=true]/settings:rotate-180"
+              />
+            </Button>
             {beadSettings && <div id={`${id}-bead-settings`}>{beadSettings}</div>}
           </div>
         </div>

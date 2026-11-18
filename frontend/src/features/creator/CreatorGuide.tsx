@@ -85,9 +85,9 @@ export function CreatorGuide() {
 
       <GuideSection title="4. Use or export the model">
         <p>
-          Open <Term>Model details</Term> to edit the model name and description. The
-          adjacent <Term>Model actions</Term> menu contains templates, JSON import and
-          JSON export. <Term>User guide</Term> opens these instructions.
+          Open <Term>Details</Term> to edit the model name and description. The adjacent{" "}
+          <Term>Models</Term> menu contains templates, JSON import and JSON export.{" "}
+          <Term>User guide</Term> opens these instructions.
         </p>
         <p>
           <Term>Use model</Term> applies the model to this conversion once every issue
@@ -99,7 +99,8 @@ export function CreatorGuide() {
         <p>
           Edits are saved in this browser, including unfinished beads. Escape keeps your
           draft when closing the creator, and it is restored after a page reload.
-          <Term> Cancel</Term> restores the draft from before you opened the creator.
+          <Term> Cancel</Term> asks for confirmation before restoring the draft from
+          before you opened the creator.
         </p>
       </GuideSection>
     </div>
