@@ -11,7 +11,6 @@ export class CustomModelFileError extends Error {}
 
 const DEFAULT_CUSTOM_MODEL_NAME = "Custom Model";
 
-// Mirrors the limits checked in app/models/form.py.
 export function customModelSizeIssues(json: string, config: AppConfig): string[] {
   const issues: string[] = [];
   if (new TextEncoder().encode(json).byteLength > config.custom_model_json_max_size) {

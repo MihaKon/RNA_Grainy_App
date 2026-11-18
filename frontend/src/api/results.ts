@@ -26,7 +26,6 @@ async function fetchText(url: string): Promise<string> {
   return (await apiFetch(url)).text();
 }
 
-// The PDB file is optional, so a failed download must not hide the mmCIF result.
 async function fetchOptionalText(url: string | null): Promise<string | null> {
   if (!url) {
     return null;
@@ -56,7 +55,6 @@ export async function fetchResultStructures(
   };
 }
 
-// Reuse the downloaded structure text for display controls and file downloads.
 export const resultStructuresQueryOptions = (result: CoarseGrainResult) =>
   queryOptions({
     queryKey: ["results", result.workspace_id, "structures"],

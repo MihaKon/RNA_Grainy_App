@@ -78,5 +78,9 @@
     "cao2010predicting": {
         "text": "Cao S, Giedroc DP, Chen SJ. Predicting loop–helix tertiary structural contacts in RNA pseudoknots. RNA. 2010;16(3):538–552. doi:10.1261/rna.1800210.",
         "url": "https://doi.org/10.1261/rna.1800210"
+    },
+    "ding2008ab": {
+        "text": "Ding F, Sharma S, Chalasani P, Demidov VV, Broude NE, Dokholyan NV. Ab initio RNA folding by discrete molecular dynamics: from structure prediction to folding mechanisms. RNA. 2008;14(6):1164–1173. doi:10.1261/rna.894608.",
+        "url": "https://doi.org/10.1261/rna.894608"
     }
 }

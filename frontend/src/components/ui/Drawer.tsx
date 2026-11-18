@@ -18,7 +18,6 @@ export function Drawer({ open, labelledBy, onClose, children }: DrawerProps) {
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
-  // Portaled out of any surrounding form: Enter in a drawer field would submit it.
   return createPortal(
     <dialog
       ref={dialogRef}
