@@ -43,13 +43,11 @@ export async function readPreviewSource(text: string) {
       field("parent_comp_id"),
     );
   }
-  let originalAtomCount = 0;
   const residues = new Map<string, PreviewResidue>();
   const firstModel = value("pdbx_PDB_model_num", 0);
   for (let row = 0; row < site.rowCount; row++) {
     if (value("pdbx_PDB_model_num", row) !== firstModel) continue;
     const polymer = polymerIds.has(value("label_entity_id", row));
-    if (polymer) originalAtomCount++;
     const chain = value("label_asym_id", row);
     const sequence = Number(value("label_seq_id", row));
     const name = value("label_comp_id", row);
@@ -65,10 +63,10 @@ export async function readPreviewSource(text: string) {
       atoms: [],
       inputAtomCount: 0,
     };
-    residue.inputAtomCount = (residue.inputAtomCount ?? 0) + 1;
-    residues.set(key, residue);
     const alt = value("label_alt_id", row);
     if (alt && alt !== "." && alt !== "?" && alt !== "A") continue;
+    residue.inputAtomCount = (residue.inputAtomCount ?? 0) + 1;
+    residues.set(key, residue);
     const atomName = value("label_atom_id", row);
     if (!residue.atoms.some((atom) => atom.name === atomName)) {
       residue.atoms.push({
@@ -81,7 +79,7 @@ export async function readPreviewSource(text: string) {
     }
   }
   if (residues.size === 0) throw new Error("The example has no standard RNA residues.");
-  return { residues: [...residues.values()], originalAtomCount };
+  return { residues: [...residues.values()] };
 }
 
 function cifValue(value: string | number): string {
@@ -106,7 +104,6 @@ export function buildPreview(
   draft: ModelDraft,
   source: PreviewResidue[],
   selection: "all" | Residue,
-  totalInputAtoms?: number,
 ) {
   const residues =
     selection === "all"
@@ -262,13 +259,11 @@ export function buildPreview(
         : "")
     );
   };
-  const original =
-    selection === "all" && totalInputAtoms !== undefined
-      ? totalInputAtoms
-      : residues.reduce(
-          (sum, residue) => sum + (residue.inputAtomCount ?? residue.atoms.length),
-          0,
-        );
+  const original = residues.reduce((sum, residue, index) => {
+    if (!coarse[index]?.atoms.length) return sum;
+
+    return sum + (residue.inputAtomCount ?? residue.atoms.length);
+  }, 0);
   const count = coarse.reduce((sum, residue) => sum + residue.atoms.length, 0);
   return {
     reference: serialize(residues),

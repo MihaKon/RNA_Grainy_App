@@ -65,15 +65,7 @@ export default function CreatorPreview({
     retry: false,
   });
   const preview = useMemo(
-    () =>
-      example.data
-        ? buildPreview(
-            draft,
-            example.data.residues,
-            selection,
-            example.data.originalAtomCount,
-          )
-        : null,
+    () => (example.data ? buildPreview(draft, example.data.residues, selection) : null),
     [draft, example.data, selection],
   );
 
@@ -241,7 +233,7 @@ export default function CreatorPreview({
       <dl
         aria-label="Preview atom counts"
         className="grid grid-cols-3 gap-2 border-t border-line-soft pt-2 text-xs"
-        title="Input atoms are counted as in Results: first-model polymer atoms, including modified residues and protein. Water and ligands are excluded. Counts follow the selected preview."
+        title="Input atoms from RNA residues represented in the coarse-grained model."
       >
         <div>
           <dt className="text-[10px] text-ink-3">Input atoms (AA)</dt>
