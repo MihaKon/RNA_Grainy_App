@@ -95,9 +95,8 @@ export function DocumentationPage() {
                 </h2>
                 <div className="mt-4 space-y-3 text-sm text-ink-2">
                   <p>
-                    PDB and mmCIF inputs are processed for every selected model and
-                    chain. Conversion uses a working copy; the reference structure is
-                    not repaired. Atoms without alternate-location labels and atoms in
+                    PDB and mmCIF inputs are processed for every selected input model
+                    and chain. Atoms without alternate-location labels and atoms in
                     alternate location A are retained; other alternate locations are
                     omitted.
                   </p>
@@ -109,7 +108,7 @@ export function DocumentationPage() {
                   <p>
                     Only missing atoms required by the selected CG model are estimated.
                     A canonical nucleotide template is fitted to the retained common
-                    atoms, and only missing coordinates are copied from the transformed
+                    atoms, and the positions of missing atoms are taken from the fitted
                     template. Existing coordinates are not moved. These estimates are
                     approximate; no energy minimization or full geometry validation is
                     performed.
