@@ -29,6 +29,7 @@ Different coarse-grained RNA models use different mapping strategies, resolution
 * **Interactive visualization:** Comparison of the original all-atom structure and the generated coarse-grained representation using the Mol* molecular visualization library.
 * **Custom model creator:** Define custom coarse-grained representations, pseudoatom mappings, and connectivity rules through an interactive editor, or load an existing model configuration from JSON.
 * **Structure export:** Generated coarse-grained structures can be exported in standard PDB and PDBx/mmCIF formats.
+* **Conversion report:** Inspect and download missing and estimated atoms, modified nucleotide mappings, created/skipped beads and omitted connections. The custom model JSON used for conversion can also be downloaded from the results page.
 * **Model documentation:** The application provides descriptions of supported coarse-grained models, atom mapping rules, and references to the original scientific literature.
 
 ## Supported Models
@@ -58,6 +59,7 @@ Detailed descriptions, mapping rules, and references are available in the
 ### Model documentation
 
 ![RNAgrainy model documentation](docs/screenshots/model-documentation.png)
+
 
 ## Public API
 
@@ -181,6 +183,10 @@ fi
 ```
 
 ### Open or share a result page
+
+Result metadata includes `report` with conversion details and `custom_model` with
+the custom JSON definition (`null` for published models). Both remain available
+through shared result links.
 
 Open the result in the web viewer using its `workspace_id`:
 

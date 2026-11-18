@@ -25,14 +25,17 @@ from app.coarse_grain.geometry import (
     calculate_center_of_mass,
     calculate_geometric_center,
 )
+from app.coarse_grain.report import ConversionReportCollector, ResidueConversion
 from app.coarse_grain.residue_fixer import (
     add_estimated_atoms,
     estimate_missing_atom_positions,
     load_template,
 )
 from app.coarse_grain.residues import (
+    PHOSPHATE_ATOMS,
     check_residue_completeness,
     get_required_atoms,
+    normalize_atom_name,
 )
 from app.exceptions import InvalidModelParametersError, ModelLoadingError
 from app.settings import COARSE_GRAIN_MODELS_DIR
@@ -141,7 +144,11 @@ class BaseCoarseGrainModel(ABC):
 
         return intra, inter_rule
 
-    def get_coarse_grain_structure(self, original_structure: Structure) -> Structure:
+    def get_coarse_grain_structure(
+        self,
+        original_structure: Structure,
+        report: ConversionReportCollector | None = None,
+    ) -> Structure:
         coarse_structure = original_structure.clone()
         coarse_structure.connections = ConnectionList()
         coarse_structure.clear_conect()
@@ -150,8 +157,8 @@ class BaseCoarseGrainModel(ABC):
         coarse_structure.assign_label_seq_id(force=True)
         self._handle_modified_residues_as_their_parents(coarse_structure)
 
-        self._filter_atoms(coarse_structure)
-        self._rebuild_connectivity(coarse_structure)
+        self._filter_atoms(coarse_structure, report)
+        self._rebuild_connectivity(coarse_structure, report)
         self._rebuild_polymer_metadata(coarse_structure)
 
         return coarse_structure
@@ -170,7 +177,9 @@ class BaseCoarseGrainModel(ABC):
             and residue.entity_type != EntityType.NonPolymer
         )
 
-    def _filter_atoms(self, structure: Structure) -> None:
+    def _filter_atoms(
+        self, structure: Structure, report: ConversionReportCollector | None = None
+    ) -> None:
         for model in structure:
             for chain in model:
                 first_residue_id = next(
@@ -188,6 +197,7 @@ class BaseCoarseGrainModel(ABC):
                         del chain[res_id]
                         continue
 
+                    entry = report.start(model.num, chain.name, res) if report else None
                     self._filter_alternate_conformations(res)
 
                     required_atoms = set(
@@ -198,7 +208,15 @@ class BaseCoarseGrainModel(ABC):
                         res,
                         required_atoms,
                         is_first_residue=res_id == first_residue_id,
+                        report_entry=entry,
                     ):
+                        if report and entry:
+                            report.finish(
+                                entry,
+                                res,
+                                self.nucleotides_config[res.name]["allowed_atoms"],
+                                skipped=True,
+                            )
                         del chain[res_id]
                         continue
 
@@ -206,6 +224,12 @@ class BaseCoarseGrainModel(ABC):
                         res,
                         self.nucleotides_config[res.name]["allowed_atoms"],
                     )
+                    if report and entry:
+                        report.finish(
+                            entry,
+                            res,
+                            self.nucleotides_config[res.name]["allowed_atoms"],
+                        )
 
         structure.remove_empty_chains()
         structure.assign_serial_numbers(numbered_ter=False)
@@ -228,12 +252,21 @@ class BaseCoarseGrainModel(ABC):
             if residue[atom_id].name not in keep_set:
                 del residue[atom_id]
 
-    def _rebuild_connectivity(self, structure: Structure) -> None:
+    def _rebuild_connectivity(
+        self, structure: Structure, report: ConversionReportCollector | None = None
+    ) -> None:
         intra_rules, inter_rule = self.connectivity_rules
 
         for model in structure:
             for chain in model:
-                self._connect_chain_residues(structure, chain, intra_rules, inter_rule)
+                self._connect_chain_residues(
+                    structure,
+                    chain,
+                    intra_rules,
+                    inter_rule,
+                    report=report,
+                    model_number=model.num,
+                )
 
         for number, connection in enumerate(structure.connections, start=1):
             connection.name = f"{number}"
@@ -250,7 +283,14 @@ class BaseCoarseGrainModel(ABC):
         )
 
     def _connect_chain_residues(
-        self, structure: Structure, chain: Chain, intra_rules: list, inter_rule: dict
+        self,
+        structure: Structure,
+        chain: Chain,
+        intra_rules: list,
+        inter_rule: dict,
+        *,
+        report: ConversionReportCollector | None = None,
+        model_number: int = 1,
     ) -> None:
         prev_res = None
 
@@ -265,16 +305,19 @@ class BaseCoarseGrainModel(ABC):
                 )
 
             if (
-                self._are_residues_consecutive(prev_res, res)
+                prev_res is not None
+                and self._are_residues_consecutive(prev_res, res)
                 and inter_rule.get("tail")
                 and inter_rule.get("head")
             ):
                 self._add_inter_residue_connection(
                     structure,
-                    prev_res,  # type: ignore
+                    prev_res,
                     res,
                     inter_rule,
                     chain.name,
+                    report=report,
+                    model_number=model_number,
                 )
 
             prev_res = res
@@ -311,6 +354,9 @@ class BaseCoarseGrainModel(ABC):
         curr_res: Residue,
         inter_rule: dict[str, str],
         chain_name: str,
+        *,
+        report: ConversionReportCollector | None = None,
+        model_number: int = 1,
     ) -> None:
         tail_atom_name = self._get_bead_name_for_bead_id(
             prev_res.name, inter_rule["tail"]
@@ -322,16 +368,26 @@ class BaseCoarseGrainModel(ABC):
         tail_atom = next((a for a in prev_res if a.name == tail_atom_name), None)
         head_atom = next((a for a in curr_res if a.name == head_atom_name), None)
 
-        if (
-            tail_atom is not None
-            and head_atom is not None
-            and tail_atom.pos.dist(head_atom.pos) <= MAX_INTER_RESIDUE_DISTANCE
-        ):
+        if tail_atom is None or head_atom is None:
+            return
+
+        distance = tail_atom.pos.dist(head_atom.pos)
+        if distance <= MAX_INTER_RESIDUE_DISTANCE:
             conn = self._create_connection(
                 prev_res, tail_atom, curr_res, head_atom, chain_name
             )
             structure.connections.append(conn)
             structure.add_conect(tail_atom.serial, head_atom.serial, order=1)
+        elif report is not None and distance > MAX_INTER_RESIDUE_DISTANCE:
+            report.record_skipped_connection(
+                model_number,
+                chain_name,
+                prev_res,
+                curr_res,
+                tail_atom_name,
+                head_atom_name,
+                distance,
+            )
 
     def _create_connection(
         self,
@@ -423,12 +479,21 @@ class BaseCoarseGrainModel(ABC):
         res: Residue,
         required_atoms: set[str],
         is_first_residue: bool,
+        report_entry: ResidueConversion | None = None,
     ) -> bool:
         missing_atoms = check_residue_completeness(
             res,
             required_atoms,
             is_first_residue=is_first_residue,
         )
+        if report_entry is not None:
+            report_entry.missing_atoms = sorted(missing_atoms)
+            report_entry.terminal_phosphate_absent = (
+                is_first_residue
+                and PHOSPHATE_ATOMS.isdisjoint(
+                    normalize_atom_name(atom.name) for atom in res
+                )
+            )
 
         if not missing_atoms:
             return True
@@ -442,6 +507,8 @@ class BaseCoarseGrainModel(ABC):
         )
 
         if estimation.failures:
+            if report_entry is not None:
+                report_entry.failures = estimation.failures
             logger.warning(
                 "Skipping residue %s: %s",
                 res.seqid,
@@ -454,6 +521,8 @@ class BaseCoarseGrainModel(ABC):
             template,
             estimation.positions,
         )
+        if report_entry is not None:
+            report_entry.estimated_atoms = sorted(estimation.positions)
         return True
 
 
@@ -464,7 +533,9 @@ class CalculateBeadModel(BaseCoarseGrainModel):
         """Return the function used to calculate bead center positions."""
         ...
 
-    def _filter_atoms(self, structure: Structure) -> None:
+    def _filter_atoms(
+        self, structure: Structure, report: ConversionReportCollector | None = None
+    ) -> None:
         for model in structure:
             for chain in model:
                 first_residue_id = next(
@@ -483,6 +554,7 @@ class CalculateBeadModel(BaseCoarseGrainModel):
                         del chain[res_id]
                         continue
 
+                    entry = report.start(model.num, chain.name, res) if report else None
                     self._filter_alternate_conformations(res)
                     required_atoms = get_required_atoms(
                         res.name,
@@ -493,11 +565,31 @@ class CalculateBeadModel(BaseCoarseGrainModel):
                         res,
                         required_atoms,
                         is_first_residue=res_id == first_residue_id,
+                        report_entry=entry,
                     ):
+                        if report and entry:
+                            report.finish(
+                                entry,
+                                res,
+                                list(
+                                    self.nucleotides_config[res.name][
+                                        "bead_names"
+                                    ].values()
+                                ),
+                                skipped=True,
+                            )
                         del chain[res_id]
                         continue
 
                     self._get_residue_with_beads(res)
+                    if report and entry:
+                        report.finish(
+                            entry,
+                            res,
+                            list(
+                                self.nucleotides_config[res.name]["bead_names"].values()
+                            ),
+                        )
 
         structure.remove_empty_chains()
         structure.assign_serial_numbers(numbered_ter=True)
@@ -688,29 +780,20 @@ class Nares2PModel(GeometricCenterModel):
         curr_res: Residue,
         inter_rule: dict[str, str],
         chain_name: str,
+        *,
+        report: ConversionReportCollector | None = None,
+        model_number: int = 1,
     ) -> None:
         self._calculate_inter_p_bead_position(curr_res, prev_res)
-
-        tail_atom_name = self._get_bead_name_for_bead_id(
-            prev_res.name, inter_rule["tail"]
+        super()._add_inter_residue_connection(
+            structure,
+            prev_res,
+            curr_res,
+            inter_rule,
+            chain_name,
+            report=report,
+            model_number=model_number,
         )
-        head_atom_name = self._get_bead_name_for_bead_id(
-            curr_res.name, inter_rule["head"]
-        )
-
-        tail_atom = next((a for a in prev_res if a.name == tail_atom_name), None)
-        head_atom = next((a for a in curr_res if a.name == head_atom_name), None)
-
-        if (
-            tail_atom is not None
-            and head_atom is not None
-            and tail_atom.pos.dist(head_atom.pos) <= MAX_INTER_RESIDUE_DISTANCE
-        ):
-            structure.add_conect(tail_atom.serial, head_atom.serial, order=1)
-            conn = self._create_connection(
-                prev_res, tail_atom, curr_res, head_atom, chain_name
-            )
-            structure.connections.append(conn)
 
 
 @CoarseGrainModelRegistry.register

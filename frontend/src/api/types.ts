@@ -56,4 +56,42 @@ export interface CoarseGrainResult {
   selected_models: number[];
   selected_chains: string[];
   model: ModelDocumentation;
+  report?: ConversionReport | null;
+  custom_model?: Record<string, unknown> | null;
+}
+
+export interface ResidueConversion {
+  model: number;
+  chain: string;
+  residue_id: string;
+  residue_name: string;
+  canonical_name: string;
+  status: "converted" | "skipped";
+  missing_atoms: string[];
+  estimated_atoms: string[];
+  created_beads: string[];
+  skipped_beads: string[];
+  failures: Record<string, string>;
+  ignored_altlocs: string[];
+  terminal_phosphate_absent: boolean;
+}
+
+export interface SkippedConnection {
+  model: number;
+  chain: string;
+  source_residue: string;
+  target_residue: string;
+  source_bead: string;
+  target_bead: string;
+  distance: number;
+}
+
+export interface ConversionReport {
+  created_beads: number;
+  skipped_beads: number;
+  skipped_residues: number;
+  estimated_atoms: number;
+  modified_residues: number;
+  residues: ResidueConversion[];
+  skipped_connections: SkippedConnection[];
 }

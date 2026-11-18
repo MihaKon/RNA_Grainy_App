@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from app.coarse_grain.report import ConversionReport
+
 
 class ErrorResponse(BaseModel):
     detail: str
@@ -63,3 +65,5 @@ class CoarseGrainResult(BaseModel):
     selected_models: list[int]
     selected_chains: list[str]
     model: ModelDocumentation
+    report: ConversionReport | None = None
+    custom_model: dict | None = None
