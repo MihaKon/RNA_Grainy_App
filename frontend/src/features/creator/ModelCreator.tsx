@@ -12,6 +12,7 @@ import {
 import type { AppConfig } from "@/api/types";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { Tabs } from "@/components/ui/Tabs";
 import { TextField } from "@/components/ui/TextField";
 import {
   CustomModelFileError,
@@ -99,6 +100,8 @@ export function ModelCreator({
 
   const openEditor = (key?: string) => {
     guideRef.current?.removeAttribute("open");
+    detailsRef.current?.removeAttribute("open");
+    modelMenuRef.current?.removeAttribute("open");
     returnFocusRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (key) setSelectedKey(key);
@@ -156,7 +159,7 @@ export function ModelCreator({
       ref={editorRef}
       tabIndex={-1}
       aria-labelledby="bead-settings-heading"
-      className="fixed inset-x-4 top-24 z-40 mt-2 flex max-h-[calc(100dvh-7rem)] flex-col overflow-hidden rounded-md border border-line-soft bg-white shadow-xl transition-[transform,opacity] duration-150 outline-none motion-reduce:transition-none min-[640px]:absolute min-[640px]:inset-x-auto min-[640px]:top-full min-[640px]:right-0 min-[640px]:max-h-[min(70dvh,620px)] min-[640px]:w-[360px] starting:-translate-y-2 starting:opacity-0"
+      className="fixed inset-x-4 top-24 z-40 mt-2 flex max-h-[calc(100dvh-7rem)] flex-col overflow-hidden rounded-md border border-line-soft bg-white shadow-xl transition-[transform,opacity] duration-150 outline-none motion-reduce:transition-none min-[640px]:absolute min-[640px]:inset-x-auto min-[640px]:top-full min-[640px]:left-0 min-[640px]:max-h-[min(70dvh,620px)] min-[640px]:w-[360px] starting:-translate-y-2 starting:opacity-0"
     >
       <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
         <h3 id="bead-settings-heading" className="eyebrow">
@@ -167,19 +170,17 @@ export function ModelCreator({
         </Button>
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-4">
-        <div>
-          {active ? (
-            <BeadEditor
-              key={active.key}
-              draft={draft}
-              bead={active}
-              issues={issues.beads[active.key]}
-              dispatch={dispatch}
-            />
-          ) : (
-            <p className="text-xs text-ink-3">Choose Add bead in the 2D editor.</p>
-          )}
-        </div>
+        {active ? (
+          <BeadEditor
+            key={active.key}
+            draft={draft}
+            bead={active}
+            issues={issues.beads[active.key]}
+            dispatch={dispatch}
+          />
+        ) : (
+          <p className="text-xs text-ink-3">Choose Add bead in the 2D editor.</p>
+        )}
       </div>
     </section>
   ) : null;
@@ -189,17 +190,14 @@ export function ModelCreator({
       <header className="relative z-30 border-b border-line-soft bg-surface">
         <div className="mx-auto flex max-w-[1800px] flex-wrap items-center justify-between gap-2 px-4 py-2">
           <div className="flex min-w-0 flex-wrap items-center gap-4">
-            <div>
-              <p className="eyebrow">Custom model</p>
-              <h2 id={titleId} className="font-display text-heading-compact text-ink">
-                Model <span className="text-accent">creator</span>
-              </h2>
-            </div>
+            <h2 id={titleId} className="font-display text-heading-compact text-ink">
+              Model <span className="text-accent">creator</span>
+            </h2>
             <details
               ref={detailsRef}
               className="group/model-details relative"
               onKeyDown={(event) => {
-                if (event.key === "Escape") {
+                if (event.key === "Escape" && event.currentTarget.open) {
                   event.preventDefault();
                   event.stopPropagation();
                   detailsRef.current?.removeAttribute("open");
@@ -213,17 +211,17 @@ export function ModelCreator({
                   setEditorOpen(false);
                 }}
                 className="flex max-w-60 cursor-pointer list-none items-center gap-2 rounded border border-line-soft bg-white px-3 py-2 text-sm text-ink transition-colors group-open/model-details:border-accent hover:border-accent hover:bg-accent/5 [&::-webkit-details-marker]:hidden"
-                aria-label="Model details"
-                title="Model details"
+                aria-label="Details"
+                title="Details"
               >
-                <span className="truncate text-ink">Model details</span>
+                <span className="truncate text-ink">Details</span>
                 <ChevronDown
                   aria-hidden="true"
                   className="size-3.5 shrink-0 text-ink-3 transition-transform group-open/model-details:rotate-180"
                 />
               </summary>
               <div className="fixed inset-x-4 top-20 z-30 mt-2 grid gap-3 rounded-md border border-line-soft bg-white p-4 shadow-lg lg:absolute lg:inset-x-auto lg:top-full lg:left-0 lg:w-80">
-                <p className="eyebrow">Model details</p>
+                <p className="eyebrow">Details</p>
                 <TextField
                   label="Model name"
                   value={draft.name}
@@ -248,6 +246,7 @@ export function ModelCreator({
                   variant="ghost"
                   onClick={() => {
                     detailsRef.current?.removeAttribute("open");
+                    detailsRef.current?.querySelector("summary")?.focus();
                   }}
                 >
                   Done
@@ -256,9 +255,9 @@ export function ModelCreator({
             </details>
             <details
               ref={modelMenuRef}
-              className="relative"
+              className="group/models relative"
               onKeyDown={(event) => {
-                if (event.key === "Escape") {
+                if (event.key === "Escape" && event.currentTarget.open) {
                   event.preventDefault();
                   event.stopPropagation();
                   modelMenuRef.current?.removeAttribute("open");
@@ -266,7 +265,7 @@ export function ModelCreator({
               }}
             >
               <summary
-                aria-label="Model actions menu"
+                aria-label="Models"
                 aria-description={modelStatus}
                 title={modelStatus}
                 onClick={() => {
@@ -281,7 +280,7 @@ export function ModelCreator({
                 ) : (
                   <CircleCheck aria-hidden="true" className="size-3.5 text-[#5b9b72]" />
                 )}
-                Model actions
+                Models
                 {issueCount > 0 && (
                   <span
                     aria-hidden="true"
@@ -290,7 +289,10 @@ export function ModelCreator({
                     {issueCount}
                   </span>
                 )}
-                <ChevronDown aria-hidden="true" className="size-3.5 text-ink-3" />
+                <ChevronDown
+                  aria-hidden="true"
+                  className="size-3.5 text-ink-3 transition-transform group-open/models:rotate-180"
+                />
               </summary>
               <div
                 className="fixed inset-x-4 top-32 z-30 mt-2 flex max-h-[calc(100dvh-9rem)] flex-col gap-1 overflow-auto rounded-md border border-line-soft bg-white p-2 shadow-lg lg:absolute lg:inset-x-auto lg:top-full lg:left-0 lg:w-64"
@@ -389,7 +391,7 @@ export function ModelCreator({
                 ref={guideRef}
                 className="relative"
                 onKeyDown={(event) => {
-                  if (event.key === "Escape") {
+                  if (event.key === "Escape" && event.currentTarget.open) {
                     event.preventDefault();
                     event.stopPropagation();
                     guideRef.current?.removeAttribute("open");
@@ -440,7 +442,18 @@ export function ModelCreator({
               onChange={(event) => void handleImport(event)}
             />
 
-            <Button variant="ghost" onClick={onCancel}>
+            <Button
+              variant="danger"
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Discard changes made since opening the model creator?",
+                  )
+                ) {
+                  onCancel();
+                }
+              }}
+            >
               Cancel
             </Button>
             <Button
@@ -466,6 +479,9 @@ export function ModelCreator({
               dispatch({ type: "removeBead", key });
             }}
             beadSettings={beadSettings}
+            onCloseSettings={() => {
+              setEditorOpen(false);
+            }}
             onEdit={() => {
               if (editorOpen) closeEditor();
               else openEditor();
@@ -505,68 +521,54 @@ export function ModelCreator({
           aria-label="Model preview"
           className="flex min-w-0 flex-col overflow-hidden rounded-md border border-line-soft bg-white lg:h-[var(--creator-height)] lg:min-h-[480px]"
         >
-          <div
-            role="group"
-            aria-label="Preview mode"
-            className="flex items-center gap-2 border-b border-line-soft px-3 py-2"
+          <Tabs
+            label="Preview mode"
+            items={[
+              { value: "live", label: "Live preview" },
+              { value: "json", label: "JSON preview" },
+            ]}
+            value={previewTab}
+            onChange={setPreviewTab}
+            className="flex min-h-0 flex-1 flex-col"
+            panelClassName="flex min-h-0 flex-1 flex-col"
           >
-            <Button
-              variant="ghost"
-              aria-pressed={previewTab === "live"}
-              className={previewTab === "live" ? "border-accent text-accent" : ""}
-              onClick={() => {
-                setPreviewTab("live");
-              }}
-            >
-              Live preview
-            </Button>
-            <span className="text-xs text-ink-3">or</span>
-            <Button
-              variant="ghost"
-              aria-pressed={previewTab === "json"}
-              className={previewTab === "json" ? "border-accent text-accent" : ""}
-              onClick={() => {
-                setPreviewTab("json");
-              }}
-            >
-              JSON preview
-            </Button>
-          </div>
-          <div className={cn("min-h-0 flex-1", previewTab !== "live" && "hidden")}>
-            <Suspense
-              fallback={
-                <p role="status" className="p-4 text-sm text-ink-3">
-                  Loading live preview…
-                </p>
-              }
-            >
-              <CreatorPreview
-                draft={draft}
-                presetIds={config.preset_ids}
-                valid={
-                  draft.beads.length > 0 &&
-                  Object.keys(issues.beads).length === 0 &&
-                  issues.model.every((issue) => issue === "Enter a model name.")
+            <div className={cn("min-h-0 flex-1", previewTab !== "live" && "hidden")}>
+              <Suspense
+                fallback={
+                  <p role="status" className="p-4 text-sm text-ink-3">
+                    Loading live preview…
+                  </p>
                 }
-              />
-            </Suspense>
-          </div>
-          {previewTab === "json" && (
-            <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
-              <p
-                className={cn(
-                  "font-mono text-xs",
-                  tooLarge ? "text-red-deep" : "text-ink-3",
-                )}
               >
-                {json.length.toLocaleString("en-US")} /{" "}
-                {config.custom_model_json_max_chars.toLocaleString("en-US")} characters
-              </p>
-              <pre className="min-h-0 flex-1 overflow-auto rounded border border-line-soft bg-surface p-3 font-mono text-xs text-ink-2">
-                {json}
-              </pre>
+                <CreatorPreview
+                  draft={draft}
+                  presetIds={config.preset_ids}
+                  valid={
+                    draft.beads.length > 0 &&
+                    Object.keys(issues.beads).length === 0 &&
+                    issues.model.every((issue) => issue === "Enter a model name.")
+                  }
+                />
+              </Suspense>
             </div>
-          )}
+            {previewTab === "json" && (
+              <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
+                <p
+                  className={cn(
+                    "font-mono text-xs",
+                    tooLarge ? "text-red-deep" : "text-ink-3",
+                  )}
+                >
+                  {json.length.toLocaleString("en-US")} /{" "}
+                  {config.custom_model_json_max_chars.toLocaleString("en-US")}{" "}
+                  characters
+                </p>
+                <pre className="min-h-0 flex-1 overflow-auto rounded border border-line-soft bg-surface p-3 font-mono text-xs text-ink-2">
+                  {json}
+                </pre>
+              </div>
+            )}
+          </Tabs>
         </aside>
       </div>
       {importError && (

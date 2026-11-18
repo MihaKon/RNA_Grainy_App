@@ -30,7 +30,7 @@ async function openModelMenu(
   user: ReturnType<typeof renderApp>["user"],
   dialog: HTMLElement,
 ) {
-  const control = within(dialog).getByLabelText("Model actions menu");
+  const control = within(dialog).getByLabelText("Models");
   if (!control.parentElement?.hasAttribute("open")) await user.click(control);
 }
 
@@ -38,7 +38,7 @@ async function openModelDetails(
   user: ReturnType<typeof renderApp>["user"],
   dialog: HTMLElement,
 ) {
-  const control = within(dialog).getByLabelText("Model details");
+  const control = within(dialog).getByLabelText("Details");
   if (!control.parentElement?.hasAttribute("open")) await user.click(control);
 }
 
@@ -129,7 +129,7 @@ describe("ModelCreator", () => {
       "Custom Model based on SimRNA. Unsaved work",
     );
   });
-  it.each(["Model details", "Model actions menu"])(
+  it.each(["Details", "Models"])(
     "handles focus changes safely in %s",
     async (label) => {
       const { user, dialog } = await openCreator();
@@ -157,12 +157,10 @@ describe("ModelCreator", () => {
       expect(dropdown).not.toHaveAttribute("open");
       await user.click(control);
       await user.click(
-        within(panel).getByText(
-          label === "Model details" ? "Model details" : "Model ready",
-        ),
+        within(panel).getByText(label === "Details" ? "Details" : "Model ready"),
       );
       expect(dropdown).toHaveAttribute("open");
-      if (label === "Model details") {
+      if (label === "Details") {
         await user.click(within(panel).getByText("Model name", { selector: "label" }));
         expect(within(panel).getByLabelText("Model name")).toHaveFocus();
         expect(dropdown).toHaveAttribute("open");
@@ -212,7 +210,7 @@ describe("ModelCreator", () => {
     await user.click(
       within(dialog).getByRole("button", { name: "Close bead settings" }),
     );
-    await user.click(within(dialog).getByRole("button", { name: "JSON preview" }));
+    await user.click(within(dialog).getByRole("tab", { name: "JSON preview" }));
     const json = dialog.querySelector("pre");
     expect(json).toHaveTextContent('"inter_residue": []');
     expect(json).not.toHaveTextContent('"A1"');
@@ -245,7 +243,7 @@ describe("ModelCreator", () => {
     ).toBeInTheDocument();
   });
 
-  it("switches the selected bead without closing its settings", async () => {
+  it("dismisses bead settings outside the dropdown and edits the next selection", async () => {
     const { user, dialog } = await openCreator();
     const control = within(dialog).getByRole("button", { name: "Bead settings" });
     expect(control).toHaveAttribute("aria-expanded", "false");
@@ -258,7 +256,14 @@ describe("ModelCreator", () => {
       within(dialog).getByRole("menuitemradio", { name: /A3.*N9.*Purines/ }),
     );
     expect(selector).toHaveFocus();
-    expect(within(settings).getByLabelText("Bead ID")).toHaveValue("A3");
+    expect(settings).not.toBeInTheDocument();
+    expect(control).toHaveAttribute("aria-expanded", "false");
+    await user.click(control);
+    expect(
+      within(
+        within(dialog).getByRole("region", { name: "Bead settings" }),
+      ).getByLabelText("Bead ID"),
+    ).toHaveValue("A3");
     expect(
       within(dialog).getByRole("status", { name: "Active bead summary" }),
     ).toHaveTextContent("A3");
@@ -381,7 +386,7 @@ describe("ModelCreator", () => {
     await user.click(
       within(dialog).getByRole("button", { name: "Select A bead A2 C4'" }),
     );
-    await user.click(within(dialog).getByRole("button", { name: "JSON preview" }));
+    await user.click(within(dialog).getByRole("tab", { name: "JSON preview" }));
     const json = dialog.querySelector("pre");
     expect(json).toHaveTextContent('"source": "A1"');
     expect(json).toHaveTextContent('"target": "A2"');
@@ -396,7 +401,7 @@ describe("ModelCreator", () => {
     await user.click(within(dialog).getByRole("button", { name: "Connect beads" }));
     expect(within(dialog).getByLabelText("Connection type")).toHaveValue("inter");
     expect(
-      within(dialog).getByRole("button", { name: "Live preview" }),
+      within(dialog).getByRole("tab", { name: "Live preview" }),
     ).toBeInTheDocument();
   });
 
@@ -495,7 +500,7 @@ describe("ModelCreator", () => {
     await user.click(
       within(dialog).getByRole("button", { name: "Select A bead A2 C4'" }),
     );
-    await user.click(within(dialog).getByRole("button", { name: "JSON preview" }));
+    await user.click(within(dialog).getByRole("tab", { name: "JSON preview" }));
     expect(
       within(dialog).getByText(/"intra_residue": \[\s*\[\s*"A2"/),
     ).toBeInTheDocument();
@@ -527,7 +532,15 @@ describe("ModelCreator", () => {
 
     await user.clear(nameField);
     await user.type(nameField, "Changed");
-    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const cancel = within(dialog).getByRole("button", { name: "Cancel" });
+    expect(cancel).toHaveClass("text-red-deep");
+    await user.click(cancel);
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(dialog).toBeInTheDocument();
+    expect(nameField).toHaveValue("Changed");
+    confirm.mockReturnValue(true);
+    await user.click(cancel);
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByText("Loaded")).toBeInTheDocument();
@@ -562,7 +575,7 @@ describe("ModelCreator", () => {
     );
     expect(within(dialog).getByRole("button", { name: "Use model" })).toBeDisabled();
 
-    expect(within(dialog).getByLabelText("Model actions menu")).toHaveAttribute(
+    expect(within(dialog).getByLabelText("Models")).toHaveAttribute(
       "title",
       "1 model issue",
     );
@@ -573,7 +586,7 @@ describe("ModelCreator", () => {
       }),
     );
     expect(issue).not.toBeInTheDocument();
-    expect(within(dialog).getByLabelText("Model actions menu")).toHaveAttribute(
+    expect(within(dialog).getByLabelText("Models")).toHaveAttribute(
       "title",
       "Model ready",
     );
@@ -701,10 +714,6 @@ describe("ModelCreator", () => {
       "geometric_center",
     );
     await user.click(within(dialog).getByRole("button", { name: "A atom OP1" }));
-    expect(within(bead).getByRole("button", { name: "OP1" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
     expect(within(dialog).getByRole("button", { name: "G atom OP1" })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -716,7 +725,7 @@ describe("ModelCreator", () => {
     await user.click(
       within(dialog).getByRole("button", { name: "Select A bead A2 C4'" }),
     );
-    await user.click(within(dialog).getByRole("button", { name: "JSON preview" }));
+    await user.click(within(dialog).getByRole("tab", { name: "JSON preview" }));
     expect(
       within(dialog).getByText(/"intra_residue": \[\s*\[\s*"A2"/),
     ).toBeInTheDocument();

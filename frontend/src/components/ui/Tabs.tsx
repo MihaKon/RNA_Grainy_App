@@ -12,6 +12,7 @@ interface TabsProps<T extends string> {
   items: readonly TabItem<T>[];
   value: T;
   onChange: (value: T) => void;
+  className?: string;
   panelClassName?: string;
   children: ReactNode;
 }
@@ -21,6 +22,7 @@ export function Tabs<T extends string>({
   items,
   value,
   onChange,
+  className,
   panelClassName,
   children,
 }: TabsProps<T>) {
@@ -29,7 +31,7 @@ export function Tabs<T extends string>({
   const panelId = `${baseId}-panel`;
 
   return (
-    <div>
+    <div className={className}>
       <div role="tablist" aria-label={label} className="flex border-b border-line-soft">
         {items.map((item) => {
           const selected = item.value === value;
