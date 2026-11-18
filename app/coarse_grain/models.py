@@ -25,6 +25,15 @@ from app.coarse_grain.geometry import (
     calculate_center_of_mass,
     calculate_geometric_center,
 )
+from app.coarse_grain.residue_fixer import (
+    add_estimated_atoms,
+    estimate_missing_atom_positions,
+    load_template,
+)
+from app.coarse_grain.residues import (
+    check_residue_completeness,
+    get_required_atoms,
+)
 from app.exceptions import InvalidModelParametersError, ModelLoadingError
 from app.settings import COARSE_GRAIN_MODELS_DIR
 
@@ -33,6 +42,7 @@ logger = logging.getLogger(__name__)
 ModifiedResidueKey = tuple[str, str, str]  # chain, seqid, residue name
 EMPTY_ALTLOC = "\x00"
 PRIMARY_ATOM_ALTLOC = "A"
+MAX_INTER_RESIDUE_DISTANCE = 8.0
 
 
 class CoarseGrainModelRegistry:
@@ -163,6 +173,14 @@ class BaseCoarseGrainModel(ABC):
     def _filter_atoms(self, structure: Structure) -> None:
         for model in structure:
             for chain in model:
+                first_residue_id = next(
+                    (
+                        i
+                        for i, residue in enumerate(chain)
+                        if self._should_keep_residue(residue)
+                    ),
+                    None,
+                )
                 for res_id in range(len(chain) - 1, -1, -1):
                     res = chain[res_id]
 
@@ -171,8 +189,22 @@ class BaseCoarseGrainModel(ABC):
                         continue
 
                     self._filter_alternate_conformations(res)
+
+                    required_atoms = set(
+                        self.nucleotides_config[res.name]["allowed_atoms"]
+                    )
+
+                    if not self._reconstruct_missing_atoms(
+                        res,
+                        required_atoms,
+                        is_first_residue=res_id == first_residue_id,
+                    ):
+                        del chain[res_id]
+                        continue
+
                     self._filter_residue_atoms(
-                        res, self.nucleotides_config[res.name]["allowed_atoms"]
+                        res,
+                        self.nucleotides_config[res.name]["allowed_atoms"],
                     )
 
         structure.remove_empty_chains()
@@ -290,7 +322,11 @@ class BaseCoarseGrainModel(ABC):
         tail_atom = next((a for a in prev_res if a.name == tail_atom_name), None)
         head_atom = next((a for a in curr_res if a.name == head_atom_name), None)
 
-        if tail_atom and head_atom:
+        if (
+            tail_atom is not None
+            and head_atom is not None
+            and tail_atom.pos.dist(head_atom.pos) <= MAX_INTER_RESIDUE_DISTANCE
+        ):
             conn = self._create_connection(
                 prev_res, tail_atom, curr_res, head_atom, chain_name
             )
@@ -382,6 +418,44 @@ class BaseCoarseGrainModel(ABC):
                         residue.name = parent_name
                         residue.het_flag = "A"
 
+    def _reconstruct_missing_atoms(
+        self,
+        res: Residue,
+        required_atoms: set[str],
+        is_first_residue: bool,
+    ) -> bool:
+        missing_atoms = check_residue_completeness(
+            res,
+            required_atoms,
+            is_first_residue=is_first_residue,
+        )
+
+        if not missing_atoms:
+            return True
+
+        template = load_template(res.name)
+
+        estimation = estimate_missing_atom_positions(
+            res,
+            missing_atoms,
+            template,
+        )
+
+        if estimation.failures:
+            logger.warning(
+                "Skipping residue %s: %s",
+                res.seqid,
+                estimation.failures,
+            )
+            return False
+
+        add_estimated_atoms(
+            res,
+            template,
+            estimation.positions,
+        )
+        return True
+
 
 class CalculateBeadModel(BaseCoarseGrainModel):
     @property
@@ -393,6 +467,15 @@ class CalculateBeadModel(BaseCoarseGrainModel):
     def _filter_atoms(self, structure: Structure) -> None:
         for model in structure:
             for chain in model:
+                first_residue_id = next(
+                    (
+                        i
+                        for i, residue in enumerate(chain)
+                        if self._should_keep_residue(residue)
+                    ),
+                    None,
+                )
+
                 for res_id in range(len(chain) - 1, -1, -1):
                     res = chain[res_id]
 
@@ -401,6 +484,19 @@ class CalculateBeadModel(BaseCoarseGrainModel):
                         continue
 
                     self._filter_alternate_conformations(res)
+                    required_atoms = get_required_atoms(
+                        res.name,
+                        self.nucleotides_config[res.name]["atom_centers"].values(),
+                    )
+
+                    if not self._reconstruct_missing_atoms(
+                        res,
+                        required_atoms,
+                        is_first_residue=res_id == first_residue_id,
+                    ):
+                        del chain[res_id]
+                        continue
+
                     self._get_residue_with_beads(res)
 
         structure.remove_empty_chains()
@@ -605,7 +701,11 @@ class Nares2PModel(GeometricCenterModel):
         tail_atom = next((a for a in prev_res if a.name == tail_atom_name), None)
         head_atom = next((a for a in curr_res if a.name == head_atom_name), None)
 
-        if tail_atom and head_atom:
+        if (
+            tail_atom is not None
+            and head_atom is not None
+            and tail_atom.pos.dist(head_atom.pos) <= MAX_INTER_RESIDUE_DISTANCE
+        ):
             structure.add_conect(tail_atom.serial, head_atom.serial, order=1)
             conn = self._create_connection(
                 prev_res, tail_atom, curr_res, head_atom, chain_name
