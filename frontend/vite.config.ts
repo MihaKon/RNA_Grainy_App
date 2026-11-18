@@ -14,7 +14,6 @@ export default defineConfig({
     },
   },
   build: {
-    // Mol* ships as a single ~3.3 MB chunk that is lazy-loaded on the result page.
     chunkSizeWarningLimit: 4000,
   },
   server: {

@@ -11,6 +11,7 @@ import {
   residuesWithoutAtom,
   SCOPES,
 } from "./atoms";
+import { beadPoint, nucleotideDiagram } from "./nucleotideDiagram";
 
 export interface BeadDraft {
   key: string;
@@ -47,7 +48,6 @@ interface MappingEntry {
   config: MappingConfig;
 }
 
-// Mirrors CustomModelDefinition in app/models/custom_model.py.
 export interface CustomModelDefinition {
   model_name: string;
   description: string;
@@ -62,7 +62,7 @@ export interface CustomModelDefinition {
 export type DraftAction =
   | { type: "replace"; draft: ModelDraft }
   | { type: "setModelInfo"; patch: Partial<Pick<ModelDraft, "name" | "description">> }
-  | { type: "addBead" }
+  | { type: "addBead"; strategy?: BeadStrategy }
   | { type: "removeBead"; key: string }
   | {
       type: "updateBead";
@@ -70,7 +70,13 @@ export type DraftAction =
       patch: Partial<Pick<BeadDraft, "name" | "description">>;
     }
   | { type: "renameBead"; key: string; beadId: string }
-  | { type: "setBeadScope"; key: string; scope: BeadScope }
+  | {
+      type: "setBeadScope";
+      key: string;
+      scope: BeadScope;
+      keepAtoms?: boolean;
+      atom?: string;
+    }
   | { type: "setBeadStrategy"; key: string; strategy: BeadStrategy }
   | { type: "toggleAtom"; key: string; atom: string }
   | { type: "toggleIntraConnection"; first: string; second: string }
@@ -80,7 +86,7 @@ export type DraftAction =
 
 let beadKeyCounter = 0;
 
-function createBead(bead: Omit<BeadDraft, "key">): BeadDraft {
+export function createBead(bead: Omit<BeadDraft, "key">): BeadDraft {
   beadKeyCounter += 1;
   return { key: `bead-${beadKeyCounter.toString()}`, ...bead };
 }
@@ -142,13 +148,11 @@ export function hasIntraConnection(draft: ModelDraft, first: string, second: str
   );
 }
 
-// Imported definitions can connect bead IDs that no bead defines.
 function isDefinedBead(draft: ModelDraft): (beadId: string | null) => boolean {
   const beadIds = new Set(uniqueBeadIds(draft));
   return (beadId) => beadId === null || beadIds.has(beadId);
 }
 
-// The connectivity matrix cannot show these, so they only come from imports.
 function intraConnectionIssues(draft: ModelDraft): (string | null)[] {
   const isDefined = isDefinedBead(draft);
   return draft.intraResidue.map(([a, b], index) => {
@@ -184,8 +188,8 @@ export function draftReducer(draft: ModelDraft, action: DraftAction): ModelDraft
           createBead({
             beadId,
             name: beadId,
-            scope: "all",
-            strategy: "direct",
+            scope: "nucleotide",
+            strategy: action.strategy ?? "direct",
             description: "",
             atoms: [],
           }),
@@ -220,11 +224,16 @@ export function draftReducer(draft: ModelDraft, action: DraftAction): ModelDraft
     }
 
     case "setBeadScope":
-      return updateBead(draft, action.key, (bead) => ({
-        ...bead,
-        scope: action.scope,
-        atoms: [],
-      }));
+      return updateBead(draft, action.key, (bead) => {
+        const scoped = {
+          ...bead,
+          scope: action.scope,
+          atoms: action.keepAtoms
+            ? bead.atoms.filter((atom) => SCOPES[action.scope].atoms.includes(atom))
+            : [],
+        };
+        return action.atom === undefined ? scoped : atomSelection(scoped, action.atom);
+      });
 
     case "setBeadStrategy":
       return updateBead(draft, action.key, (bead) => ({
@@ -234,16 +243,7 @@ export function draftReducer(draft: ModelDraft, action: DraftAction): ModelDraft
       }));
 
     case "toggleAtom":
-      return updateBead(draft, action.key, (bead) => {
-        if (bead.atoms.includes(action.atom)) {
-          return { ...bead, atoms: bead.atoms.filter((atom) => atom !== action.atom) };
-        }
-        return {
-          ...bead,
-          atoms:
-            bead.strategy === "direct" ? [action.atom] : [...bead.atoms, action.atom],
-        };
-      });
+      return updateBead(draft, action.key, (bead) => atomSelection(bead, action.atom));
 
     case "toggleIntraConnection": {
       const { first, second } = action;
@@ -291,9 +291,48 @@ function updateBead(
   key: string,
   update: (bead: BeadDraft) => BeadDraft,
 ): ModelDraft {
+  const current = draft.beads.find((bead) => bead.key === key);
+  if (!current) return draft;
+  const next = update(current);
+  const positionChanged =
+    next.scope !== current.scope ||
+    next.strategy !== current.strategy ||
+    next.atoms !== current.atoms;
+  if (positionChanged && positionConflict(draft, next)) return draft;
   return {
     ...draft,
-    beads: draft.beads.map((bead) => (bead.key === key ? update(bead) : bead)),
+    beads: draft.beads.map((bead) => (bead.key === key ? next : bead)),
+  };
+}
+
+export function positionConflict(draft: ModelDraft, bead: BeadDraft) {
+  for (const residue of residuesForScope(bead.scope)) {
+    const { atoms } = nucleotideDiagram(residue);
+    const point = beadPoint(bead, atoms);
+    if (!point) continue;
+    const occupied = draft.beads.find((other) => {
+      if (other.key === bead.key || !residuesForScope(other.scope).includes(residue))
+        return false;
+      const otherPoint = beadPoint(other, atoms);
+      return (
+        otherPoint &&
+        Math.hypot(point[0] - otherPoint[0], point[1] - otherPoint[1]) < 0.000001
+      );
+    });
+    if (occupied)
+      return `Position already occupied by bead ${occupied.beadId} in ${residue}.`;
+  }
+  return undefined;
+}
+
+export function atomSelection(bead: BeadDraft, atom: string): BeadDraft {
+  return {
+    ...bead,
+    atoms: bead.atoms.includes(atom)
+      ? bead.atoms.filter((selected) => selected !== atom)
+      : bead.strategy === "direct"
+        ? [atom]
+        : [...bead.atoms, atom],
   };
 }
 
@@ -337,6 +376,8 @@ export function validateDraft(draft: ModelDraft): DraftIssues {
 
   for (const bead of draft.beads) {
     const beadIssues: string[] = [];
+    const conflict = positionConflict(draft, bead);
+    if (conflict) beadIssues.push(conflict);
     if (!bead.beadId.trim()) beadIssues.push("Enter a bead ID.");
     if (!bead.name.trim()) beadIssues.push("Enter a bead name.");
     if (bead.atoms.length === 0) beadIssues.push("Select at least one atom.");
@@ -363,7 +404,6 @@ export function validateDraft(draft: ModelDraft): DraftIssues {
       beadsByResidue.set(`${bead.beadId}:${residue}`, bead.key);
     }
 
-    // The backend looks atoms up by name, so a residue needs unique bead names.
     const nameConflicts = residuesForScope(bead.scope).filter((residue) =>
       namesByResidue.has(`${bead.name}:${residue}`),
     );
@@ -395,7 +435,6 @@ export function validateDraft(draft: ModelDraft): DraftIssues {
   }
   issues.invalidConnections = intraIssues.length > 0 || missingInter.length > 0;
 
-  // The backend connects beads in every residue, so both ends must exist in all of them.
   const covered = new Map<string, Set<Residue>>();
   for (const bead of draft.beads) {
     const residues = covered.get(bead.beadId) ?? new Set<Residue>();
@@ -480,8 +519,6 @@ interface ResolvedBead {
   description: string;
 }
 
-// Mirrors _build_nucleotide_config() in app/coarse_grain/models.py: each residue starts
-// from the default mapping, and every mapping entry for it overrides single keys.
 export function resolveBeads(
   definition: Record<string, unknown>,
 ): Map<Residue, Map<string, ResolvedBead>> {
@@ -509,8 +546,6 @@ export function resolveBeads(
       const listedStrategy = strategies[beadId];
       const strategy = isStrategy(listedStrategy) ? listedStrategy : "direct";
       const atoms = stringList(atomCenters[beadId]);
-      // The backend skips atoms the residue lacks, and the bead itself when a direct
-      // mapping's atom or every center atom is missing.
       const present = atoms.filter(
         (atom) => residuesWithoutAtom(atom, [residue]).length === 0,
       );
@@ -545,7 +580,6 @@ function entryResidues(entry: Record<string, unknown>): Residue[] {
 export function fromDefinition(definition: Record<string, unknown>): ModelDraft {
   const resolved = resolveBeads(definition);
 
-  // Residues that define a bead identically share one bead in the creator.
   const groups = new Map<
     string,
     { beadId: string; bead: ResolvedBead; residues: Residue[] }
@@ -604,7 +638,6 @@ function scopeForResidues(
   atoms: readonly string[],
 ): BeadScope | undefined {
   if (residues.length === ALL_RESIDUES.length) {
-    // All, phosphate and sugar beads cover every residue; pick the one offering most atoms.
     const overlap = (scope: BeadScope) =>
       atoms.filter((atom) => SCOPES[scope].atoms.includes(atom)).length;
     return BEAD_SCOPES.filter((scope) => !SCOPES[scope].residues).reduce(
@@ -618,7 +651,7 @@ function scopeForResidues(
   );
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
@@ -639,7 +672,7 @@ function isStrategy(value: unknown): value is BeadStrategy {
   return BEAD_STRATEGIES.some((strategy) => strategy === value);
 }
 
-function isStringPair(value: unknown): value is [string, string] {
+export function isStringPair(value: unknown): value is [string, string] {
   return (
     Array.isArray(value) &&
     value.length === 2 &&

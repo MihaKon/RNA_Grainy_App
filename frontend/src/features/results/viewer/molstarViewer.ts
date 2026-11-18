@@ -33,6 +33,7 @@ export interface MolstarViewer {
   setNonPolymerVisibility(visible: boolean): void;
   setRepresentation(id: StructureId, type: RepresentationType): Promise<void>;
   setColorMode(id: StructureId, colorMode: ColorMode): Promise<void>;
+  replaceStructure(input: StructureInput): Promise<void>;
   dispose(): void;
 }
 
@@ -53,6 +54,7 @@ interface NonPolymerComponent {
 }
 
 interface StructureEntry {
+  dataRef: string;
   polymer: StructureSelector;
   nonPolymer: NonPolymerComponent[];
   representation: StateObjectSelector | undefined;
@@ -115,6 +117,7 @@ export async function createMolstarViewer(
   });
 
   const entries = new Map<StructureId, StructureEntry>();
+  const visibility = new Map<StructureId, boolean>();
 
   const getEntry = (id: StructureId): StructureEntry => {
     const entry = entries.get(id);
@@ -187,7 +190,9 @@ export async function createMolstarViewer(
         input.format,
       );
       const model = await plugin.builders.structure.createModel(trajectory);
-      const structure = await plugin.builders.structure.createStructure(model);
+      const rootStructure = await plugin.builders.structure.createStructure(model);
+      const structure =
+        await plugin.builders.structure.insertStructureProperties(rootStructure);
       const polymer = input.isCoarse
         ? undefined
         : await plugin.builders.structure.tryCreateComponentFromExpression(
@@ -242,6 +247,7 @@ export async function createMolstarViewer(
       }
 
       entries.set(input.id, {
+        dataRef: data.ref,
         polymer: polymer ?? structure,
         nonPolymer,
         representation: undefined,
@@ -249,7 +255,7 @@ export async function createMolstarViewer(
         colorMode: "uniform",
         color: input.color,
         isCoarse: input.isCoarse,
-        visible: true,
+        visible: visibility.get(input.id) ?? true,
       });
       await updateRepresentation(input.id, "ball-and-stick", "uniform");
     } catch (error) {
@@ -278,14 +284,52 @@ export async function createMolstarViewer(
   return {
     failedStructures,
     hasNonPolymer: [...entries.values()].some((entry) => entry.nonPolymer.length > 0),
+    async replaceStructure(input) {
+      const previous = entries.get(input.id);
+      const canvas = plugin.canvas3d;
+      const camera = canvas?.camera.getSnapshot();
+      const manualReset = canvas?.props.camera.manualReset ?? false;
+      canvas?.setProps({ camera: { manualReset: true } });
+      try {
+        await loadStructure(input);
+        if (previous) {
+          const entry = getEntry(input.id);
+          entry.visible = visibility.get(input.id) ?? previous.visible;
+          if (
+            entry.representationType !== previous.representationType ||
+            entry.colorMode !== previous.colorMode
+          )
+            await updateRepresentation(
+              input.id,
+              previous.representationType,
+              previous.colorMode,
+            );
+          else applyVisibility(entry);
+          await plugin.build().delete(previous.dataRef).commit();
+        }
+        canvas?.commit(true);
+        if (camera) canvas?.requestCameraReset({ snapshot: camera, durationMs: 0 });
+      } catch (error) {
+        const replacement = entries.get(input.id);
+        if (replacement && replacement.dataRef !== previous?.dataRef)
+          await plugin.build().delete(replacement.dataRef).commit();
+        if (previous) entries.set(input.id, previous);
+        throw error;
+      } finally {
+        canvas?.setProps({ camera: { manualReset } });
+      }
+    },
     setNonPolymerVisibility(visible) {
       nonPolymerVisible = visible;
       entries.forEach(applyVisibility);
     },
     setVisibility(id, visible) {
-      const entry = getEntry(id);
-      entry.visible = visible;
-      applyVisibility(entry);
+      visibility.set(id, visible);
+      const entry = entries.get(id);
+      if (entry) {
+        entry.visible = visible;
+        applyVisibility(entry);
+      }
     },
     async setRepresentation(id, type) {
       const entry = getEntry(id);
@@ -301,6 +345,7 @@ export async function createMolstarViewer(
     },
     dispose() {
       entries.clear();
+      visibility.clear();
       plugin.dispose();
     },
   };

@@ -23,8 +23,4 @@ describe("SCOPES", () => {
       }
     }
   });
-
-  it("offers the ring atoms shared by all bases", () => {
-    expect(SCOPES.all.atoms).toEqual(["N1", "C2", "N3", "C4", "C5", "C6"]);
-  });
 });

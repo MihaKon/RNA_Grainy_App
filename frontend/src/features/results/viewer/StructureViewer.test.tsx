@@ -26,6 +26,7 @@ function fakeViewer(overrides: Partial<MolstarViewer> = {}): MolstarViewer {
     setRepresentation: vi.fn(() => Promise.resolve()),
     setColorMode: vi.fn(() => Promise.resolve()),
     dispose: vi.fn(),
+    replaceStructure: vi.fn(() => Promise.resolve()),
     ...overrides,
   };
 }

@@ -32,8 +32,6 @@ export function StructureFileInput({
   const [dragging, setDragging] = useState(false);
   const describedBy = error ? `${inputId}-error` : `${inputId}-hint`;
 
-  // Clear the native input when the form drops the file (e.g. on Reset), or picking
-  // the same file again fires no change event.
   useEffect(() => {
     if (!file && inputRef.current) inputRef.current.value = "";
   }, [file]);
